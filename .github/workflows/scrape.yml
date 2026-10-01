@@ -1,0 +1,39 @@
+name: Scrape ayahs from read.tafsir.one
+
+# Run manually: Actions -> "Scrape ayahs from read.tafsir.one" -> Run workflow.
+# Downloads pages pg_1..pg_668, rebuilds the database and commits the result.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'First page'
+        default: '1'
+      to:
+        description: 'Last page'
+        default: '668'
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Scrape
+        run: python3 tools/scrape_tafsir_one.py --from "${{ inputs.from }}" --to "${{ inputs.to }}" --delay 0.3
+      - name: Build database
+        run: python3 tools/build_db.py
+      - name: Verify
+        run: python3 tools/verify.py
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add data web/data
+          git commit -m "Update ayahs from read.tafsir.one" || echo "nothing to commit"
+          git push
