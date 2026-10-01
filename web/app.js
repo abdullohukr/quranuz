@@ -28,7 +28,7 @@
 
   function getTranslation(id) {
     if (translations[id]) return Promise.resolve(translations[id]);
-    return fetch('data/tr/' + id + '.json').then(function (r) { return r.json(); })
+    return fetch('data/tr/' + id + '.json?v=3').then(function (r) { return r.json(); })
       .then(function (d) { translations[id] = d; return d; });
   }
   function currentTr() { return translations[settings.translation] || null; }
@@ -228,7 +228,7 @@
 
   /* ---------- init ---------- */
   function init() {
-    fetch('data/quran.json').then(function (r) { return r.json(); }).then(function (data) {
+    fetch('data/quran.json?v=3').then(function (r) { return r.json(); }).then(function (data) {
       quran = new QuranCore.Quran(data);
       $('sura').innerHTML = data.suras.map(function (s, i) {
         return '<option value="' + (i + 1) + '">' + (i + 1) + '. ' + esc(s[1]) + ' — ' + esc(s[0]) + '</option>';

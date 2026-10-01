@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Qur'on oyatlari</title>
-<link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css">
+<link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=3" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=3">
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="core.js"></script>
+<script src="core.js?v=3"></script>
 </head>
 <body>
 <header>
@@ -22,8 +22,8 @@
       placeholder="2:255 · Бақара 30-37 · الرحمن الرحيم · ٱلرَّحۡمَـٰنِ · таржима матни">
     <div class="pick">
       <select id="sura" aria-label="Сура"></select>
-      <label>оят <input id="from" type="number" min="1" value="1"></label>
-      <label>— <input id="to" type="number" min="1" value="1"></label>
+      <span class="range"><label>оят <input id="from" type="number" min="1" value="1"></label>
+      <label>— <input id="to" type="number" min="1" value="1"></label></span>
     </div>
     <div id="status" class="muted">Юкланмоқда…</div>
     <ol id="results"></ol>
@@ -76,6 +76,6 @@
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="app.js"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

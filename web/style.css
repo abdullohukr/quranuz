@@ -5,15 +5,15 @@
 }
 /* Scheherazade New (SIL, OFL) renders the tafsir.one text correctly: ی, open tanween,
    ۝ + number as one ayah sign. KFGQPC fonts expect another encoding, so not used here. */
-@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2) format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2?v=3) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2?v=3) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #161715; --fg: #ecebe6; --muted: #a09f98; --line: #34352f;
     --accent: #4fb399; --accent-fg: #0d1210; --card: #1e1f1c; --hl: #4a4220; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg);
-  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+  font: 15px/1.5 'QuranUz Arabic', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
 header { display: flex; align-items: center; gap: 8px; padding: 10px 16px;
   border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2; }
 header h1 { font-size: 17px; margin: 0; flex: 1; }
@@ -29,6 +29,8 @@ input[type=search], select, input[type=number], input[type=text] {
 .pick { display: flex; gap: 8px; margin: 8px 0; flex-wrap: wrap; align-items: center; }
 .pick select { flex: 1; min-width: 140px; }
 .pick input { width: 70px; }
+.pick .range { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+body.office .pick select { flex-basis: 100%; }
 button { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 7px 14px; cursor: pointer; }
 button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
 button.icon { font-size: 18px; padding: 3px 9px; }
