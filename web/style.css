@@ -1,8 +1,12 @@
 :root {
   --bg: #fbfaf6; --fg: #1d1d1b; --muted: #6b6b66; --line: #e3e0d6;
   --accent: #1f6f5c; --accent-fg: #fff; --card: #fff; --hl: #fff2c2;
-  --ar-font: 'KFGQPC HAFS Uthmanic Script', 'UthmanicHafs', 'Scheherazade New', serif;
+  --ar-font: 'QuranUz Arabic', 'Scheherazade New', serif;
 }
+/* Scheherazade New (SIL, OFL) renders the tafsir.one text correctly: ی, open tanween,
+   ۝ + number as one ayah sign. KFGQPC fonts expect another encoding, so not used here. */
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2) format('woff2'); font-weight: 700; font-display: swap; }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #161715; --fg: #ecebe6; --muted: #a09f98; --line: #34352f;
     --accent: #4fb399; --accent-fg: #0d1210; --card: #1e1f1c; --hl: #4a4220; }
@@ -48,7 +52,7 @@ body.office #results { max-height: 32vh; }
 #preview-ar .num { color: var(--accent); }
 .actions { display: flex; gap: 8px; margin: 10px 0; }
 .out { border-top: 1px solid var(--line); padding-top: 8px; }
-.out .arabic { font-size: 22px; }
+.out .arabic { font-size: 22px; font-weight: 700; }
 dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); max-width: 420px; width: calc(100% - 32px); }
 dialog form { display: flex; flex-direction: column; gap: 10px; }
 dialog h2 { margin: 0; font-size: 17px; }

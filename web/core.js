@@ -158,19 +158,45 @@
     var arabic = parts.join(' ');
     if (opts.brackets !== false) arabic = br.open + arabic + br.close;
 
-    var uz = null;
+    var uz = null, trParts = null;
     if (opts.translation) {
-      var multi = sel.to > sel.from, tr = [];
+      var multi = sel.to > sel.from, tr = [], bounds = [], pos = 1;   // 1 = after «
       for (var b2 = sel.from; b2 <= sel.to; b2++) {
         var t = stripTrNumber(opts.translation[this.index(sel.sura, b2)]);
         tr.push(multi ? b2 + '. ' + t : t);
+        bounds.push(pos); pos += tr[tr.length - 1].length + 1;
       }
       var body = tr.join(' ').replace(/[\s.,;:]+$/, '');
       var range = multi ? sel.from + '-' + sel.to : String(sel.from);
-      uz = '«' + body + '» (' + this.suras[sel.sura - 1][1] + ': ' + range + ').';
+      var quote = '«' + body + '»', ref = ' (' + this.suras[sel.sura - 1][1] + ': ' + range + ').';
+      uz = quote + ref;
+      trParts = splitParens(quote, bounds).concat([{ text: ref, bold: false, italic: true }]);
     }
-    return { arabic: arabic, translation: uz };
+    return { arabic: arabic, translation: uz, translationParts: trParts };
   };
+
+  /* Translation formatting: the ayah meaning is bold, explanations in (…) are not.
+     Parentheses are matched in pairs inside each ayah (bounds = start offsets of
+     ayahs); an unmatched "(" or ")" (there are some in the source) is ignored, so it
+     cannot un-bold the rest of the text. Returns [{text, bold, italic}].            */
+  function splitParens(text, bounds) {
+    var plainMask = new Array(text.length), stack = [], b = 1;
+    bounds = bounds || [0];
+    for (var i = 0; i < text.length; i++) {
+      if (b < bounds.length && i === bounds[b]) { stack = []; b++; }
+      if (text[i] === '(') stack.push(i);
+      else if (text[i] === ')' && stack.length) {
+        for (var k = stack.pop(); k <= i; k++) plainMask[k] = true;
+      }
+    }
+    var out = [];
+    for (var j = 0; j < text.length; j++) {
+      var bold = !plainMask[j], last = out[out.length - 1];
+      if (last && last.bold === bold) last.text += text[j];
+      else out.push({ text: text[j], bold: bold, italic: false });
+    }
+    return out;
+  }
 
   return { Quran: Quran, normArabic: normArabic, arNum: arNum };
 });

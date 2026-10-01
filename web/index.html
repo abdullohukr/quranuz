@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Qur'on oyatlari</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap">
+<link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <script src="core.js"></script>
@@ -58,7 +57,12 @@
     <label><input type="checkbox" id="s-newpara"> Автоматик янги абзац (Word)</label>
     <fieldset>
       <legend>Араб матни</legend>
-      <label>Шрифт <input id="s-ar-font" type="text"></label>
+      <label>Шрифт <input id="s-ar-font" type="text" list="ar-fonts"></label>
+      <datalist id="ar-fonts"><option value="Scheherazade New"><option value="Amiri Quran"></datalist>
+      <p class="small muted">Word'да тўғри кўриниши учун шрифтни компьютерга ўрнатинг:
+        <a href="fonts/ScheherazadeNew-Regular.ttf" download>Regular</a> ·
+        <a href="fonts/ScheherazadeNew-Bold.ttf" download>Bold</a>.
+        KFGQPC шрифтлари бу матнни нотўғри кўрсатади.</p>
       <label>Ўлчам <input id="s-ar-size" type="number" min="6" max="72"></label>
     </fieldset>
     <fieldset>

@@ -4,14 +4,19 @@
   var $ = function (id) { return document.getElementById(id); };
   var DEFAULTS = {
     translation: 'alovuddin_mansur', withTr: true, brackets: true, newPara: true,
-    arFont: 'KFGQPC HAFS Uthmanic Script', arSize: 18, uzFont: '', uzSize: 14
+    arFont: 'Scheherazade New', arSize: 18, uzFont: '', uzSize: 14
   };
   var settings = load();
   var quran, translations = {}, sel = { sura: 1, from: 1, to: 1, wordFrom: 0, wordTo: null };
   var clickStart = null, inWord = false, results = [];
 
   function load() {
-    try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('quranuz-settings') || '{}')); }
+    try {
+      var st = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('quranuz-settings') || '{}'));
+      // KFGQPC fonts expect another encoding (ی shows as a dot, ۝ doubles) - switch old default
+      if (/KFGQPC/i.test(st.arFont)) st.arFont = DEFAULTS.arFont;
+      return st;
+    }
     catch (e) { return Object.assign({}, DEFAULTS); }
   }
   function save() { try { localStorage.setItem('quranuz-settings', JSON.stringify(settings)); } catch (e) {} }
@@ -98,7 +103,7 @@
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
     var out = quran.format(sel, { brackets: settings.brackets, translation: settings.withTr ? currentTr() : null });
     $('out-ar').textContent = out.arabic;
-    $('out-uz').textContent = out.translation || '';
+    $('out-uz').innerHTML = out.translation ? partsHtml(out.translationParts) : '';
     $('out-ar').style.fontFamily = settings.arFont ? "'" + settings.arFont + "', var(--ar-font)" : '';
   }
 
@@ -125,15 +130,21 @@
   }
 
   function xmlEsc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function runXml(text, font, size, rtl) {
+  /* fmt = {bold, italic}; set explicitly on/off so nothing is inherited from the cursor position */
+  function runXml(text, font, size, rtl, fmt) {
     var f = font ? '<w:rFonts w:ascii="' + xmlEsc(font) + '" w:hAnsi="' + xmlEsc(font) + '" w:cs="' + xmlEsc(font) + '"/>' : '';
+    var v = function (on) { return on ? '' : ' w:val="0"'; };
+    var bi = '<w:b' + v(fmt.bold) + '/><w:bCs' + v(fmt.bold) + '/><w:i' + v(fmt.italic) + '/><w:iCs' + v(fmt.italic) + '/>';
     var sz = size ? '<w:sz w:val="' + Math.round(size * 2) + '"/><w:szCs w:val="' + Math.round(size * 2) + '"/>' : '';
-    return '<w:r><w:rPr>' + f + (rtl ? '<w:rtl/>' : '') + sz + '</w:rPr><w:t xml:space="preserve">' + xmlEsc(text) + '</w:t></w:r>';
+    return '<w:r><w:rPr>' + f + bi + sz + (rtl ? '<w:rtl/>' : '') + '</w:rPr><w:t xml:space="preserve">' + xmlEsc(text) + '</w:t></w:r>';
   }
   function buildOoxml(out) {
-    var body = '<w:p><w:pPr><w:bidi/><w:jc w:val="both"/></w:pPr>' + runXml(out.arabic, settings.arFont, settings.arSize, true) + '</w:p>';
+    var body = '<w:p><w:pPr><w:bidi/><w:jc w:val="both"/></w:pPr>' +
+      runXml(out.arabic, settings.arFont, settings.arSize, true, { bold: true, italic: false }) + '</w:p>';
     if (out.translation)
-      body += '<w:p><w:pPr><w:jc w:val="both"/></w:pPr>' + runXml(out.translation, settings.uzFont, settings.uzSize, false) + '</w:p>';
+      body += '<w:p><w:pPr><w:jc w:val="both"/></w:pPr>' + out.translationParts.map(function (p) {
+        return runXml(p.text, settings.uzFont, settings.uzSize, false, p);
+      }).join('') + '</w:p>';
     return '<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">' +
       '<pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml"><pkg:xmlData>' +
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
@@ -143,11 +154,16 @@
       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
       '</w:body></w:document></pkg:xmlData></pkg:part></pkg:package>';
   }
+  function partsHtml(parts) {
+    return parts.map(function (p) {
+      return '<span style="font-weight:' + (p.bold ? 'bold' : 'normal') + ';font-style:' + (p.italic ? 'italic' : 'normal') + '">' + esc(p.text) + '</span>';
+    }).join('');
+  }
   function buildHtml(out) {
-    var ar = '<p dir="rtl" style="text-align:justify;' + (settings.arFont ? "font-family:'" + esc(settings.arFont) + "';" : '') +
+    var ar = '<p dir="rtl" style="text-align:justify;font-weight:bold;' + (settings.arFont ? "font-family:'" + esc(settings.arFont) + "';" : '') +
       'font-size:' + settings.arSize + 'pt">' + esc(out.arabic) + '</p>';
     var uz = out.translation ? '<p style="text-align:justify;' + (settings.uzFont ? "font-family:'" + esc(settings.uzFont) + "';" : '') +
-      'font-size:' + settings.uzSize + 'pt">' + esc(out.translation) + '</p>' : '';
+      'font-size:' + settings.uzSize + 'pt">' + partsHtml(out.translationParts) + '</p>' : '';
     return ar + uz;
   }
   function plain(out) { return out.arabic + (out.translation ? '\n' + out.translation : ''); }
