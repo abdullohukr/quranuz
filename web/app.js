@@ -28,7 +28,7 @@
 
   function getTranslation(id) {
     if (translations[id]) return Promise.resolve(translations[id]);
-    return fetch('data/tr/' + id + '.json?v=3').then(function (r) { return r.json(); })
+    return fetch('data/tr/' + id + '.json?v=4').then(function (r) { return r.json(); })
       .then(function (d) { translations[id] = d; return d; });
   }
   function currentTr() { return translations[settings.translation] || null; }
@@ -107,21 +107,59 @@
     $('out-ar').style.fontFamily = settings.arFont ? "'" + settings.arFont + "', var(--ar-font)" : '';
   }
 
-  $('preview-ar').addEventListener('click', function (e) {
-    var el = e.target.closest('.w'); if (!el) return;
-    var a = +el.dataset.a, w = +el.dataset.w;
-    if (!clickStart) {
-      clickStart = { a: a, w: w };
-      sel.from = a; sel.wordFrom = w; sel.wordTo = null;
-      if (sel.to < a) sel.to = a;
-    } else {
-      var st = clickStart, en = { a: a, w: w };
-      if (en.a < st.a || (en.a === st.a && en.w < st.w)) { var t = st; st = en; en = t; }
-      sel.from = st.a; sel.wordFrom = st.w; sel.to = en.a; sel.wordTo = en.w;
-      clickStart = null;
-    }
+  /* Word selection: click first word then last word, or drag across words with the mouse. */
+  function applyRange(st, en) {
+    if (en.a < st.a || (en.a === st.a && en.w < st.w)) { var t = st; st = en; en = t; }
+    sel.from = st.a; sel.wordFrom = st.w; sel.to = en.a; sel.wordTo = en.w;
+    clickStart = null;
     $('from').value = sel.from; $('to').value = sel.to;
     render();
+  }
+  function clickWord(a, w) {
+    if (clickStart) { applyRange(clickStart, { a: a, w: w }); return; }
+    clickStart = { a: a, w: w };
+    sel.from = a; sel.wordFrom = w; sel.wordTo = null;
+    if (sel.to < a) sel.to = a;
+    $('from').value = sel.from; $('to').value = sel.to;
+    render();
+  }
+  var drag = null;
+  function wordAt(x, y) {
+    var el = document.elementFromPoint(x, y);
+    el = el && el.closest ? el.closest('#preview-ar .w') : null;
+    return el ? { a: +el.dataset.a, w: +el.dataset.w } : null;
+  }
+  function paintDrag() {
+    var lo = drag.start, hi = drag.end;
+    if (hi.a < lo.a || (hi.a === lo.a && hi.w < lo.w)) { var t = lo; lo = hi; hi = t; }
+    [].forEach.call($('preview-ar').querySelectorAll('.w'), function (el) {
+      var a = +el.dataset.a, w = +el.dataset.w;
+      var inside = (a > lo.a || (a === lo.a && w >= lo.w)) && (a < hi.a || (a === hi.a && w <= hi.w));
+      el.classList.toggle('drag', inside);
+    });
+  }
+  $('preview-ar').addEventListener('pointerdown', function (e) {
+    if (e.button > 0) return;
+    var p = wordAt(e.clientX, e.clientY); if (!p) return;
+    e.preventDefault();
+    drag = { start: p, end: p, moved: false };
+  });
+  document.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var p = wordAt(e.clientX, e.clientY);
+    if (!p || (p.a === drag.end.a && p.w === drag.end.w)) return;
+    drag.end = p; drag.moved = true;
+    $('preview-ar').classList.add('dragging');
+    paintDrag();
+  });
+  document.addEventListener('pointerup', function () {
+    if (!drag) return;
+    var d = drag; drag = null;
+    $('preview-ar').classList.remove('dragging');
+    if (d.moved) applyRange(d.start, d.end); else clickWord(d.start.a, d.start.w);
+  });
+  document.addEventListener('pointercancel', function () {
+    drag = null; $('preview-ar').classList.remove('dragging'); render();
   });
 
   /* ---------- output ---------- */
@@ -136,15 +174,19 @@
     var v = function (on) { return on ? '' : ' w:val="0"'; };
     var bi = '<w:b' + v(fmt.bold) + '/><w:bCs' + v(fmt.bold) + '/><w:i' + v(fmt.italic) + '/><w:iCs' + v(fmt.italic) + '/>';
     var sz = size ? '<w:sz w:val="' + Math.round(size * 2) + '"/><w:szCs w:val="' + Math.round(size * 2) + '"/>' : '';
-    return '<w:r><w:rPr>' + f + bi + sz + (rtl ? '<w:rtl/>' : '') + '</w:rPr><w:t xml:space="preserve">' + xmlEsc(text) + '</w:t></w:r>';
+    return '<w:r><w:rPr>' + f + bi + sz + (rtl ? '<w:rtl/>' : '<w:rtl w:val="0"/>') + '</w:rPr><w:t xml:space="preserve">' + xmlEsc(text) + '</w:t></w:r>';
   }
   function buildOoxml(out) {
     var body = '<w:p><w:pPr><w:bidi/><w:jc w:val="both"/></w:pPr>' +
       runXml(out.arabic, settings.arFont, settings.arSize, true, { bold: true, italic: false }) + '</w:p>';
     if (out.translation)
-      body += '<w:p><w:pPr><w:jc w:val="both"/></w:pPr>' + out.translationParts.map(function (p) {
+      body += '<w:p><w:pPr><w:bidi w:val="0"/><w:jc w:val="both"/></w:pPr>' + out.translationParts.map(function (p) {
         return runXml(p.text, settings.uzFont, settings.uzSize, false, p);
       }).join('') + '</w:p>';
+    // Word merges the LAST inserted paragraph into the paragraph at the cursor and gives it
+    // that paragraph's properties (e.g. RTL). An empty last paragraph takes that role, so
+    // the Arabic (RTL) and translation (LTR) paragraphs keep their own properties.
+    body += '<w:p/>';
     return '<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">' +
       '<pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml"><pkg:xmlData>' +
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
@@ -162,7 +204,7 @@
   function buildHtml(out) {
     var ar = '<p dir="rtl" style="text-align:justify;font-weight:bold;' + (settings.arFont ? "font-family:'" + esc(settings.arFont) + "';" : '') +
       'font-size:' + settings.arSize + 'pt">' + esc(out.arabic) + '</p>';
-    var uz = out.translation ? '<p style="text-align:justify;' + (settings.uzFont ? "font-family:'" + esc(settings.uzFont) + "';" : '') +
+    var uz = out.translation ? '<p dir="ltr" style="text-align:justify;' + (settings.uzFont ? "font-family:'" + esc(settings.uzFont) + "';" : '') +
       'font-size:' + settings.uzSize + 'pt">' + partsHtml(out.translationParts) + '</p>' : '';
     return ar + uz;
   }
@@ -228,7 +270,7 @@
 
   /* ---------- init ---------- */
   function init() {
-    fetch('data/quran.json?v=3').then(function (r) { return r.json(); }).then(function (data) {
+    fetch('data/quran.json?v=4').then(function (r) { return r.json(); }).then(function (data) {
       quran = new QuranCore.Quran(data);
       $('sura').innerHTML = data.suras.map(function (s, i) {
         return '<option value="' + (i + 1) + '">' + (i + 1) + '. ' + esc(s[1]) + ' — ' + esc(s[0]) + '</option>';

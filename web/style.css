@@ -5,8 +5,8 @@
 }
 /* Scheherazade New (SIL, OFL) renders the tafsir.one text correctly: ی, open tanween,
    ۝ + number as one ayah sign. KFGQPC fonts expect another encoding, so not used here. */
-@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2?v=3) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
-@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2?v=3) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2?v=4) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2?v=4) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #161715; --fg: #ecebe6; --muted: #a09f98; --line: #34352f;
     --accent: #4fb399; --accent-fg: #0d1210; --card: #1e1f1c; --hl: #4a4220; }
@@ -50,7 +50,10 @@ body.office #results { max-height: 32vh; }
 #preview-ar .w { cursor: pointer; border-radius: 4px; }
 #preview-ar .w:hover { outline: 1px dashed var(--accent); }
 #preview-ar .w.off { opacity: .35; }
-#preview-ar .w.start, #preview-ar .w.end { background: var(--hl); }
+#preview-ar .w.start, #preview-ar .w.end, #preview-ar .w.drag { background: var(--hl); }
+#preview-ar { user-select: none; -webkit-user-select: none; }
+#preview-ar .w { touch-action: none; }
+#preview-ar.dragging .w { opacity: 1; }
 #preview-ar .num { color: var(--accent); }
 .actions { display: flex; gap: 8px; margin: 10px 0; }
 .out { border-top: 1px solid var(--line); padding-top: 8px; }
