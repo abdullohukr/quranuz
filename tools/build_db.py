@@ -44,7 +44,7 @@ def search_text(t):
     """Plain text without diacritics (same style as quran_ar_search in Quran.csv)."""
     t = re.sub("۝[٠-٩]+", " ", t)
     t = t.replace("۞", " ").replace("۩", " ")
-    t = MARKS.sub("", t)
+    t = MARKS.sub("", t.replace("\u200a", ""))
     t = t.replace("ی", "ي").replace("ٱ", "ا")
     return re.sub(r"\s+", " ", t).strip()
 

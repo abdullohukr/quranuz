@@ -92,7 +92,7 @@
       words.forEach(function (w, i) {
         html += '<span class="w ' + wordState(a, i, words.length) + '" data-a="' + a + '" data-w="' + i + '">' + esc(w) + '</span> ';
       });
-      html += '<span class="num">' + esc(full.match(/۝[٠-٩]+\s*$/)[0]) + '</span> ';
+      html += '<span class="num">' + esc(full.match(/۝[٠-٩]+ *$/)[0]) + '</span> ';
     }
     $('preview-ar').innerHTML = html;
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);

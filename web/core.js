@@ -6,7 +6,7 @@
   'use strict';
 
   var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
-  var END_MARK = /\s*۝[٠-٩]+\s*$/;
+  var END_MARK = / *۝[٠-٩]+ *$/;
   var MARKS = /[ؐ-ًؚ-ٟۖ-ۭ࣓-ࣿـ​-‏⁠۝۞۩]/g;
 
   function arNum(n) {
@@ -22,7 +22,7 @@
      1: dagger alef -> alef (imla'i spelling)          الرحمان العالمين
      2: skeleton: no alef / hamza at all               لرحمن   لعلمين            */
   function normArabic(s, level) {
-    s = toLatinDigits(s).replace(/۝[0-9]+/g, ' ').replace(/[0-9]/g, ' ');
+    s = toLatinDigits(s).replace(/\s+(?=\u0670)/g, '').replace(/[\u200A\u2060]/g, '').replace(/۝[0-9]+/g, ' ').replace(/[0-9]/g, ' ');
     if (level === 1) s = s.replace(/ٰ/g, 'ا');
     else s = s.replace(/ٰ/g, '');
     s = s.replace(MARKS, '')
@@ -131,7 +131,8 @@
 
   /* Words of an ayah, without the end mark "۝N". */
   Quran.prototype.words = function (s, a) {
-    return this.text(s, a).replace(END_MARK, '').split(/\s+/).filter(Boolean);
+    // split on ordinary spaces only: U+200A inside words like وَرِضۡوَ ٰ⁠نࣰا is not a word break
+    return this.text(s, a).replace(END_MARK, '').split(/ +/).filter(Boolean);
   };
 
   function stripTrNumber(t) { return t.trim().replace(/^\d+\s*\.\s*/, ''); }
