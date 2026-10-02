@@ -1,6 +1,6 @@
 name: Import from QUL (qul.tarteel.ai)
 
-# Needs the repository secret QUL_COOKIE (value of the qul.tarteel.ai session cookie).
+# Uses only public QUL pages and API (no login).
 # Starts on push when tools/qul_run.json changes, or manually from the Actions tab.
 on:
   push:
@@ -25,25 +25,18 @@ jobs:
           python-version: '3.11'
       - run: pip install requests fonttools brotli
       - name: Scrape
-        env:
-          QUL_COOKIE: ${{ secrets.QUL_COOKIE }}
         run: |
-          TYPES=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['types'])")
+          ONLY=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['only'])")
           LIMIT=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('limit',0))")
-          python3 tools/scrape_qul.py --types "$TYPES" --limit "$LIMIT"
+          python3 tools/scrape_qul.py --only "$ONLY" --limit "$LIMIT"
       - name: Build web data
         run: |
           if [ -f tools/build_qul.py ]; then python3 tools/build_qul.py; fi
-      - name: Keep probe files (catalog, page samples, small raw files)
+      - name: Report and samples
         run: |
-          PROBE=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('probe',False))")
           mkdir -p data/qul
           cp qul_raw/catalog.json data/qul/catalog.json
-          if [ "$PROBE" = "True" ]; then
-            rm -rf data/qul/probe && mkdir -p data/qul/probe
-            cp -r qul_raw/_debug data/qul/probe/
-            find qul_raw -name '*.zip' -size -15M -exec cp --parents {} data/qul/probe/ \;
-          fi
+          python3 tools/qul_probe_report.py
       - uses: actions/upload-artifact@v4
         with:
           name: qul-raw

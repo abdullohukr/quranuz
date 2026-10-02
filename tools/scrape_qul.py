@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
-"""Download translations, tafsirs, Quran scripts, fonts and surah info from
-QUL - Quranic Universal Library (https://qul.tarteel.ai, open source:
-https://github.com/TarteelAI/quranic-universal-library).
+"""Import translations, tafsirs, Quran scripts and fonts from QUL - Quranic
+Universal Library (https://qul.tarteel.ai, open source:
+https://github.com/TarteelAI/quranic-universal-library). No login is needed.
 
-How the site works (from its source code):
-  /resources/<type>                       list of resources (paginated, ?page=N)
-  /resources/<type>/<id>                  resource page: name (<h1>), tags (language,
-                                          "Quran text", font names ...), download links
-  /resources/<type>/<token>/download      file download, needs a signed-in session
-                                          (redirects to a zip on the storage CDN)
-  /api/v1/resources/translations|tafsirs  public metadata (language, author, names)
-  /api/v1/chapters?locale=xx              surah names in many languages
-Resources marked (c) copyrighted have no download links and are skipped.
+What the site offers (from its source code):
+  GET /api/v1/resources/translations|tafsirs|languages?includes=names   metadata
+  GET /api/v1/translations/<id>/by_range?from=S:A&to=S:A   whole range, no paging;
+      resources whose owners rejected sharing are excluded by the API itself
+  GET /api/v1/tafsirs/<id>/by_range?from=S:A&to=S:A        idem (grouped ayahs)
+  GET /api/v1/chapters?locale=xx                           surah names per locale
+  GET /api/v1/chapters/<n>/verses?fields=text_qpc_hafs,...&per_page=286
+  GET /resources/<type>, /resources/<type>/<id>            public resource pages:
+      name, tags, (c) notice, font preview URL on static-cdn.tarteel.ai
+Resources marked (c) on the site are skipped. Uzbek translations/tafsirs are
+skipped (the project has its own).
 
-The session cookie comes from the QUL_COOKIE environment variable (a GitHub
-secret): either the raw value of `_quran_com-community_session`, `name=value`,
-or the whole Netscape cookies.txt content. It is never written to disk.
-
-Output (raw, not committed):  qul_raw/<type>/<id>.zip + qul_raw/catalog.json
-Usage: python3 tools/scrape_qul.py [--types translation,tafsir,...] [--limit N]
+Output: qul_raw/ (not committed) - catalog.json, translation/<id>.json,
+tafsir/<id>.json, scripts.json, fonts/<file>
+Usage: python3 tools/scrape_qul.py [--only meta,translation,tafsir,script,font] [--limit N]
 """
 import argparse
 import html
@@ -27,54 +26,40 @@ import os
 import re
 import sys
 import time
-import zipfile
 
 import requests
 
 BASE = "https://qul.tarteel.ai"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "qul_raw")
-UA = "Mozilla/5.0 (MyQuran data import; +https://github.com/abdullohukr/quranuz)"
-TYPES = ["translation", "tafsir", "quran-script", "font", "surah-info"]
-# preferred download format per resource type
-PREFER = {
-    "translation": ["simple.json", "json"],
-    "tafsir": ["json"],
-    "quran-script": ["json"],
-    "surah-info": ["json"],
-    "font": ["ttf", "otf", "woff2", "woff"],   # fonts: all of these
-}
+UA = "MyQuran data import (+https://github.com/abdullohukr/quranuz)"
+SKIP_LANGS = {"uzbek"}
+SCRIPT_FIELDS = [
+    "text_qpc_hafs", "text_uthmani", "text_uthmani_simple", "text_imlaei", "text_imlaei_simple",
+    "text_indopak", "text_indopak_nastaleeq", "text_qpc_nastaleeq", "text_qpc_nastaleeq_hafs",
+    "text_digital_khatt", "text_digital_khatt_v1", "text_digital_khatt_indopak",
+    "text_uthmani_tajweed", "text_qpc_hafs_tajweed",
+]
+SURA_COUNTS = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135,
+               112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89,
+               59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30,
+               52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15,
+               21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6]
+
+S = requests.Session()
+S.headers["User-Agent"] = UA
 
 
-def session_from_env():
-    s = requests.Session()
-    s.headers["User-Agent"] = UA
-    raw = os.environ.get("QUL_COOKIE", "").strip()
-    if not raw:
-        sys.exit("QUL_COOKIE is empty: add it as a repository secret")
-    name, value = "_quran_com-community_session", raw
-    for line in raw.splitlines():               # Netscape cookies.txt
-        parts = line.split("\t")
-        if len(parts) >= 7 and "qul.tarteel.ai" in parts[0]:
-            name, value = parts[5].strip(), parts[6].strip()
-            break
-    else:
-        if "=" in raw and not raw.endswith("=="):
-            name, value = raw.split("=", 1)
-    s.cookies.set(name.strip(), value.strip(), domain="qul.tarteel.ai")
-    return s
-
-
-def get(s, url, **kw):
-    for attempt in range(5):
+def get(url, **kw):
+    for attempt in range(6):
         try:
-            r = s.get(url, timeout=120, **kw)
-            if r.status_code in (429, 502, 503, 504):
-                raise requests.HTTPError(f"{r.status_code}")
+            r = S.get(url, timeout=300, **kw)
+            if r.status_code in (429, 500, 502, 503, 504):
+                raise requests.HTTPError(str(r.status_code))
             return r
         except Exception as e:  # noqa: BLE001
-            wait = 2 ** (attempt + 2)
-            print(f"  ! {url}: {e}; retry in {wait}s", flush=True)
+            wait = min(2 ** (attempt + 2), 120)
+            print(f"  ! {url} {kw.get('params', '')}: {e}; retry in {wait}s", flush=True)
             time.sleep(wait)
     raise RuntimeError(f"failed: {url}")
 
@@ -83,15 +68,35 @@ def text_of(fragment):
     return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fragment)).split())
 
 
-def list_resources(s, rtype, delay):
-    """All resource ids of a type, walking ?page=N until nothing new appears."""
+def norm_name(s):
+    return re.sub(r"[^\w]+", " ", (s or "").lower()).strip()
+
+
+def save(path, data):
+    path = os.path.join(RAW, path)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
+
+
+def chunks(n_chunks=8):
+    """Split the Quran into ~equal ranges of whole surahs: [(from_key, to_key)]."""
+    total, target, out, start, acc = 6236, 6236 / n_chunks, [], 1, 0
+    for s, c in enumerate(SURA_COUNTS, 1):
+        acc += c
+        if acc >= target or s == 114:
+            out.append((f"{start}:1", f"{s}:{c}"))
+            start, acc = s + 1, 0
+    return out
+
+
+# ---------------------------------------------------------------- site pages
+def list_pages(rtype, delay):
     ids, page = [], 1
     link = re.compile(r'href="/resources/%s/([A-Za-z0-9_-]+)"' % re.escape(rtype))
-    while page < 200:
-        r = get(s, f"{BASE}/resources/{rtype}", params={"page": page, "view": "list"})
+    while page < 100:
+        r = get(f"{BASE}/resources/{rtype}", params={"page": page})
         new = [i for i in link.findall(r.text) if i not in ids and not re.fullmatch(r"[0-9a-f]{32}", i)]
-        if page == 1:
-            save_debug(f"list-{rtype}.html", r.text)
         if not new:
             break
         ids += new
@@ -100,130 +105,164 @@ def list_resources(s, rtype, delay):
     return ids
 
 
-def save_debug(name, text):
-    os.makedirs(os.path.join(RAW, "_debug"), exist_ok=True)
-    with open(os.path.join(RAW, "_debug", name), "w", encoding="utf-8") as f:
-        f.write(text)
-
-
-def parse_detail(rtype, rid, page):
+def detail(rtype, rid):
+    page = get(f"{BASE}/resources/{rtype}/{rid}").text
     h1 = re.search(r"<h1[^>]*>(.*?)</h1>", page, re.S)
-    name = text_of(h1.group(1)) if h1 else str(rid)
-    files = []
-    for href, label in re.findall(
-            r'href="(/resources/[\w-]+/[0-9a-f]{32}/download)"[^>]*>(.*?)</a>', page, re.S):
-        ftype = re.sub(r"^\s*Download\s*", "", text_of(label) or "").strip()
-        if (href, ftype) not in files:
-            files.append((href, ftype))
     tags = []
     m = re.search(r">\s*Tags\s*</h2>(.*?)</section>", page, re.S)
     if m:
-        tags = [t for t in (text_of(x) for x in re.findall(r"<(?:a|span)[^>]*>(.*?)</(?:a|span)>", m.group(1), re.S)) if t]
-    cardinality = ""
-    m = re.search(r"</h1>\s*<span[^>]*>(.*?)</span>", page, re.S)
-    if m:
-        cardinality = text_of(m.group(1))
-    desc = ""
-    m = re.search(r'<section class="bg-gray-50[^"]*"[^>]*>(.*?)</section>', page, re.S)
-    if m:
-        desc = text_of(m.group(1))
+        tags = [t for t in (text_of(x) for x in re.findall(r"<a[^>]*>(.*?)</a>", m.group(1), re.S)) if t]
+    card = re.search(r"</h1>\s*<span[^>]*>(.*?)</span>", page, re.S)
+    desc = re.search(r'<section class="bg-gray-50[^"]*"[^>]*>(.*?)</section>', page, re.S)
+    font_url = re.search(r'data-font-preview-font-url-value="([^"]+)"', page)
     return {
-        "type": rtype, "id": rid, "name": name, "tags": tags, "cardinality": cardinality,
-        "description": desc, "copyrighted": "bg-red-100" in page and not files,
-        "files": [{"href": h, "type": t} for h, t in files],
+        "type": rtype, "id": rid, "name": text_of(h1.group(1)) if h1 else str(rid), "tags": tags,
+        "cardinality": text_of(card.group(1)) if card else "",
+        "description": text_of(desc.group(1)) if desc else "",
+        "copyrighted": "Download Links" not in page,
+        "font_url": html.unescape(font_url.group(1)) if font_url else None,
     }
 
 
-def choose_files(rtype, files):
-    pref = PREFER[rtype]
-    if rtype == "font":
-        return [f for f in files if f["type"].lower() in pref]
-    for p in pref:
-        for f in files:
-            if f["type"].lower() == p:
-                return [f]
-    return []
-
-
-def download(s, f, dest):
-    if os.path.exists(dest) and zipfile.is_zipfile(dest):
-        return True
-    r = get(s, BASE + f["href"], allow_redirects=False)
-    loc = r.headers.get("Location", "")
-    if r.status_code not in (301, 302, 303, 307, 308) or "/users/sign_in" in loc or not loc:
-        sys.exit(f"download refused ({r.status_code} -> {loc or 'no redirect'}): "
-                 "the QUL_COOKIE session is missing or expired - log in again and update the secret")
-    # the file lives on the storage CDN: fetch it WITHOUT our session cookie
-    r2 = get(requests.Session(), loc if loc.startswith("http") else BASE + loc,
-             headers={"User-Agent": UA})
-    r2.raise_for_status()
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
-    with open(dest, "wb") as fh:
-        fh.write(r2.content)
-    return True
-
-
-def api_metadata(s):
-    meta = {}
+# ---------------------------------------------------------------- steps
+def step_meta(delay):
+    cat = {"api": {}, "pages": {}}
     for kind in ("translations", "tafsirs", "languages"):
-        r = get(s, f"{BASE}/api/v1/resources/{kind}", params={"includes": "names"})
-        meta[kind] = r.json().get(kind, []) if r.ok else []
-    return meta
-
-
-def chapter_names(s, locales):
-    names = {}
+        r = get(f"{BASE}/api/v1/resources/{kind}", params={"includes": "names"})
+        r.raise_for_status()
+        cat["api"][kind] = r.json()[kind]
+    locales = {l["iso_code"] for l in cat["api"]["languages"] if l.get("iso_code")} | {"en", "ar"}
+    cat["chapters"] = {}
     for loc in sorted(locales):
-        r = get(s, f"{BASE}/api/v1/chapters", params={"locale": loc})
-        if not r.ok:
+        r = get(f"{BASE}/api/v1/chapters", params={"locale": loc})
+        if r.ok:
+            cat["chapters"][loc] = [{"simple": c.get("name_simple"), "arabic": c.get("name_arabic"),
+                                     "translated": (c.get("translated_name") or {}).get("name"),
+                                     "lang": (c.get("translated_name") or {}).get("language_name"),
+                                     "place": c.get("revelation_place"), "order": c.get("revelation_order")}
+                                    for c in r.json()["chapters"]]
+        time.sleep(delay / 2)
+    for rtype in ("translation", "tafsir", "quran-script", "font"):
+        ids = list_pages(rtype, delay)
+        print(f"{rtype}: {len(ids)} pages", flush=True)
+        cat["pages"][rtype] = []
+        for rid in ids:
+            d = detail(rtype, rid)
+            cat["pages"][rtype].append(d)
+            print(f"  {rtype}/{rid}: {d['name']} | {d['cardinality']} | {d['tags']}"
+                  f"{' | (c)' if d['copyrighted'] else ''}{' | ' + d['font_url'] if d['font_url'] else ''}", flush=True)
+            time.sleep(delay)
+    save("catalog.json", cat)
+    return cat
+
+
+def allowed(kind, res, pages):
+    """Skip Uzbek and resources whose page on the site carries a (c) notice."""
+    if (res.get("language") or res.get("language_name") or "").lower() in SKIP_LANGS:
+        return False
+    by_name = {norm_name(p["name"]): p for p in pages}
+    p = by_name.get(norm_name(res["name"]))
+    if p is not None:
+        return not p["copyrighted"]
+    # tafsir API does not apply share permissions itself -> require a public page
+    return kind == "translation"
+
+
+def step_ranges(kind, cat, limit, delay):
+    api_kind = "translations" if kind == "translation" else "tafsirs"
+    items = [r for r in cat["api"][api_kind] if allowed(kind, r, cat["pages"].get(kind, []))]
+    print(f"{kind}: {len(items)} of {len(cat['api'][api_kind])} allowed", flush=True)
+    if limit:
+        items = items[:limit]
+    done = []
+    for res in items:
+        path = f"{kind}/{res['id']}.json"
+        if os.path.exists(os.path.join(RAW, path)):
+            done.append(res["id"])
             continue
-        ch = r.json().get("chapters", [])
-        names[loc] = [{"simple": c.get("name_simple"), "arabic": c.get("name_arabic"),
-                       "translated": (c.get("translated_name") or {}).get("name"),
-                       "translated_lang": (c.get("translated_name") or {}).get("language_name")}
-                      for c in ch]
-        time.sleep(0.2)
-    return names
+        data, ok = ({} if kind == "translation" else []), True
+        for frm, to in chunks(8 if kind == "translation" else 24):
+            r = get(f"{BASE}/api/v1/{api_kind}/{res['id']}/by_range", params={"from": frm, "to": to})
+            if r.status_code == 404:
+                ok = False
+                break
+            r.raise_for_status()
+            rows = r.json()[api_kind]
+            if kind == "translation":
+                for row in rows:
+                    data[row["verse_key"]] = row["text"]
+            else:
+                for row in rows:
+                    data.append({"verses": row["verses"], "text": row["text"]})
+            time.sleep(delay)
+        if not ok:
+            print(f"  - {kind} {res['id']} {res['name']}: not shared, skipped", flush=True)
+            continue
+        save(path, data)
+        done.append(res["id"])
+        print(f"  {kind} {res['id']} {res['name']} ({res.get('language') or res.get('language_name')}): "
+              f"{len(data)} records", flush=True)
+    return done
+
+
+def step_scripts(delay):
+    out = {f: [] for f in SCRIPT_FIELDS}
+    for s in range(1, 115):
+        r = get(f"{BASE}/api/v1/chapters/{s}/verses",
+                params={"fields": ",".join(SCRIPT_FIELDS), "per_page": 286})
+        r.raise_for_status()
+        verses = sorted(r.json()["verses"], key=lambda v: int(v["verse_key"].split(":")[1]))
+        if len(verses) != SURA_COUNTS[s - 1]:
+            sys.exit(f"surah {s}: got {len(verses)} verses")
+        for f in SCRIPT_FIELDS:
+            out[f] += [v.get(f) or "" for v in verses]
+        time.sleep(delay)
+    save("scripts.json", out)
+    print("scripts:", {f: sum(1 for t in v if t) for f, v in out.items()}, flush=True)
+
+
+def step_fonts(cat):
+    got = []
+    for p in cat["pages"].get("font", []):
+        url = p.get("font_url")
+        if not url or p["copyrighted"] or re.search(r"/p\d+\.(ttf|woff2?|otf)$", url):
+            continue   # page-by-page mushaf fonts (p1..p604) cannot be used in Word
+        name = url.split("/")[-1].split("?")[0]
+        base = url.rsplit(".", 1)[0]
+        for ext in ("ttf", "otf", "woff2"):
+            r = get(f"{base}.{ext}")
+            if r.ok and len(r.content) > 1000:
+                os.makedirs(os.path.join(RAW, "fonts"), exist_ok=True)
+                fn = os.path.join(RAW, "fonts", name.rsplit(".", 1)[0] + "." + ext)
+                with open(fn, "wb") as fh:
+                    fh.write(r.content)
+                got.append({"page": p["id"], "name": p["name"], "file": os.path.basename(fn)})
+    save("fonts.json", got)
+    print("fonts:", [g["file"] for g in got], flush=True)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--types", default=",".join(TYPES))
-    ap.add_argument("--limit", type=int, default=0, help="max resources per type (testing)")
-    ap.add_argument("--delay", type=float, default=0.5)
-    ap.add_argument("--no-download", action="store_true", help="only build the catalog")
-    args = ap.parse_args()
-
-    s = session_from_env()
+    ap.add_argument("--only", default="meta,translation,tafsir,script,font")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--delay", type=float, default=0.3)
+    a = ap.parse_args()
+    steps = a.only.split(",")
     os.makedirs(RAW, exist_ok=True)
-    catalog = {"api": api_metadata(s), "resources": []}
-    langs = {l.get("iso_code") for l in catalog["api"].get("languages", []) if l.get("iso_code")}
-    catalog["chapters"] = chapter_names(s, langs | {"en", "ar"})
-
-    for rtype in args.types.split(","):
-        ids = list_resources(s, rtype, args.delay)
-        print(f"{rtype}: {len(ids)} resources", flush=True)
-        if args.limit:
-            ids = ids[:args.limit]
-        for n, rid in enumerate(ids):
-            r = get(s, f"{BASE}/resources/{rtype}/{rid}")
-            if n == 0:
-                save_debug(f"detail-{rtype}.html", r.text)
-            d = parse_detail(rtype, rid, r.text)
-            d["downloaded"] = []
-            if not args.no_download:
-                for f in choose_files(rtype, d["files"]):
-                    ext = re.sub(r"[^\w.]+", "_", f["type"])
-                    dest = os.path.join(RAW, rtype, f"{rid}.{ext}.zip")
-                    download(s, f, dest)
-                    d["downloaded"].append({"type": f["type"], "path": os.path.relpath(dest, RAW)})
-                    time.sleep(args.delay)
-            catalog["resources"].append(d)
-            print(f"  {rtype}/{rid}: {d['name']} | tags={d['tags']} | files={[f['type'] for f in d['files']]}"
-                  f"{' | (c) skipped' if d['copyrighted'] else ''}", flush=True)
-            time.sleep(args.delay)
-        with open(os.path.join(RAW, "catalog.json"), "w", encoding="utf-8") as fh:
-            json.dump(catalog, fh, ensure_ascii=False, indent=1)
+    cat_path = os.path.join(RAW, "catalog.json")
+    if "meta" in steps or not os.path.exists(cat_path):
+        cat = step_meta(a.delay)
+    else:
+        with open(cat_path, encoding="utf-8") as f:
+            cat = json.load(f)
+    if "translation" in steps:
+        step_ranges("translation", cat, a.limit, a.delay)
+    if "tafsir" in steps:
+        step_ranges("tafsir", cat, a.limit, a.delay)
+    if "script" in steps:
+        step_scripts(a.delay)
+    if "font" in steps:
+        step_fonts(cat)
     print("done", flush=True)
 
 
