@@ -1,0 +1,7 @@
+{
+  "note": "Changing this file on the branch starts .github/workflows/qul.yml",
+  "run": 1,
+  "types": "translation,tafsir,quran-script,font,surah-info",
+  "limit": 2,
+  "probe": true
+}

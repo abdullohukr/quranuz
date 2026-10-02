@@ -1,0 +1,58 @@
+name: Import from QUL (qul.tarteel.ai)
+
+# Needs the repository secret QUL_COOKIE (value of the qul.tarteel.ai session cookie).
+# Starts on push when tools/qul_run.json changes, or manually from the Actions tab.
+on:
+  push:
+    paths: ['tools/qul_run.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: qul-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests fonttools brotli
+      - name: Scrape
+        env:
+          QUL_COOKIE: ${{ secrets.QUL_COOKIE }}
+        run: |
+          TYPES=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['types'])")
+          LIMIT=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('limit',0))")
+          python3 tools/scrape_qul.py --types "$TYPES" --limit "$LIMIT"
+      - name: Build web data
+        run: |
+          if [ -f tools/build_qul.py ]; then python3 tools/build_qul.py; fi
+      - name: Keep probe files (catalog, page samples, small raw files)
+        run: |
+          PROBE=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('probe',False))")
+          mkdir -p data/qul
+          cp qul_raw/catalog.json data/qul/catalog.json
+          if [ "$PROBE" = "True" ]; then
+            rm -rf data/qul/probe && mkdir -p data/qul/probe
+            cp -r qul_raw/_debug data/qul/probe/
+            find qul_raw -name '*.zip' -size -15M -exec cp --parents {} data/qul/probe/ \;
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qul-raw
+          path: qul_raw
+          retention-days: 7
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add data/qul web/data web/fonts || true
+          git commit -m "Import data from QUL (qul.tarteel.ai)" || echo "nothing to commit"
+          git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"
