@@ -605,6 +605,15 @@
   },
   {
    "type": "translation",
+   "id": 216,
+   "name": "Ruwwad Center",
+   "author": "Translation Pioneers Center",
+   "language": "Albanian",
+   "iso": "sq",
+   "file": "Albanian/translation - Translation Pioneers Center (216).json"
+  },
+  {
+   "type": "translation",
    "id": 144,
    "name": "Sofian S. Siregar",
    "author": "Sofian S. Siregar",
@@ -1319,9 +1328,9 @@
    "id": 854,
    "name": "Shaikh Mahmud Abdulkader Hamza",
    "author": null,
-   "language": "Other",
-   "iso": "und",
-   "file": "Other/translation - Shaikh Mahmud Abdulkader Hamza (854).json"
+   "language": "Afar",
+   "iso": "aa",
+   "file": "Afar/translation - Shaikh Mahmud Abdulkader Hamza (854).json"
   },
   {
    "type": "translation",
@@ -1454,9 +1463,9 @@
    "id": 944,
    "name": "Muhammad Hamza Battur",
    "author": null,
-   "language": "Other",
-   "iso": "und",
-   "file": "Other/translation - Muhammad Hamza Battur (944).json"
+   "language": "Kannada",
+   "iso": "kn",
+   "file": "Kannada/translation - Muhammad Hamza Battur (944).json"
   },
   {
    "type": "translation",
@@ -1526,18 +1535,18 @@
    "id": 1256,
    "name": "Bisayan Translation - Rowwad Center",
    "author": null,
-   "language": "Filipino",
-   "iso": "fil",
-   "file": "Filipino/translation - Bisayan Translation - Rowwad Center (1256).json"
+   "language": "Cebuano (Bisaya)",
+   "iso": "ceb",
+   "file": "Cebuano (Bisaya)/translation - Bisayan Translation - Rowwad Center (1256).json"
   },
   {
    "type": "translation",
    "id": 1257,
    "name": "Filipino Iranionian translation",
    "author": null,
-   "language": "Filipino",
-   "iso": "fil",
-   "file": "Filipino/translation - Filipino Iranionian translation (1257).json"
+   "language": "Iranun",
+   "iso": "ill",
+   "file": "Iranun/translation - Filipino Iranionian translation (1257).json"
   },
   {
    "type": "translation",
@@ -1556,6 +1565,15 @@
    "language": "Chinese",
    "iso": "zh",
    "file": "Chinese/translation - Chinese Translation - Basair (1259).json"
+  },
+  {
+   "type": "translation",
+   "id": 1260,
+   "name": "Korean Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "Korean",
+   "iso": "ko",
+   "file": "Korean/translation - Korean Translation - Rowwad Translation Center (1260).json"
   },
   {
    "type": "translation",
@@ -1634,9 +1652,18 @@
    "id": 1270,
    "name": "Muhammad Baba Gutubu",
    "author": null,
-   "language": "Other",
-   "iso": "und",
-   "file": "Other/translation - Muhammad Baba Gutubu (1270).json"
+   "language": "Dagbani",
+   "iso": "dag",
+   "file": "Dagbani/translation - Muhammad Baba Gutubu (1270).json"
+  },
+  {
+   "type": "translation",
+   "id": 1556,
+   "name": "German Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "German",
+   "iso": "de",
+   "file": "German/translation - German Translation - Rowwad Translation Center (1556).json"
   },
   {
    "type": "translation",
