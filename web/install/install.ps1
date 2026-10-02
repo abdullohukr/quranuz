@@ -1,0 +1,48 @@
+# MyQuran installer for Windows: fonts (+ optional QPC page fonts) and the Word add-in.
+# No administrator rights needed. Run in PowerShell:
+#   irm https://abdullohukr.github.io/quranuz/install/install.ps1 | iex
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
+$Site = 'https://abdullohukr.github.io/quranuz'
+$Rel  = 'https://github.com/abdullohukr/quranuz/releases/download/fonts'
+$FontDir = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts'
+$FontReg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+$Tmp = Join-Path $env:TEMP ('myquran-' + [guid]::NewGuid())
+New-Item -ItemType Directory -Force -Path $FontDir, $Tmp | Out-Null
+
+function Install-Zip($url) {
+  $zip = Join-Path $Tmp 'f.zip'; $dir = Join-Path $Tmp 'x'
+  Invoke-WebRequest -UseBasicParsing $url -OutFile $zip
+  if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+  Expand-Archive -Force $zip $dir
+  Get-ChildItem $dir -Recurse -Include *.ttf, *.otf | ForEach-Object {
+    $dst = Join-Path $FontDir $_.Name
+    Copy-Item $_.FullName $dst -Force
+    $kind = if ($_.Extension -eq '.otf') { ' (OpenType)' } else { ' (TrueType)' }
+    New-ItemProperty -Path $FontReg -Name ($_.BaseName + $kind) -Value $dst -PropertyType String -Force | Out-Null
+  }
+}
+function Ask($q) { $a = Read-Host "$q [Y/n]"; return ($a -eq '' -or $a -match '^[YyДдHh]') }
+
+Write-Host "`n1/3  MyQuran fonts / шрифтлар / шрифты" -ForegroundColor Cyan
+Install-Zip "$Site/fonts/MyQuran-fonts.zip"
+
+Write-Host "`n2/3  QPC page fonts (Quran Library V1, V2, V4: 3 x 604 fonts)" -ForegroundColor Cyan
+foreach ($v in 'V1', 'V2', 'V4') {
+  if (Ask "Install QPC $v? / Ўрнатилсинми? / Установить?") { Install-Zip "$Rel/MyQuran-QPC-$v-fonts.zip" }
+}
+
+Write-Host "`n3/3  Word add-in MyQuran" -ForegroundColor Cyan
+$AddinDir = Join-Path $env:LOCALAPPDATA 'MyQuran'
+New-Item -ItemType Directory -Force -Path $AddinDir | Out-Null
+$Manifest = Join-Path $AddinDir 'manifest.xml'
+Invoke-WebRequest -UseBasicParsing "$Site/manifest.xml" -OutFile $Manifest
+$Id = ([xml](Get-Content $Manifest -Raw)).OfficeApp.Id
+$Dev = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+New-Item -Force -Path $Dev | Out-Null
+New-ItemProperty -Path $Dev -Name $Id -Value $Manifest -PropertyType String -Force | Out-Null
+
+Remove-Item -Recurse -Force $Tmp
+Write-Host "`nDone. Restart Word, then Home -> MyQuran." -ForegroundColor Green
+Write-Host "Тайёр. Word'ни қайта ишга туширинг, сўнг Главная -> MyQuran."
+Write-Host "Готово. Перезапустите Word, затем Главная -> MyQuran."

@@ -24,6 +24,11 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install requests fonttools brotli
+      - name: Sync with the branch head and the existing qul-data library
+        run: |
+          git fetch -q origin "${GITHUB_REF_NAME}" && git reset -q --hard "origin/${GITHUB_REF_NAME}"
+          git clone -q --depth 1 -b qul-data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" qul_data_out \
+            || mkdir -p qul_data_out
       - name: Scrape
         run: |
           ONLY=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['only'])")
@@ -36,24 +41,31 @@ jobs:
       - name: Report and samples
         run: |
           mkdir -p data/qul
-          cp qul_raw/catalog.json data/qul/catalog.json
+          if [ -f qul_raw/catalog.json ]; then cp qul_raw/catalog.json data/qul/catalog.json; fi
           python3 tools/qul_probe_report.py
       - uses: actions/upload-artifact@v4
         with:
           name: qul-raw
           path: qul_raw
           retention-days: 7
-      - name: Push heavy data to the qul-data branch
-        if: ${{ hashFiles('qul_data_out/**') != '' }}
+      - name: Push data to the qul-data branch
         run: |
           cd qul_data_out
-          git init -q -b qul-data
+          [ -d .git ] || git init -q -b qul-data
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
           printf '# MyQuran data from QUL (qul.tarteel.ai)\n\nlibrary/<Language>/ - every translation and tafsir, named by translator;\nlibrary/Arabic (mushaf)/ - Quran scripts; library/index.json - list of everything.\n' > README.md
           git add -A
-          git commit -q -m "QUL data $(date -u +%F)"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:qul-data
+          git commit -q -m "QUL data $(date -u +%F)" || echo "no changes"
+          git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:qul-data
+      - name: Upload QPC page-font ZIPs to the "fonts" release
+        if: ${{ hashFiles('qul_release/*.zip') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view fonts >/dev/null 2>&1 || gh release create fonts --title "MyQuran fonts" \
+            --notes "Fonts for MyQuran (Word add-in): QPC V1/V2/V4 page fonts from QUL (qul.tarteel.ai). Use the installer: https://abdullohukr.github.io/quranuz/install.html"
+          gh release upload fonts qul_release/*.zip --clobber
       - name: Commit catalog and fonts
         run: |
           git config user.name "github-actions[bot]"

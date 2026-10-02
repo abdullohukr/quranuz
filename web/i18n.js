@@ -16,7 +16,8 @@
     source: 'Араб матни манбаси', save: 'Сақлаш', surahInfo: 'Сура ҳақида', close: 'Ёпиш',
     ayahByAyah: 'Бу мусҳаф оятма-оят шаклда: оят ичидан сўз танлаш тахминий бўлиши мумкин.',
     noInfo: 'Бу тилда маълумот йўқ, инглизчаси кўрсатилмоқда.', ayahs: 'оят', meccan: 'Маккий', medinan: 'Маданий',
-    'script.default': 'Мадина мусҳафи (tafsir.one)', 'script.quranLibrary': 'Quran Library', 'script.tajweed': 'Тажвид', 'script.simple': 'Оддий (имлоий)' };
+    'script.default': 'Мадина мусҳафи (tafsir.one)', 'script.quranLibrary': 'Quran Library', 'script.tajweed': 'Тажвид', glyphNote: 'Бу мусҳаф ҳар саҳифа учун алоҳида шрифтдан фойдаланади. Word\'да тўғри кўриниши учун унинг 604 шрифтини ўрнатинг:', glyphZip: 'Шрифтлар (ZIP)', installer: 'Ўрнатувчи (Mac / Windows)',
+    'script.simple': 'Оддий (имлоий)' };
 
   L.uz_latn = { _name: 'Oʻzbekcha (lotin)', title: 'MyQuran',
     search: '2:255 · Baqara 30-37 · الرحمن الرحيم · tarjima matni', ayah: 'oyat', results: '{n} ta natija',
@@ -31,7 +32,8 @@
     source: 'Arab matni manbasi', save: 'Saqlash', surahInfo: 'Sura haqida', close: 'Yopish',
     ayahByAyah: 'Bu mushaf oyatma-oyat shaklda: oyat ichidan soʻz tanlash taxminiy boʻlishi mumkin.',
     noInfo: 'Bu tilda maʼlumot yoʻq, inglizchasi koʻrsatilmoqda.', ayahs: 'oyat', meccan: 'Makkiy', medinan: 'Madaniy',
-    'script.default': 'Madina mushafi (tafsir.one)', 'script.tajweed': 'Tajvid', 'script.simple': 'Oddiy (imloiy)' };
+    'script.default': 'Madina mushafi (tafsir.one)', 'script.tajweed': 'Tajvid', glyphNote: 'Bu mushaf har sahifa uchun alohida shriftdan foydalanadi. Word’da toʻgʻri koʻrinishi uchun uning 604 shriftini oʻrnating:', glyphZip: 'Shriftlar (ZIP)', installer: 'Oʻrnatuvchi (Mac / Windows)',
+    'script.simple': 'Oddiy (imloiy)' };
 
   L.en = { _name: 'English', search: '2:255 · Baqarah 30-37 · الرحمن الرحيم · translation text', ayah: 'ayah',
     results: '{n} results', notFound: 'Nothing found', loading: 'Loading…', selTip: 'Drag over words with the mouse, or click the first and then the last word',
@@ -45,7 +47,8 @@
     source: 'Arabic text source', save: 'Save', surahInfo: 'About the surah', close: 'Close',
     ayahByAyah: 'This mushaf is ayah-by-ayah only: selecting words inside an ayah may be approximate.',
     noInfo: 'Not available in this language, showing English.', ayahs: 'ayahs', meccan: 'Meccan', medinan: 'Medinan',
-    'script.default': 'Madinah Mushaf (tafsir.one)', 'script.quranLibrary': 'Quran Library', 'script.tajweed': 'Tajweed', 'script.simple': 'Simple (Imlaei)' };
+    'script.default': 'Madinah Mushaf (tafsir.one)', 'script.quranLibrary': 'Quran Library', 'script.tajweed': 'Tajweed', glyphNote: 'This mushaf uses a separate font for every page. Install its 604 fonts so Word shows it correctly:', glyphZip: 'Fonts (ZIP)', installer: 'Installer (Mac / Windows)',
+    'script.simple': 'Simple (Imlaei)' };
 
   L.ar = { _name: 'العربية', _dir: 'rtl', search: '2:255 · البقرة 30-37 · الرحمن الرحيم · نص الترجمة', ayah: 'آية',
     results: '{n} نتيجة', notFound: 'لا توجد نتائج', loading: 'جارٍ التحميل…', selTip: 'حدّد الكلمات بالسحب بالفأرة، أو انقر الكلمة الأولى ثم الأخيرة',
@@ -59,7 +62,8 @@
     source: 'مصدر النص العربي', save: 'حفظ', surahInfo: 'عن السورة', close: 'إغلاق',
     ayahByAyah: 'هذا المصحف متوفر آيةً آية فقط: قد يكون تحديد الكلمات داخل الآية تقريبيًا.',
     noInfo: 'غير متوفر بهذه اللغة، يُعرض بالإنجليزية.', ayahs: 'آيات', meccan: 'مكية', medinan: 'مدنية',
-    'script.default': 'مصحف المدينة (tafsir.one)', 'script.quranLibrary': 'مكتبة القرآن', 'script.tajweed': 'التجويد', 'script.simple': 'إملائي' };
+    'script.default': 'مصحف المدينة (tafsir.one)', 'script.quranLibrary': 'مكتبة القرآن', 'script.tajweed': 'التجويد', glyphNote: 'يستخدم هذا المصحف خطًا مستقلًا لكل صفحة. ثبّت خطوطه الـ604 ليظهر صحيحًا في Word:', glyphZip: 'الخطوط (ZIP)', installer: 'أداة التثبيت (Mac / Windows)',
+    'script.simple': 'إملائي' };
 
   L.ru = { _name: 'Русский', search: '2:255 · Бакара 30-37 · الرحمن الرحيم · текст перевода', ayah: 'аят',
     results: 'Найдено: {n}', notFound: 'Ничего не найдено', loading: 'Загрузка…', selTip: 'Выделите слова мышью или нажмите первое, затем последнее слово',
@@ -73,7 +77,8 @@
     source: 'Источник арабского текста', save: 'Сохранить', surahInfo: 'О суре', close: 'Закрыть',
     ayahByAyah: 'Этот мусхаф доступен только по аятам: выбор слов внутри аята может быть приблизительным.',
     noInfo: 'На этом языке нет, показан английский.', ayahs: 'аятов', meccan: 'Мекканская', medinan: 'Мединская',
-    'script.default': 'Мединский мусхаф (tafsir.one)', 'script.quranLibrary': 'Коранская библиотека', 'script.tajweed': 'Таджвид', 'script.simple': 'Простой (имляи)' };
+    'script.default': 'Мединский мусхаф (tafsir.one)', 'script.quranLibrary': 'Коранская библиотека', 'script.tajweed': 'Таджвид', glyphNote: 'Этот мусхаф использует отдельный шрифт для каждой страницы. Установите его 604 шрифта, чтобы Word показывал его правильно:', glyphZip: 'Шрифты (ZIP)', installer: 'Установщик (Mac / Windows)',
+    'script.simple': 'Простой (имляи)' };
 
   L.tr = { _name: 'Türkçe', search: '2:255 · Bakara 30-37 · الرحمن الرحيم · meal metni', ayah: 'ayet',
     results: '{n} sonuç', notFound: 'Bulunamadı', loading: 'Yükleniyor…', selTip: 'Kelimeleri fareyle seçin veya önce ilk, sonra son kelimeye tıklayın',
@@ -87,7 +92,8 @@
     source: 'Arapça metnin kaynağı', save: 'Kaydet', surahInfo: 'Sure hakkında', close: 'Kapat',
     ayahByAyah: 'Bu mushaf yalnızca ayet ayet mevcuttur: ayet içinde kelime seçimi yaklaşık olabilir.',
     noInfo: 'Bu dilde mevcut değil, İngilizcesi gösteriliyor.', ayahs: 'ayet', meccan: 'Mekki', medinan: 'Medeni',
-    'script.default': 'Medine Mushafı (tafsir.one)', 'script.quranLibrary': 'Kur’an Kütüphanesi', 'script.tajweed': 'Tecvid', 'script.simple': 'Basit (imlâî)' };
+    'script.default': 'Medine Mushafı (tafsir.one)', 'script.quranLibrary': 'Kur’an Kütüphanesi', 'script.tajweed': 'Tecvid', glyphNote: 'Bu mushaf her sayfa için ayrı bir yazı tipi kullanır. Word’de doğru görünmesi için 604 yazı tipini yükleyin:', glyphZip: 'Yazı tipleri (ZIP)', installer: 'Kurulum (Mac / Windows)',
+    'script.simple': 'Basit (imlâî)' };
 
   L.fr = { _name: 'Français', search: '2:255 · Baqara 30-37 · الرحمن الرحيم · texte de la traduction', ayah: 'verset',
     results: '{n} résultats', notFound: 'Aucun résultat', loading: 'Chargement…', selTip: 'Sélectionnez les mots à la souris, ou cliquez sur le premier puis le dernier mot',
@@ -101,7 +107,8 @@
     source: 'Source du texte arabe', save: 'Enregistrer', surahInfo: 'À propos de la sourate', close: 'Fermer',
     ayahByAyah: 'Ce mushaf n’existe que verset par verset : la sélection de mots peut être approximative.',
     noInfo: 'Indisponible dans cette langue, affichage en anglais.', ayahs: 'versets', meccan: 'Mecquoise', medinan: 'Médinoise',
-    'script.default': 'Mushaf de Médine (tafsir.one)', 'script.quranLibrary': 'Bibliothèque coranique', 'script.tajweed': 'Tajwid', 'script.simple': 'Simple (imla’i)' };
+    'script.default': 'Mushaf de Médine (tafsir.one)', 'script.quranLibrary': 'Bibliothèque coranique', 'script.tajweed': 'Tajwid', glyphNote: 'Ce mushaf utilise une police par page. Installez ses 604 polices pour un affichage correct dans Word :', glyphZip: 'Polices (ZIP)', installer: 'Installateur (Mac / Windows)',
+    'script.simple': 'Simple (imla’i)' };
 
   L.de = { _name: 'Deutsch', search: '2:255 · Baqara 30-37 · الرحمن الرحيم · Übersetzungstext', ayah: 'Vers',
     results: '{n} Ergebnisse', notFound: 'Nichts gefunden', loading: 'Wird geladen…', selTip: 'Wörter mit der Maus markieren oder erst das erste, dann das letzte Wort anklicken',
@@ -115,7 +122,8 @@
     source: 'Quelle des arabischen Textes', save: 'Speichern', surahInfo: 'Über die Sure', close: 'Schließen',
     ayahByAyah: 'Dieser Mushaf liegt nur versweise vor: die Wortauswahl im Vers kann ungenau sein.',
     noInfo: 'In dieser Sprache nicht verfügbar, Englisch wird angezeigt.', ayahs: 'Verse', meccan: 'Mekkanisch', medinan: 'Medinensisch',
-    'script.default': 'Mushaf von Medina (tafsir.one)', 'script.quranLibrary': 'Koran-Bibliothek', 'script.tajweed': 'Tadschwid', 'script.simple': 'Einfach (Imla’i)' };
+    'script.default': 'Mushaf von Medina (tafsir.one)', 'script.quranLibrary': 'Koran-Bibliothek', 'script.tajweed': 'Tadschwid', glyphNote: 'Dieser Mushaf nutzt für jede Seite eine eigene Schrift. Installieren Sie die 604 Schriften für Word:', glyphZip: 'Schriften (ZIP)', installer: 'Installer (Mac / Windows)',
+    'script.simple': 'Einfach (Imla’i)' };
 
   L.kk = { _name: 'Қазақша', search: '2:255 · Бақара 30-37 · الرحمن الرحيم · аударма мәтіні', ayah: 'аят',
     results: '{n} нәтиже', notFound: 'Табылмады', loading: 'Жүктелуде…', selTip: 'Сөздерді тінтуірмен белгілеңіз немесе алдымен бірінші, сосын соңғы сөзді басыңыз',
@@ -129,7 +137,8 @@
     source: 'Араб мәтінінің көзі', save: 'Сақтау', surahInfo: 'Сүре туралы', close: 'Жабу',
     ayahByAyah: 'Бұл мұсхаф тек аят бойынша: аят ішіндегі сөз таңдау шамамен болуы мүмкін.',
     noInfo: 'Бұл тілде жоқ, ағылшынша көрсетілуде.', ayahs: 'аят', meccan: 'Меккелік', medinan: 'Мәдиналық',
-    'script.default': 'Мәдина мұсхафы (tafsir.one)', 'script.quranLibrary': 'Құран кітапханасы', 'script.tajweed': 'Тәжуид', 'script.simple': 'Қарапайым (имлаи)' };
+    'script.default': 'Мәдина мұсхафы (tafsir.one)', 'script.quranLibrary': 'Құран кітапханасы', 'script.tajweed': 'Тәжуид', glyphNote: 'Бұл мұсхаф әр бетке бөлек қаріп қолданады. Word-та дұрыс көрінуі үшін оның 604 қаріпін орнатыңыз:', glyphZip: 'Қаріптер (ZIP)', installer: 'Орнатқыш (Mac / Windows)',
+    'script.simple': 'Қарапайым (имлаи)' };
 
   L.ky = { _name: 'Кыргызча', search: '2:255 · Бакара 30-37 · الرحمن الرحيم · котормо тексти', ayah: 'аят',
     results: '{n} натыйжа', notFound: 'Табылган жок', loading: 'Жүктөлүүдө…', selTip: 'Сөздөрдү чычкан менен белгилеңиз же адегенде биринчи, анан акыркы сөздү басыңыз',
@@ -143,7 +152,8 @@
     source: 'Араб текстинин булагы', save: 'Сактоо', surahInfo: 'Сүрө жөнүндө', close: 'Жабуу',
     ayahByAyah: 'Бул мусхаф аят боюнча гана: аяттын ичинен сөз тандоо болжолдуу болушу мүмкүн.',
     noInfo: 'Бул тилде жок, англисчеси көрсөтүлүүдө.', ayahs: 'аят', meccan: 'Меккелик', medinan: 'Мединалык',
-    'script.default': 'Мадина мусхафы (tafsir.one)', 'script.quranLibrary': 'Куран китепканасы', 'script.tajweed': 'Тажвид', 'script.simple': 'Жөнөкөй (имлаи)' };
+    'script.default': 'Мадина мусхафы (tafsir.one)', 'script.quranLibrary': 'Куран китепканасы', 'script.tajweed': 'Тажвид', glyphNote: 'Бул мусхаф ар бир бетке өзүнчө арип колдонот. Word’до туура көрүнүшү үчүн анын 604 арибин орнотуңуз:', glyphZip: 'Арип (ZIP)', installer: 'Орноткуч (Mac / Windows)',
+    'script.simple': 'Жөнөкөй (имлаи)' };
 
   L.tg = { _name: 'Тоҷикӣ', search: '2:255 · Бақара 30-37 · الرحمن الرحيم · матни тарҷума', ayah: 'оят',
     results: '{n} натиҷа', notFound: 'Ёфт нашуд', loading: 'Боргирӣ…', selTip: 'Калимаҳоро бо муш қайд кунед ё аввал калимаи якум, баъд охиринро пахш кунед',
@@ -157,7 +167,8 @@
     source: 'Манбаи матни арабӣ', save: 'Нигоҳ доштан', surahInfo: 'Дар бораи сура', close: 'Пӯшидан',
     ayahByAyah: 'Ин мусҳаф танҳо оят ба оят аст: интихоби калима дар дохили оят тахминӣ буда метавонад.',
     noInfo: 'Бо ин забон нест, англисӣ нишон дода мешавад.', ayahs: 'оят', meccan: 'Маккӣ', medinan: 'Мадинагӣ',
-    'script.default': 'Мусҳафи Мадина (tafsir.one)', 'script.quranLibrary': 'Китобхонаи Қуръон', 'script.tajweed': 'Таҷвид', 'script.simple': 'Оддӣ (имлоӣ)' };
+    'script.default': 'Мусҳафи Мадина (tafsir.one)', 'script.quranLibrary': 'Китобхонаи Қуръон', 'script.tajweed': 'Таҷвид', glyphNote: 'Ин мусҳаф барои ҳар саҳифа ҳуруфи алоҳида дорад. Барои Word 604 ҳуруфи онро насб кунед:', glyphZip: 'Ҳуруфҳо (ZIP)', installer: 'Насбкунанда (Mac / Windows)',
+    'script.simple': 'Оддӣ (имлоӣ)' };
 
   L.az = { _name: 'Azərbaycanca', search: '2:255 · Bəqərə 30-37 · الرحمن الرحيم · tərcümə mətni', ayah: 'ayə',
     results: '{n} nəticə', notFound: 'Tapılmadı', loading: 'Yüklənir…', selTip: 'Sözləri siçanla seçin və ya əvvəl birinci, sonra sonuncu sözə klikləyin',
@@ -171,7 +182,8 @@
     source: 'Ərəb mətninin mənbəyi', save: 'Yadda saxla', surahInfo: 'Surə haqqında', close: 'Bağla',
     ayahByAyah: 'Bu mushaf yalnız ayə-ayə mövcuddur: ayə daxilində söz seçimi təxmini ola bilər.',
     noInfo: 'Bu dildə yoxdur, ingiliscəsi göstərilir.', ayahs: 'ayə', meccan: 'Məkki', medinan: 'Mədəni',
-    'script.default': 'Mədinə Mushafı (tafsir.one)', 'script.quranLibrary': 'Quran Kitabxanası', 'script.tajweed': 'Təcvid', 'script.simple': 'Sadə (imlai)' };
+    'script.default': 'Mədinə Mushafı (tafsir.one)', 'script.quranLibrary': 'Quran Kitabxanası', 'script.tajweed': 'Təcvid', glyphNote: 'Bu mushaf hər səhifə üçün ayrıca şrift istifadə edir. Word-da düzgün görünməsi üçün 604 şrifti quraşdırın:', glyphZip: 'Şriftlər (ZIP)', installer: 'Quraşdırıcı (Mac / Windows)',
+    'script.simple': 'Sadə (imlai)' };
 
   L.fa = { _name: 'فارسی', _dir: 'rtl', search: '2:255 · بقره 30-37 · الرحمن الرحيم · متن ترجمه', ayah: 'آیه',
     results: '{n} نتیجه', notFound: 'چیزی یافت نشد', loading: 'در حال بارگذاری…', selTip: 'کلمات را با ماوس انتخاب کنید یا ابتدا کلمه اول و سپس آخر را بزنید',
@@ -185,7 +197,8 @@
     source: 'منبع متن عربی', save: 'ذخیره', surahInfo: 'درباره سوره', close: 'بستن',
     ayahByAyah: 'این مصحف فقط آیه به آیه است: انتخاب کلمه در آیه ممکن است تقریبی باشد.',
     noInfo: 'به این زبان موجود نیست، انگلیسی نمایش داده می‌شود.', ayahs: 'آیه', meccan: 'مکی', medinan: 'مدنی',
-    'script.default': 'مصحف مدینه (tafsir.one)', 'script.quranLibrary': 'کتابخانه قرآن', 'script.tajweed': 'تجوید', 'script.simple': 'ساده (املایی)' };
+    'script.default': 'مصحف مدینه (tafsir.one)', 'script.quranLibrary': 'کتابخانه قرآن', 'script.tajweed': 'تجوید', glyphNote: 'این مصحف برای هر صفحه قلم جداگانه دارد. برای نمایش درست در Word، ۶۰۴ قلم آن را نصب کنید:', glyphZip: 'قلم‌ها (ZIP)', installer: 'نصب‌کننده (Mac / Windows)',
+    'script.simple': 'ساده (املایی)' };
 
   L.ur = { _name: 'اردو', _dir: 'rtl', search: '2:255 · البقرۃ 30-37 · الرحمن الرحيم · ترجمے کا متن', ayah: 'آیت',
     results: '{n} نتائج', notFound: 'کچھ نہیں ملا', loading: 'لوڈ ہو رہا ہے…', selTip: 'الفاظ کو ماؤس سے منتخب کریں یا پہلے پہلا پھر آخری لفظ دبائیں',
@@ -199,7 +212,8 @@
     source: 'عربی متن کا ماخذ', save: 'محفوظ کریں', surahInfo: 'سورت کے بارے میں', close: 'بند کریں',
     ayahByAyah: 'یہ مصحف صرف آیت بہ آیت ہے: آیت کے اندر الفاظ کا انتخاب تقریبی ہو سکتا ہے۔',
     noInfo: 'اس زبان میں دستیاب نہیں، انگریزی دکھائی جا رہی ہے۔', ayahs: 'آیات', meccan: 'مکی', medinan: 'مدنی',
-    'script.default': 'مصحف مدینہ (tafsir.one)', 'script.quranLibrary': 'قرآن لائبریری', 'script.tajweed': 'تجوید', 'script.simple': 'سادہ (املائی)' };
+    'script.default': 'مصحف مدینہ (tafsir.one)', 'script.quranLibrary': 'قرآن لائبریری', 'script.tajweed': 'تجوید', glyphNote: 'یہ مصحف ہر صفحے کے لیے الگ فونٹ استعمال کرتا ہے۔ Word میں درست دکھانے کے لیے اس کے 604 فونٹس انسٹال کریں:', glyphZip: 'فونٹس (ZIP)', installer: 'انسٹالر (Mac / Windows)',
+    'script.simple': 'سادہ (املائی)' };
 
   L.id = { _name: 'Bahasa Indonesia', search: '2:255 · Al-Baqarah 30-37 · الرحمن الرحيم · teks terjemahan', ayah: 'ayat',
     results: '{n} hasil', notFound: 'Tidak ditemukan', loading: 'Memuat…', selTip: 'Pilih kata dengan menyeret mouse, atau klik kata pertama lalu kata terakhir',
@@ -213,7 +227,8 @@
     source: 'Sumber teks Arab', save: 'Simpan', surahInfo: 'Tentang surah', close: 'Tutup',
     ayahByAyah: 'Mushaf ini hanya per ayat: pemilihan kata di dalam ayat bisa tidak tepat.',
     noInfo: 'Tidak tersedia dalam bahasa ini, ditampilkan bahasa Inggris.', ayahs: 'ayat', meccan: 'Makkiyah', medinan: 'Madaniyah',
-    'script.default': 'Mushaf Madinah (tafsir.one)', 'script.quranLibrary': 'Perpustakaan Al-Qur’an', 'script.tajweed': 'Tajwid', 'script.simple': 'Sederhana (imla’i)' };
+    'script.default': 'Mushaf Madinah (tafsir.one)', 'script.quranLibrary': 'Perpustakaan Al-Qur’an', 'script.tajweed': 'Tajwid', glyphNote: 'Mushaf ini memakai fon tersendiri untuk setiap halaman. Pasang 604 fonnya agar tampil benar di Word:', glyphZip: 'Fon (ZIP)', installer: 'Pemasang (Mac / Windows)',
+    'script.simple': 'Sederhana (imla’i)' };
 
   L.ms = { _name: 'Bahasa Melayu', search: '2:255 · Al-Baqarah 30-37 · الرحمن الرحيم · teks terjemahan', ayah: 'ayat',
     results: '{n} hasil', notFound: 'Tiada hasil', loading: 'Memuatkan…', selTip: 'Pilih perkataan dengan tetikus, atau klik perkataan pertama kemudian yang terakhir',
@@ -227,7 +242,8 @@
     source: 'Sumber teks Arab', save: 'Simpan', surahInfo: 'Tentang surah', close: 'Tutup',
     ayahByAyah: 'Mushaf ini hanya ayat demi ayat: pemilihan perkataan dalam ayat mungkin tidak tepat.',
     noInfo: 'Tiada dalam bahasa ini, dipaparkan bahasa Inggeris.', ayahs: 'ayat', meccan: 'Makkiyah', medinan: 'Madaniyah',
-    'script.default': 'Mushaf Madinah (tafsir.one)', 'script.quranLibrary': 'Perpustakaan Al-Quran', 'script.tajweed': 'Tajwid', 'script.simple': 'Ringkas (imla’i)' };
+    'script.default': 'Mushaf Madinah (tafsir.one)', 'script.quranLibrary': 'Perpustakaan Al-Quran', 'script.tajweed': 'Tajwid', glyphNote: 'Mushaf ini menggunakan fon berasingan bagi setiap halaman. Pasang 604 fonnya supaya betul dalam Word:', glyphZip: 'Fon (ZIP)', installer: 'Pemasang (Mac / Windows)',
+    'script.simple': 'Ringkas (imla’i)' };
 
   L.bn = { _name: 'বাংলা', search: '2:255 · আল-বাকারা 30-37 · الرحمن الرحيم · অনুবাদের লেখা', ayah: 'আয়াত',
     results: '{n}টি ফলাফল', notFound: 'কিছু পাওয়া যায়নি', loading: 'লোড হচ্ছে…', selTip: 'মাউস দিয়ে শব্দ নির্বাচন করুন, অথবা প্রথমে প্রথম তারপর শেষ শব্দে ক্লিক করুন',
@@ -241,7 +257,8 @@
     source: 'আরবি লেখার উৎস', save: 'সংরক্ষণ', surahInfo: 'সূরা সম্পর্কে', close: 'বন্ধ',
     ayahByAyah: 'এই মুসহাফ শুধু আয়াত-ভিত্তিক: আয়াতের ভেতরে শব্দ নির্বাচন আনুমানিক হতে পারে।',
     noInfo: 'এই ভাষায় নেই, ইংরেজি দেখানো হচ্ছে।', ayahs: 'আয়াত', meccan: 'মাক্কী', medinan: 'মাদানী',
-    'script.default': 'মদিনা মুসহাফ (tafsir.one)', 'script.quranLibrary': 'কুরআন লাইব্রেরি', 'script.tajweed': 'তাজবীদ', 'script.simple': 'সরল (ইমলায়ী)' };
+    'script.default': 'মদিনা মুসহাফ (tafsir.one)', 'script.quranLibrary': 'কুরআন লাইব্রেরি', 'script.tajweed': 'তাজবীদ', glyphNote: 'এই মুসহাফে প্রতিটি পৃষ্ঠার জন্য আলাদা ফন্ট আছে। Word-এ সঠিকভাবে দেখাতে এর ৬০৪টি ফন্ট ইনস্টল করুন:', glyphZip: 'ফন্ট (ZIP)', installer: 'ইনস্টলার (Mac / Windows)',
+    'script.simple': 'সরল (ইমলায়ী)' };
 
   L.hi = { _name: 'हिन्दी', search: '2:255 · अल-बक़रा 30-37 · الرحمن الرحيم · अनुवाद का पाठ', ayah: 'आयत',
     results: '{n} परिणाम', notFound: 'कुछ नहीं मिला', loading: 'लोड हो रहा है…', selTip: 'माउस से शब्द चुनें, या पहले पहला फिर आख़िरी शब्द क्लिक करें',
@@ -255,7 +272,8 @@
     source: 'अरबी पाठ का स्रोत', save: 'सहेजें', surahInfo: 'सूरह के बारे में', close: 'बंद करें',
     ayahByAyah: 'यह मुसहफ़ केवल आयत-दर-आयत है: आयत के भीतर शब्द चयन अनुमानित हो सकता है।',
     noInfo: 'इस भाषा में उपलब्ध नहीं, अंग्रेज़ी दिखाई जा रही है।', ayahs: 'आयतें', meccan: 'मक्की', medinan: 'मदनी',
-    'script.default': 'मदीना मुसहफ़ (tafsir.one)', 'script.quranLibrary': 'क़ुरआन लाइब्रेरी', 'script.tajweed': 'तजवीद', 'script.simple': 'सरल (इमलाई)' };
+    'script.default': 'मदीना मुसहफ़ (tafsir.one)', 'script.quranLibrary': 'क़ुरआन लाइब्रेरी', 'script.tajweed': 'तजवीद', glyphNote: 'यह मुसहफ़ हर पृष्ठ के लिए अलग फ़ॉन्ट उपयोग करता है। Word में सही दिखाने के लिए इसके 604 फ़ॉन्ट इंस्टॉल करें:', glyphZip: 'फ़ॉन्ट (ZIP)', installer: 'इंस्टॉलर (Mac / Windows)',
+    'script.simple': 'सरल (इमलाई)' };
 
   L.es = { _name: 'Español', search: '2:255 · Al-Baqara 30-37 · الرحمن الرحيم · texto de la traducción', ayah: 'aleya',
     results: '{n} resultados', notFound: 'Sin resultados', loading: 'Cargando…', selTip: 'Seleccione palabras arrastrando el ratón, o haga clic en la primera y luego en la última',
@@ -269,7 +287,8 @@
     source: 'Fuente del texto árabe', save: 'Guardar', surahInfo: 'Sobre la sura', close: 'Cerrar',
     ayahByAyah: 'Este mushaf solo existe aleya por aleya: la selección de palabras puede ser aproximada.',
     noInfo: 'No disponible en este idioma, se muestra en inglés.', ayahs: 'aleyas', meccan: 'Mequí', medinan: 'Medinense',
-    'script.default': 'Mushaf de Medina (tafsir.one)', 'script.quranLibrary': 'Biblioteca coránica', 'script.tajweed': 'Tajwid', 'script.simple': 'Simple (imla’i)' };
+    'script.default': 'Mushaf de Medina (tafsir.one)', 'script.quranLibrary': 'Biblioteca coránica', 'script.tajweed': 'Tajwid', glyphNote: 'Este mushaf usa una fuente por página. Instale sus 604 fuentes para verlo bien en Word:', glyphZip: 'Fuentes (ZIP)', installer: 'Instalador (Mac / Windows)',
+    'script.simple': 'Simple (imla’i)' };
 
   L.zh = { _name: '中文', search: '2:255 · 黄牛 30-37 · الرحمن الرحيم · 译文', ayah: '节',
     results: '{n} 个结果', notFound: '未找到', loading: '加载中…', selTip: '用鼠标拖选词语，或先点第一个词再点最后一个词',
@@ -283,7 +302,8 @@
     source: '阿拉伯文来源', save: '保存', surahInfo: '章节简介', close: '关闭',
     ayahByAyah: '此经本仅按节提供：节内选词可能不精确。',
     noInfo: '无此语言版本，显示英文。', ayahs: '节', meccan: '麦加章', medinan: '麦地那章',
-    'script.default': '麦地那经本 (tafsir.one)', 'script.quranLibrary': '古兰经图书馆', 'script.tajweed': '泰吉威德', 'script.simple': '简易拼写' };
+    'script.default': '麦地那经本 (tafsir.one)', 'script.quranLibrary': '古兰经图书馆', 'script.tajweed': '泰吉威德', glyphNote: '此经本每一页使用单独的字体。请安装其 604 个字体，以便在 Word 中正确显示：', glyphZip: '字体 (ZIP)', installer: '安装程序 (Mac / Windows)',
+    'script.simple': '简易拼写' };
 
   L.ko = { _name: '한국어', search: '2:255 · 알바까라 30-37 · الرحمن الرحيم · 번역문', ayah: '절',
     results: '결과 {n}개', notFound: '결과 없음', loading: '불러오는 중…', selTip: '마우스로 단어를 드래그하거나 첫 단어와 마지막 단어를 차례로 클릭하세요',
@@ -297,7 +317,8 @@
     source: '아랍어 원문 출처', save: '저장', surahInfo: '장 정보', close: '닫기',
     ayahByAyah: '이 무스하프는 절 단위만 제공됩니다: 절 안의 단어 선택은 근사치일 수 있습니다.',
     noInfo: '이 언어로는 없어 영어로 표시합니다.', ayahs: '절', meccan: '메카 계시', medinan: '메디나 계시',
-    'script.default': '메디나 무스하프 (tafsir.one)', 'script.quranLibrary': '꾸란 라이브러리', 'script.tajweed': '타즈위드', 'script.simple': '간이 표기' };
+    'script.default': '메디나 무스하프 (tafsir.one)', 'script.quranLibrary': '꾸란 라이브러리', 'script.tajweed': '타즈위드', glyphNote: '이 무스하프는 페이지마다 다른 글꼴을 사용합니다. Word에서 올바르게 보이도록 604개 글꼴을 설치하세요:', glyphZip: '글꼴 (ZIP)', installer: '설치 프로그램 (Mac / Windows)',
+    'script.simple': '간이 표기' };
 
   L.ja = { _name: '日本語', search: '2:255 · 雌牛章 30-37 · الرحمن الرحيم · 訳文', ayah: '節',
     results: '{n} 件', notFound: '見つかりません', loading: '読み込み中…', selTip: 'マウスで語をドラッグするか、最初の語と最後の語を順にクリックしてください',
@@ -311,7 +332,8 @@
     source: 'アラビア語本文の出典', save: '保存', surahInfo: '章について', close: '閉じる',
     ayahByAyah: 'このムスハフは節単位のみです：節内の語の選択は近似になる場合があります。',
     noInfo: 'この言語ではないため英語で表示します。', ayahs: '節', meccan: 'マッカ啓示', medinan: 'マディーナ啓示',
-    'script.default': 'マディーナ版ムスハフ (tafsir.one)', 'script.quranLibrary': 'クルアーン・ライブラリー', 'script.tajweed': 'タジュウィード', 'script.simple': '簡易表記' };
+    'script.default': 'マディーナ版ムスハフ (tafsir.one)', 'script.quranLibrary': 'クルアーン・ライブラリー', 'script.tajweed': 'タジュウィード', glyphNote: 'このムスハフはページごとに別のフォントを使います。Word で正しく表示するには 604 個のフォントをインストールしてください：', glyphZip: 'フォント (ZIP)', installer: 'インストーラー (Mac / Windows)',
+    'script.simple': '簡易表記' };
 
   var ORDER = ['uz', 'uz_latn', 'ar', 'en', 'ru', 'tr', 'fr', 'de', 'es', 'kk', 'ky', 'tg', 'az',
                'fa', 'ur', 'id', 'ms', 'bn', 'hi', 'zh', 'ko', 'ja'];

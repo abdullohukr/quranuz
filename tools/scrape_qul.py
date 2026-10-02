@@ -17,7 +17,7 @@ skipped (the project has its own).
 
 Output: qul_raw/ (not committed) - catalog.json, translation/<id>.json,
 tafsir/<id>.json, scripts.json, fonts/<file>
-Usage: python3 tools/scrape_qul.py [--only meta,translation,tafsir,script,font] [--limit N]
+Usage: python3 tools/scrape_qul.py [--only meta,translation,tafsir,script,font,glyph,pagefonts] [--limit N]
 """
 import argparse
 import html
@@ -241,18 +241,75 @@ def step_fonts(cat):
     print("fonts:", [g["file"] for g in got], flush=True)
 
 
+# QPC page-by-page mushafs: every word is a glyph of the font of its page.
+GLYPH = {  # name: (mushaf id in QUL, word field with the glyph code, page-font folder on the CDN)
+    "v1": (2, "code_v1", "v1"),
+    "v2": (1, "code_v2", "v2"),
+    "v4": (19, "code_v2", "v4-tajweed"),
+}
+FONT_CDN = "https://static-cdn.tarteel.ai/qul/fonts/quran_fonts"
+
+
+def step_glyph(delay):
+    """Per ayah: [[page, glyph], ...] for QPC V1 / V2 / V4 (words incl. the ayah-end glyph)."""
+    for name, (mushaf, field, _) in GLYPH.items():
+        ayahs, mismatch = [], 0
+        for s in range(1, 115):
+            r = get(f"{BASE}/api/v1/chapters/{s}/verses",
+                    params={"words": "true", "word_fields": "code_v1,code_v2,location", "mushaf": mushaf, "per_page": 286})
+            r.raise_for_status()
+            verses = sorted(r.json()["verses"], key=lambda v: int(v["verse_key"].split(":")[1]))
+            for v in verses:
+                words = sorted(v.get("words", []), key=lambda w: w.get("position", 0))
+                row = []
+                for w in words:
+                    code = w.get(field) or w.get("text") or ""
+                    if w.get("text") and w.get("text") != code:
+                        mismatch += 1
+                    row.append([w.get("page_number"), code])
+                ayahs.append(row)
+            time.sleep(delay)
+        save(f"glyph/{name}.json", ayahs)
+        pages = sorted({w[0] for a in ayahs for w in a if w[0]})
+        print(f"glyph {name}: {len(ayahs)} ayahs, pages {pages[:1]}..{pages[-1:]} ({len(pages)}), "
+              f"text!=code: {mismatch}", flush=True)
+
+
+def step_pagefonts():
+    """QPC V1 / V2 / V4 page fonts p1..p604 (ttf for Word, woff2 for the web preview)."""
+    for name, (_, _, folder) in GLYPH.items():
+        cors = None
+        for p in range(1, 605):
+            for ext in ("ttf", "woff2"):
+                dest = os.path.join(RAW, "pagefonts", name, ext, f"p{p}.{ext}")
+                if os.path.exists(dest):
+                    continue
+                r = get(f"{FONT_CDN}/{folder}/{ext}/p{p}.{ext}", headers={"Origin": "https://abdullohukr.github.io"})
+                if r.status_code == 404 and ext == "woff2":
+                    continue
+                r.raise_for_status()
+                if cors is None:
+                    cors = r.headers.get("Access-Control-Allow-Origin")
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+                with open(dest, "wb") as fh:
+                    fh.write(r.content)
+        print(f"page fonts {name}: done, CORS={cors}", flush=True)
+        save(f"pagefonts/{name}/cors.json", {"cors": cors})
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--only", default="meta,translation,tafsir,script,font")
+    ap.add_argument("--only", default="meta,translation,tafsir,script,font,glyph,pagefonts")
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--delay", type=float, default=0.3)
     a = ap.parse_args()
     steps = a.only.split(",")
     os.makedirs(RAW, exist_ok=True)
     cat_path = os.path.join(RAW, "catalog.json")
-    if "meta" in steps or not os.path.exists(cat_path):
+    cat = None
+    if "meta" in steps or (not os.path.exists(cat_path) and set(steps) & {"translation", "tafsir", "font"}):
         cat = step_meta(a.delay)
-    else:
+    elif os.path.exists(cat_path):
         with open(cat_path, encoding="utf-8") as f:
             cat = json.load(f)
     if "translation" in steps:
@@ -263,6 +320,10 @@ def main():
         step_scripts(a.delay)
     if "font" in steps:
         step_fonts(cat)
+    if "glyph" in steps:
+        step_glyph(a.delay)
+    if "pagefonts" in steps:
+        step_pagefonts()
     print("done", flush=True)
 
 

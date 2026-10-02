@@ -18,6 +18,11 @@ import os
 import re
 import shutil
 import urllib.parse
+
+try:
+    from fontTools.ttLib import TTFont
+except ImportError:
+    TTFont = None
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -105,11 +110,31 @@ def url(rel):
     return BASE_URL + "library/" + urllib.parse.quote(rel)
 
 
+def page_family(name, p):
+    """Family names of the QPC page fonts (used if a font file could not be read)."""
+    return {"v1": f"QCF_P{p:03d}", "v2": f"QCF2{p:03d}", "v4": f"QCF4{p:03d}_COLOR"}[name]
+
+
+GLYPHS = {  # QPC page-by-page mushafs (one font per page): label, CDN folder
+    "v1": (["script.quranLibrary", " — V1 (1405)"], "v1"),
+    "v2": (["script.quranLibrary", " — V2 (1421)"], "v2"),
+    "v4": (["script.quranLibrary", " — V4 ", "script.tajweed"], "v4-tajweed"),
+}
+FONT_CDN = "https://static-cdn.tarteel.ai/qul/fonts/quran_fonts"
+RELEASE = os.path.join(ROOT, "qul_release")        # big font ZIPs -> GitHub release "fonts"
+RELEASE_URL = f"https://github.com/{os.environ.get('GITHUB_REPOSITORY', 'abdullohukr/quranuz')}/releases/download/fonts/"
+
+
 def main():
-    cat = load("catalog.json")
-    if not cat:
-        print("no qul_raw/catalog.json - nothing to build")
-        return
+    # Incremental: every run rebuilds only what it downloaded and keeps the rest.
+    cat = load("catalog.json") or {"api": {"languages": [], "translations": [], "tafsirs": []}, "pages": {}, "chapters": {}}
+    have = {k: bool(glob.glob(os.path.join(RAW, k, "*"))) for k in ("translation", "tafsir", "glyph")}
+    have["scripts"] = os.path.exists(os.path.join(RAW, "scripts.json"))
+    have["fonts"] = os.path.exists(os.path.join(RAW, "fonts.json"))
+    cat_path = os.path.join(WEB, "catalog.json")
+    prev = json.load(open(cat_path, encoding="utf-8")) if os.path.exists(cat_path) else {}
+    idx_path = os.path.join(LIB, "index.json")
+    prev_index = json.load(open(idx_path, encoding="utf-8")) if os.path.exists(idx_path) else {}
     langs = {}
     for l in cat["api"]["languages"]:
         langs[l["name"].lower()] = l
@@ -180,11 +205,7 @@ def main():
     # ---- fonts
     fonts = []
     os.makedirs(os.path.join(FONTS, "qul"), exist_ok=True)
-    try:
-        from fontTools.ttLib import TTFont
-    except ImportError:
-        TTFont = None
-    for f in load("fonts.json", []):
+    for f in load("fonts.json", []) if have["fonts"] else []:
         src = os.path.join(RAW, "fonts", f["file"])
         key = norm(f["name"])
         if not os.path.exists(src) or not any(k in key for k in TEXT_FONTS):
@@ -201,6 +222,9 @@ def main():
                 pass
         fonts.append(dict(f, family=family))
     
+
+    if not have["fonts"]:
+        fonts = prev_index.get("fonts", [])
 
     # ---- scripts (mushafs)
     scripts = load("scripts.json", {})
@@ -239,6 +263,67 @@ def main():
         out["scripts"].append({"id": field, "label": label, "file": url(rel), "tajweed": tajweed,
                                "ayahByAyah": bool(page) and not wbw, "font": font, "source": "qul.tarteel.ai"})
 
+    # ---- QPC page mushafs V1 / V2 / V4: [[page, glyph], ...] per ayah, a font per page
+    os.makedirs(RELEASE, exist_ok=True)
+    for name, (label, folder) in GLYPHS.items():
+        ay = load(f"glyph/{name}.json")
+        if not ay or len(ay) != 6236:
+            continue
+        families = []
+        for p in range(1, 605):
+            fam, ttf = None, os.path.join(RAW, "pagefonts", name, "ttf", f"p{p}.ttf")
+            if TTFont and os.path.exists(ttf):
+                try:
+                    n = TTFont(ttf, lazy=True)["name"]
+                    fam = (n.getDebugName(16) or n.getDebugName(1) or "").strip() or None
+                except Exception:  # noqa: BLE001
+                    pass
+            families.append(fam or page_family(name, p))
+        cors = (load(f"pagefonts/{name}/cors.json") or {}).get("cors")
+        if cors == "*":
+            web = f"{FONT_CDN}/{folder}/woff2/p{{n}}.woff2"
+        else:                                   # host the web fonts ourselves (qul-data branch)
+            for fn in glob.glob(os.path.join(RAW, "pagefonts", name, "woff2", "*.woff2")):
+                os.makedirs(os.path.join(DATA, "pagefonts", name), exist_ok=True)
+                shutil.copy(fn, os.path.join(DATA, "pagefonts", name, os.path.basename(fn)))
+            web = f"{BASE_URL}pagefonts/{name}/p{{n}}.woff2"
+        title = "Quran Library — " + {"v1": "V1 (1405)", "v2": "V2 (1421)", "v4": "V4 Tajweed"}[name]
+        rel = f"Arabic (mushaf)/{title} (glyph {name}).json"
+        dump(os.path.join(LIB, rel), ay)
+        index.append({"type": "mushaf", "field": f"qpc_{name}", "name": title, "file": rel, "glyph": True})
+        zname = f"MyQuran-QPC-{name.upper()}-fonts.zip"
+        with zipfile.ZipFile(os.path.join(RELEASE, zname), "w", zipfile.ZIP_DEFLATED) as z:
+            for p in range(1, 605):
+                ttf = os.path.join(RAW, "pagefonts", name, "ttf", f"p{p}.ttf")
+                if os.path.exists(ttf):
+                    z.write(ttf, f"fonts/QPC-{name.upper()}-p{p:03d}.ttf")
+            for fn in glob.glob(os.path.join(ROOT, "tools", "fonts-install", "*")):
+                z.write(fn, os.path.basename(fn))
+        out["scripts"].append({"id": f"qpc_{name}", "label": label, "file": url(rel), "glyph": True,
+                               "tajweed": name == "v4", "pageFont": {"families": families, "url": web},
+                               "fontsZip": RELEASE_URL + zname, "source": "qul.tarteel.ai"})
+
+    # ---- merge with the previous build for parts that were not downloaded this time
+    if not have["translation"]:
+        out["translations"] = prev.get("translations", [])
+    if not have["tafsir"]:
+        out["tafsirs"] = prev.get("tafsirs", [])
+    keep = [x for x in prev.get("scripts", []) if (x.get("glyph") and not have["glyph"]) or (not x.get("glyph") and not have["scripts"])]
+    out["scripts"] = [x for x in out["scripts"] if x.get("glyph") or have["scripts"]] + keep
+    order = [f for f, *_ in SCRIPTS] + ["qpc_v1", "qpc_v2", "qpc_v4"]
+    out["scripts"].sort(key=lambda x: order.index(x["id"]) if x["id"] in order else 99)
+    if not out["languages"]:
+        out["languages"] = prev.get("languages", {})
+    rebuilt = {"translation": have["translation"], "tafsir": have["tafsir"]}
+    for it in prev_index.get("items", []):
+        t = it.get("type")
+        if t == "mushaf":
+            if (it.get("glyph") and have["glyph"]) or (not it.get("glyph") and have["scripts"]):
+                continue
+        elif rebuilt.get(t):
+            continue
+        index.append(it)
+
     # ---- surah names per locale
     suras_path = os.path.join(WEB, "suras.json")
     suras = json.load(open(suras_path, encoding="utf-8")) if os.path.exists(suras_path) else {}
@@ -246,12 +331,12 @@ def main():
         if len(ch) == 114:
             suras.setdefault(loc, {})
             suras[loc]["simple"] = [c["simple"] for c in ch]
-            if all(c.get("translated") for c in ch):
+            if all(c.get("translated") for c in ch):  # noqa
                 suras[loc]["translated"] = [c["translated"] for c in ch]
     dump(suras_path, suras)
 
-    dump(os.path.join(WEB, "catalog.json"), out)
-    dump(os.path.join(LIB, "index.json"), {"source": "https://qul.tarteel.ai (Quranic Universal Library)",
+    dump(cat_path, out)
+    dump(idx_path, {"source": "https://qul.tarteel.ai (Quranic Universal Library)",
                                            "fonts": fonts, "items": index}, pretty=True)
 
     # ---- one ZIP with every font + install scripts

@@ -1,6 +1,6 @@
 {
   "note": "Changing this file on the branch starts .github/workflows/qul.yml",
-  "run": 4,
-  "only": "meta,translation,tafsir,script,font",
+  "run": 5,
+  "only": "glyph,pagefonts",
   "limit": 0
 }

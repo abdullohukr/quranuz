@@ -81,6 +81,7 @@
     var o = 0;
     for (var i = 0; i < this.suras.length; i++) { this.offsets.push(o); o += this.suras[i][2]; }
     this.extraNames = [];                // other languages, for finding a sura by name
+    this.baseAyahs = data.ayahs;         // Unicode text: search always works on it
     this.setScript(data.ayahs);
   }
 
@@ -89,7 +90,22 @@
     opts = opts || {};
     this.tajweed = !!opts.tajweed;
     this.colors = null;
-    if (this.tajweed) {
+    this.pages = null;
+    if (opts.glyph) {
+      /* QPC page mushafs: ayah = [[page, glyph], ...]. Glyphs are Private Use characters
+         (bidi class L): RLM around every word keeps the words right-to-left in Word and
+         in the browser while the characters of a word stay in order. */
+      this.ayahs = []; this.pages = [];
+      for (var g = 0; g < ayahs.length; g++) {
+        var txt = '', pg = [];
+        ayahs[g].forEach(function (w, k) {
+          var piece = (k ? ' ' : '') + '\u200F' + w[1] + '\u200F';
+          txt += piece;
+          for (var c = 0; c < piece.length; c++) pg.push(w[0]);
+        });
+        this.ayahs.push(txt); this.pages.push(pg);
+      }
+    } else if (this.tajweed) {
       this.ayahs = []; this.colors = [];
       for (var i = 0; i < ayahs.length; i++) {
         var p = parseTajweed(ayahs[i]);
@@ -111,8 +127,8 @@
   Quran.prototype._buildIndex = function () {
     if (this._idx) return this._idx;
     var idx = [[], [], []];
-    for (var i = 0; i < this.ayahs.length; i++)
-      for (var l = 0; l < 3; l++) idx[l].push(' ' + normArabic(this.ayahs[i], l) + ' ');
+    for (var i = 0; i < this.baseAyahs.length; i++)
+      for (var l = 0; l < 3; l++) idx[l].push(' ' + normArabic(this.baseAyahs[i], l) + ' ');
     this._idx = idx;
     return idx;
   };
@@ -215,11 +231,12 @@
 
   /* Runs of one piece of an ayah [start, end) with tajweed colours. */
   Quran.prototype._runs = function (s, a, start, end) {
-    var t = this.text(s, a), cols = this.colors && this.colors[this.index(s, a)], runs = [];
+    var i0 = this.index(s, a), t = this.text(s, a), runs = [];
+    var cols = this.colors && this.colors[i0], pgs = this.pages && this.pages[i0];
     for (var i = start; i < end; i++) {
-      var c = cols ? cols[i] : null, last = runs[runs.length - 1];
-      if (last && last.color === c) last.t += t[i];
-      else runs.push({ t: t[i], color: c });
+      var c = cols ? cols[i] : null, p = pgs ? pgs[i] : null, last = runs[runs.length - 1];
+      if (last && last.color === c && last.page === p) last.t += t[i];
+      else runs.push({ t: t[i], color: c, page: p });
     }
     return runs;
   };
@@ -246,7 +263,10 @@
       var endChar = e === w.length - 1 ? t.length : w[e].end;
       var pr = this._runs(sel.sura, a, w[b].start, endChar);
       if (pr.length) pr[pr.length - 1].t = pr[pr.length - 1].t.replace(/ +$/, '');
-      pr.forEach(function (r) { push(r.t, r.color ? { color: r.color } : {}); });
+      pr.forEach(function (r) {
+        var x = {}; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
+        push(r.t, x);
+      });
     }
     if (opts.brackets !== false) push(br.close);
     if (opts.ref) {
@@ -302,7 +322,8 @@
     runs.forEach(function (r) {
       if (!r.t) return;
       var l = out[out.length - 1];
-      if (l && l.bold === r.bold && (l.color || null) === (r.color || null) && !l.italic && !r.italic) l.t += r.t;
+      if (l && l.bold === r.bold && (l.color || null) === (r.color || null) && (l.page || null) === (r.page || null) &&
+          !l.italic && !r.italic) l.t += r.t;
       else out.push(r);
     });
     return out;

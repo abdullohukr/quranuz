@@ -123,7 +123,7 @@
     var sc = scriptById(id);
     var done = sc.file ? getJSON(sc.file) : Promise.resolve(sc.ayahs);
     return done.then(function (ayahs) {
-      quran.setScript(ayahs, { tajweed: !!sc.tajweed });
+      quran.setScript(ayahs, { tajweed: !!sc.tajweed && !sc.glyph, glyph: !!sc.glyph });
       if (sc.font && sc.font.url && !loadedFonts[sc.font.family]) {
         var st = document.createElement('style');
         st.textContent = "@font-face{font-family:'" + sc.font.family + "';src:url('" + sc.font.url + "');font-display:swap}";
@@ -132,11 +132,25 @@
       var fam = (sc.font && sc.font.family) ? "'" + sc.font.family + "', " : '';
       document.documentElement.style.setProperty('--ar-script', fam + "'QuranUz Arabic', 'Scheherazade New', serif");
       $('script-note').hidden = !sc.ayahByAyah;
+      $('glyph-note').hidden = !sc.glyph;
+      if (sc.glyph) $('glyph-zip').href = sc.fontsZip || '#';
       $('source').textContent = scriptName(sc) + (sc.source ? ' — ' + sc.source : '');
     });
   }
+  /* QPC page fonts: one web font per Mushaf page, loaded when a page is shown */
+  function pageFamily(page) {
+    var sc = scriptById(settings.script), fam = 'MQ-' + sc.id + '-p' + page;
+    if (!loadedFonts[fam]) {
+      var st = document.createElement('style');
+      st.textContent = "@font-face{font-family:'" + fam + "';src:url('" + sc.pageFont.url.replace('{n}', page) + "');font-display:block}";
+      document.head.appendChild(st); loadedFonts[fam] = 1;
+    }
+    return "'" + sc.pageFont.families[page - 1] + "','" + fam + "'";
+  }
+  function wordFont(page) { return scriptById(settings.script).pageFont.families[page - 1]; }
   function arabicFont() {
     var sc = scriptById(settings.script);
+    if (sc.glyph) return settings.arFont || 'Scheherazade New';   // brackets, A'udhu, reference
     return settings.arFont || (sc.font && sc.font.family) || 'Scheherazade New';
   }
   function fillScriptSelect() {
@@ -221,7 +235,8 @@
 
   function runsHtml(runs) {
     return runs.map(function (r) {
-      var st = 'font-weight:' + (r.bold ? 'bold' : 'normal') + ';font-style:' + (r.italic ? 'italic' : 'normal') + (r.color ? ';color:#' + r.color : '');
+      var st = 'font-weight:' + (r.bold ? 'bold' : 'normal') + ';font-style:' + (r.italic ? 'italic' : 'normal') + (r.color ? ';color:#' + r.color : '') +
+        (r.page ? ';font-family:' + pageFamily(r.page) : '');
       return '<span style="' + st + '">' + esc(r.t) + '</span>';
     }).join('');
   }
@@ -237,12 +252,16 @@
       var sp = quran.spans(s, a), cols = quran.colors && quran.colors[quran.index(s, a)], text = quran.text(s, a);
       sp.words.forEach(function (w, i) {
         var inner = '';
-        if (cols) quran._runs(s, a, w.start, w.end).forEach(function (r) {
-          inner += r.color ? '<span style="color:#' + r.color + '">' + esc(r.t) + '</span>' : esc(r.t);
+        if (cols || quran.pages) quran._runs(s, a, w.start, w.end).forEach(function (r) {
+          var st = (r.color ? 'color:#' + r.color + ';' : '') + (r.page ? 'font-family:' + pageFamily(r.page) : '');
+          inner += st ? '<span style="' + st + '">' + esc(r.t) + '</span>' : esc(r.t);
         }); else inner = esc(w.text);
         html += '<span class="w ' + wordState(a, i) + '" data-a="' + a + '" data-w="' + i + '">' + inner + '</span> ';
       });
-      if (sp.mark) html += '<span class="num">' + esc(sp.mark) + '</span> ';
+      if (sp.mark) {
+        var mk = quran.pages ? quran._runs(s, a, text.lastIndexOf(sp.mark), text.length)[0] : null;
+        html += '<span class="num"' + (mk && mk.page ? ' style="font-family:' + pageFamily(mk.page) + '"' : '') + '>' + esc(sp.mark) + '</span> ';
+      }
     }
     $('preview-ar').innerHTML = html;
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
@@ -317,7 +336,7 @@
   function paraXml(p, font, size) {
     var rtl = p.dir === 'rtl';
     return '<w:p><w:pPr><w:bidi' + (rtl ? '' : ' w:val="0"') + '/><w:jc w:val="both"/></w:pPr>' +
-      p.runs.map(function (r) { return runXml(r, font, size, rtl); }).join('') + '</w:p>';
+      p.runs.map(function (r) { return runXml(r, r.page ? wordFont(r.page) : font, size, rtl); }).join('') + '</w:p>';
   }
   function buildOoxml(out) {
     var body = paraXml(out.arabic, arabicFont(), settings.arSize);
