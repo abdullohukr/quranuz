@@ -129,8 +129,13 @@ MIN_AYAHS = 3000          # translations with fewer ayahs are skipped; partial o
 def text_dir(texts, default):
     """Direction from the script of the text itself (e.g. Kurdish in Arabic script)."""
     sample = " ".join(t for t in texts[:400] if t)
-    rtl = len(re.findall(r"[\u0590-\u08FF]", sample))
-    ltr = len(re.findall(r"[A-Za-z\u00C0-\u024F\u0400-\u04FF\u0900-\u0DFF\u0E00-\u0FFF\u1100-\u11FF\u3040-\u9FFF\uAC00-\uD7AF]", sample))
+    rtl = ltr = 0
+    for ch in sample:                     # letters of any script
+        if ch.isalpha():
+            if "\u0590" <= ch <= "\u08FF" or "\uFB1D" <= ch <= "\uFDFF" or "\uFE70" <= ch <= "\uFEFF":
+                rtl += 1
+            else:
+                ltr += 1
     if rtl > ltr * 2:
         return "rtl"
     if ltr > rtl * 2:
@@ -179,7 +184,8 @@ def main():
     # some QUL translations have no language in the API: take it from the name
     ALIAS = {"ikirundi": "rundi", "kirundi": "rundi", "maguindanao": "magindanawn", "bisayan": "filipino",
              "iranionian": "filipino", "iranun": "filipino", "khmer": "central khmer", "kyrgyz": "kyrgyz, kirghiz",
-             "sinhala": "sinhala, sinhalese", "uyghur": "uighur, uyghur", "uighur": "uighur, uyghur"}
+             "sinhala": "sinhala, sinhalese", "uyghur": "uighur, uyghur", "uighur": "uighur, uyghur",
+             "divehi": "divehi, dhivehi, maldivian", "dhivehi": "divehi, dhivehi, maldivian"}
     by_word = {}
     for l in cat["api"]["languages"]:
         for part in l["name"].lower().replace("(", ",").replace(")", "").split(","):
@@ -189,8 +195,14 @@ def main():
         if res.get("id") in LANG_BY_TEXT:
             return LANG_BY_TEXT[res["id"]][0]
         lang = (res.get("language") or res.get("language_name") or "").lower()
-        if lang:
-            return lang
+        if lang:                          # normalise spellings ("divehi", "yau,yuw") to QUL's names
+            if lang in langs:
+                return lang
+            for cand in (ALIAS.get(lang), by_word.get(lang), by_word.get(lang.split(",")[0].strip())):
+                if cand:
+                    return cand
+            key = lang.replace(" ", "")
+            return next((n for n in langs if n.replace(" ", "") == key), lang)
         for w in re.findall(r"[a-z]+", (res.get("name") or "").lower()):
             w = ALIAS.get(w, w)
             if w in by_word:
