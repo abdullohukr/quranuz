@@ -3,7 +3,7 @@
 ## 2.0 — MyQuran
 
 - Name **MyQuran**; interface in 22 languages (Uzbek by default); all settings are remembered.
-- **QUL import** (qul.tarteel.ai): ~200 translations in 80+ languages, ~100 tafsirs in 30+ languages,
+- **QUL import** (qul.tarteel.ai): ~200 translations in 90+ languages, ~100 tafsirs in 30+ languages,
   mushafs Hafs, Uthmani, Imlaei, Indopak, Nastaleeq, Digital Khatt, Tajweed (colour); everything in one
   library folder by language and translator (branch `qul-data`). Languages missing in QUL's metadata are
   detected from the text. QUL's Uzbek and © resources are skipped.

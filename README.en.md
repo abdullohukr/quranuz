@@ -7,7 +7,7 @@
 **Quran add-in for Microsoft Word and the web**
 
 Find ayahs and insert them into your document without mistakes: Arabic text (several mushafs),
-translations in 80+ languages, tafsirs, isti'adhah, basmalah and a source reference.
+translations in 90+ languages, tafsirs, isti'adhah, basmalah and a source reference.
 
 [Ўзбекча](README.md) · [Русский](README.ru.md) · **English**
 
@@ -24,7 +24,7 @@ translations in 80+ languages, tafsirs, isti'adhah, basmalah and a source refere
 | 🔎 **Search** | surah and ayah number (`2:255`, `2 30-37`), surah name (`Al-Baqarah 255`, `Бақара 30`, `البقرة ٥`), Arabic text with or without diacritics (`قل اعوذ برب الناس`, `ٱلرَّحۡمَـٰنِ`), the text of any selected translation in any language |
 | 🖱️ **Word selection** | drag over words with the mouse, or click the first and the last word; Shift+click extends the range |
 | 📖 **Mushafs** | Madinah Mushaf (tafsir.one), Quran Library — Hafs, Uthmani, Imlaei, Indopak, Indopak Nastaleeq, Nastaleeq, Digital Khatt, **Tajweed (colour)**, **Quran Library V1 / V2 / V4** (page fonts — for academic work) |
-| 🌍 **Translations** | Alovuddin Mansur and Muhammad Sodiq Muhammad Yusuf (Uzbek) + **~200 translations in 80+ languages** from QUL; several at once |
+| 🌍 **Translations** | Alovuddin Mansur and Muhammad Sodiq Muhammad Yusuf (Uzbek) + **~200 translations in 90+ languages** from QUL; several at once |
 | 📚 **Tafsirs** | Muyassar, Mukhtasar (Uzbek) + **~100 tafsirs in 30+ languages** from QUL; several at once, one commentary for a group of ayahs |
 | ✍️ **Extras** | ﴿ ﴾ brackets, isti'adhah, basmalah, reference like `[يونس ١]`, insert as new paragraph |
 | 🎨 **Formatting** | Arabic in bold; translation in bold, explanations in `( )` and `[ ]` regular, reference in italics; per-language quotes and text direction |
