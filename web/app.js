@@ -415,16 +415,21 @@
       if (!byLang[k]) { byLang[k] = []; order.push(k); }
       byLang[k].push(x);
     });
-    // languages in alphabetical order ("Other" last); chosen items stay in their place
+    // languages in alphabetical order ("Other" last)
     order.sort(function (a, b) {
       if (/^Other/.test(a) !== /^Other/.test(b)) return /^Other/.test(a) ? 1 : -1;
       return a.localeCompare(b);
     });
     order.forEach(function (k) { byLang[k].sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); }); });
+    // chosen items on top (in the order they were chosen), then every language alphabetically
     var html = '';
+    chosen.map(function (id) { return items.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean)
+      .forEach(function (x) { html += item(x, true); });
     order.forEach(function (k) {
+      var rest = byLang[k].filter(function (x) { return chosen.indexOf(x.id) < 0; });
+      if (!rest.length) return;
       html += '<div class="grp">' + esc(k) + '</div>';
-      byLang[k].forEach(function (x) { html += item(x, chosen.indexOf(x.id) >= 0); });
+      rest.forEach(function (x) { html += item(x, false); });
     });
     el.innerHTML = html;
     function item(x, on) {
