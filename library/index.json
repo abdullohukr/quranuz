@@ -1,7 +1,2807 @@
 {
  "source": "https://qul.tarteel.ai (Quranic Universal Library)",
- "fonts": [],
+ "fonts": [
+  {
+   "page": "462",
+   "name": "KFGQPC Nastaleeq",
+   "file": "KFGQPCNastaleeq-Regular.ttf",
+   "family": "KFGQPC Nastaleeq"
+  },
+  {
+   "page": "462",
+   "name": "KFGQPC Nastaleeq",
+   "file": "KFGQPCNastaleeq-Regular.woff2",
+   "family": "KFGQPC Nastaleeq"
+  },
+  {
+   "page": "568",
+   "name": "Digital Khatt Indopak font",
+   "file": "DigitalKhattIndoPak.otf",
+   "family": "DigitalKhatt IndoPak"
+  },
+  {
+   "page": "242",
+   "name": "Indopak Nastaleeq font",
+   "file": "IndopakNastaleeq-Hanafi.ttf",
+   "family": "AlQuran IndoPak by QuranWBW"
+  },
+  {
+   "page": "242",
+   "name": "Indopak Nastaleeq font",
+   "file": "IndopakNastaleeq-Hanafi.woff2",
+   "family": "AlQuran IndoPak by QuranWBW"
+  },
+  {
+   "page": "245",
+   "name": "QPC Hafs font",
+   "file": "UthmanicHafs_V22.ttf",
+   "family": "KFGQPC HAFS Uthmanic Script"
+  },
+  {
+   "page": "245",
+   "name": "QPC Hafs font",
+   "file": "UthmanicHafs_V22.woff2",
+   "family": "KFGQPC HAFS Uthmanic Script"
+  },
+  {
+   "page": "243",
+   "name": "Me Quran Font",
+   "file": "me_quran_volt_newmet.ttf",
+   "family": "me_quran"
+  },
+  {
+   "page": "247",
+   "name": "Digital Khatt V2 Font",
+   "file": "DigitalKhattV2.otf",
+   "family": "DigitalKhatt New Madina"
+  },
+  {
+   "page": "248",
+   "name": "Digital Khatt V1 Font",
+   "file": "DigitalKhattQuranicV1.otf",
+   "family": "DigitalKhatt Old Madina"
+  }
+ ],
  "items": [
+  {
+   "type": "translation",
+   "id": 149,
+   "name": "Fadel Soliman, Bridges’ translation",
+   "author": "Fadel Soliman",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Fadel Soliman (149).json"
+  },
+  {
+   "type": "translation",
+   "id": 20,
+   "name": "Saheeh International",
+   "author": "Saheeh International",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Saheeh International (20).json"
+  },
+  {
+   "type": "translation",
+   "id": 167,
+   "name": "Maarif-ul-Quran",
+   "author": "Mufti Muhammad Shafi",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Mufti Muhammad Shafi (167).json"
+  },
+  {
+   "type": "translation",
+   "id": 203,
+   "name": "Muhammad Taqi-ud-Din al-Hilali & Muhammad Muhsin Khan",
+   "author": "Muhammad Taqi-ud-Din al-Hilali & Muhammad Muhsin Khan",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Muhammad Taqi-ud-Din al-Hilali - Muhammad Muhsin Khan (203).json"
+  },
+  {
+   "type": "translation",
+   "id": 234,
+   "name": "Fatah Muhammad Jalandhari",
+   "author": "Fatah Muhammad Jalandhari",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Fatah Muhammad Jalandhari (234).json"
+  },
+  {
+   "type": "translation",
+   "id": 75,
+   "name": "Alikhan Musayev",
+   "author": "Alikhan Musayev",
+   "language": "Azeri",
+   "iso": "az",
+   "file": "Azeri/translation - Alikhan Musayev (75).json"
+  },
+  {
+   "type": "translation",
+   "id": 76,
+   "name": "Muhammad Saleh",
+   "author": "Muhammad Saleh",
+   "language": "Uighur, Uyghur",
+   "iso": "ug",
+   "file": "Uighur, Uyghur/translation - Muhammad Saleh (76).json"
+  },
+  {
+   "type": "translation",
+   "id": 78,
+   "name": "Ministry of Awqaf, Egypt",
+   "author": "Ministry of Awqaf, Egypt",
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Ministry of Awqaf, Egypt (78).json"
+  },
+  {
+   "type": "translation",
+   "id": 79,
+   "name": "Abu Adel",
+   "author": "Abu Adel",
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Abu Adel (79).json"
+  },
+  {
+   "type": "translation",
+   "id": 80,
+   "name": "Muhammad Karakunnu and Vanidas Elayavoor",
+   "author": "Muhammad Karakunnu and Vanidas Elayavoor",
+   "language": "Malayalam",
+   "iso": "ml",
+   "file": "Malayalam/translation - Muhammad Karakunnu and Vanidas Elayavoor (80).json"
+  },
+  {
+   "type": "translation",
+   "id": 81,
+   "name": "Burhan Muhammad-Amin",
+   "author": "Burhan Muhammad-Amin",
+   "language": "Kurdish",
+   "iso": "ku",
+   "file": "Kurdish/translation - Burhan Muhammad-Amin (81).json"
+  },
+  {
+   "type": "translation",
+   "id": 83,
+   "name": "Sheikh Isa Garcia",
+   "author": "Sheikh Isa Garcia",
+   "language": "Spanish",
+   "iso": "es",
+   "file": "Spanish/translation - Sheikh Isa Garcia (83).json"
+  },
+  {
+   "type": "translation",
+   "id": 84,
+   "name": "Mufti Taqi Usmani",
+   "author": "Mufti Taqi Usmani",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Mufti Taqi Usmani (84).json"
+  },
+  {
+   "type": "translation",
+   "id": 85,
+   "name": "Abdul Haleem",
+   "author": "Abdul Haleem",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Abdul Haleem (85).json"
+  },
+  {
+   "type": "translation",
+   "id": 86,
+   "name": "Office of the president of Maldives",
+   "author": "Office of the president of Maldives",
+   "language": "Divehi, Dhivehi, Maldivian",
+   "iso": "dv",
+   "file": "Divehi, Dhivehi, Maldivian/translation - Office of the president of Maldives (86).json"
+  },
+  {
+   "type": "translation",
+   "id": 17,
+   "name": "Dr. Ghali",
+   "author": "Dr. Ghali",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Dr. Ghali (17).json"
+  },
+  {
+   "type": "translation",
+   "id": 18,
+   "name": "Muhsin Khan",
+   "author": "Muhsin Khan",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Muhsin Khan (18).json"
+  },
+  {
+   "type": "translation",
+   "id": 95,
+   "name": "Tafheem-ul-Quran - Abul Ala Maududi",
+   "author": "Sayyid Abul Ala Maududi",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Sayyid Abul Ala Maududi (95).json"
+  },
+  {
+   "type": "translation",
+   "id": 21,
+   "name": "Shakir",
+   "author": "Shakir",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Shakir (21).json"
+  },
+  {
+   "type": "translation",
+   "id": 57,
+   "name": "Transliteration",
+   "author": "Unknown",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Unknown (57).json"
+  },
+  {
+   "type": "translation",
+   "id": 19,
+   "name": "Mohammed Marmaduke William Pickthall",
+   "author": "Mohammed Marmaduke William Pickthall",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Mohammed Marmaduke William Pickthall (19).json"
+  },
+  {
+   "type": "translation",
+   "id": 22,
+   "name": "Abdullah Yusuf Ali",
+   "author": "Abdullah Yusuf Ali",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Abdullah Yusuf Ali (22).json"
+  },
+  {
+   "type": "translation",
+   "id": 206,
+   "name": "Ruwwad Center",
+   "author": "Ruwwad Center",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Ruwwad Center (206).json"
+  },
+  {
+   "type": "translation",
+   "id": 207,
+   "name": "Dr. T. B. Irving",
+   "author": "Dr. T. B. Irving",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Dr. T. B. Irving (207).json"
+  },
+  {
+   "type": "translation",
+   "id": 54,
+   "name": "Maulana Muhammad Junagarhi",
+   "author": "Maulana Muhammad Junagarhi",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Maulana Muhammad Junagarhi (54).json"
+  },
+  {
+   "type": "translation",
+   "id": 156,
+   "name": "Fe Zilal al-Qur'an",
+   "author": "Sayyid Ibrahim Qutb",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Sayyid Ibrahim Qutb (156).json"
+  },
+  {
+   "type": "translation",
+   "id": 151,
+   "name": "Shaykh al-Hind Mahmud al-Hasan(with Tafsir E Usmani)",
+   "author": "Shaykh al-Hind Mahmud al-Hasan",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Shaykh al-Hind Mahmud al-Hasan (151).json"
+  },
+  {
+   "type": "translation",
+   "id": 158,
+   "name": "Bayan-ul-Quran",
+   "author": "Dr. Israr Ahmad",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Dr. Israr Ahmad (158).json"
+  },
+  {
+   "type": "translation",
+   "id": 97,
+   "name": "Tafheem e Qur'an - Syed Abu Ali Maududi",
+   "author": "Syed Abu Ali Maududi",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Syed Abu Ali Maududi (97).json"
+  },
+  {
+   "type": "translation",
+   "id": 136,
+   "name": "Montada Islamic Foundation",
+   "author": "Montada Islamic Foundation",
+   "language": "French",
+   "iso": "fr",
+   "file": "French/translation - Montada Islamic Foundation (136).json"
+  },
+  {
+   "type": "translation",
+   "id": 135,
+   "name": "Persian Translation - Rowwad Translation Center",
+   "author": "IslamHouse.com",
+   "language": "Persian",
+   "iso": "fa",
+   "file": "Persian/translation - IslamHouse.com (135).json"
+  },
+  {
+   "type": "translation",
+   "id": 139,
+   "name": "Khawaja Mirof & Khawaja Mir",
+   "author": "Khawaja Mirof & Khawaja Mir",
+   "language": "Tajik",
+   "iso": "tg",
+   "file": "Tajik/translation - Khawaja Mirof - Khawaja Mir (139).json"
+  },
+  {
+   "type": "translation",
+   "id": 35,
+   "name": "Ryoichi Mita",
+   "author": "Ryoichi Mita",
+   "language": "Japanese",
+   "iso": "ja",
+   "file": "Japanese/translation - Ryoichi Mita (35).json"
+  },
+  {
+   "type": "translation",
+   "id": 134,
+   "name": "King Fahad Quran Complex",
+   "author": "King Fahad Quran Complex",
+   "language": "Indonesian",
+   "iso": "id",
+   "file": "Indonesian/translation - King Fahad Quran Complex (134).json"
+  },
+  {
+   "type": "translation",
+   "id": 153,
+   "name": "Hamza Roberto Piccardo",
+   "author": "Hamza Roberto Piccardo",
+   "language": "Italian",
+   "iso": "it",
+   "file": "Italian/translation - Hamza Roberto Piccardo (153).json"
+  },
+  {
+   "type": "translation",
+   "id": 161,
+   "name": "Taisirul Quran",
+   "author": "Tawheed Publication",
+   "language": "Bengali",
+   "iso": "bn",
+   "file": "Bengali/translation - Tawheed Publication (161).json"
+  },
+  {
+   "type": "translation",
+   "id": 380,
+   "name": "Fathul Majid",
+   "author": "AbdulRahman Bin Hasan Al-Alshaikh",
+   "language": "Bengali",
+   "iso": "bn",
+   "file": "Bengali/translation - AbdulRahman Bin Hasan Al-Alshaikh (380).json"
+  },
+  {
+   "type": "translation",
+   "id": 163,
+   "name": "Sheikh Mujibur Rahman",
+   "author": "Darussalaam Publication",
+   "language": "Bengali",
+   "iso": "bn",
+   "file": "Bengali/translation - Darussalaam Publication (163).json"
+  },
+  {
+   "type": "translation",
+   "id": 162,
+   "name": "Rawai Al-bayan",
+   "author": "Bayaan Foundation",
+   "language": "Bengali",
+   "iso": "bn",
+   "file": "Bengali/translation - Bayaan Foundation (162).json"
+  },
+  {
+   "type": "translation",
+   "id": 210,
+   "name": "Dar Al-Salam Center",
+   "author": "Dar Al-Salam Center",
+   "language": "Turkish",
+   "iso": "tr",
+   "file": "Turkish/translation - Dar Al-Salam Center (210).json"
+  },
+  {
+   "type": "translation",
+   "id": 211,
+   "name": "Dar Al-Salam Center",
+   "author": "Dar Al-Salam Center",
+   "language": "Tagalog",
+   "iso": "tl",
+   "file": "Tagalog/translation - Dar Al-Salam Center (211).json"
+  },
+  {
+   "type": "translation",
+   "id": 217,
+   "name": "Dr. Mikhailo Yaqubovic",
+   "author": "Dr. Mikhailo Yaqubovic",
+   "language": "Ukrainian",
+   "iso": "uk",
+   "file": "Ukrainian/translation - Dr. Mikhailo Yaqubovic (217).json"
+  },
+  {
+   "type": "translation",
+   "id": 229,
+   "name": "Sheikh Omar Sharif bin Abdul Salam",
+   "author": "Sheikh Omar Sharif bin Abdul Salam",
+   "language": "Tamil",
+   "iso": "ta",
+   "file": "Tamil/translation - Sheikh Omar Sharif bin Abdul Salam (229).json"
+  },
+  {
+   "type": "translation",
+   "id": 215,
+   "name": "Dar Al-Salam Center",
+   "author": "Dar Al-Salam Center",
+   "language": "Serbian",
+   "iso": "sr",
+   "file": "Serbian/translation - Dar Al-Salam Center (215).json"
+  },
+  {
+   "type": "translation",
+   "id": 143,
+   "name": "Muhammad Saleh Bamoki",
+   "author": "Muhammad Saleh Bamoki",
+   "language": "Kurdish",
+   "iso": "ku",
+   "file": "Kurdish/translation - Muhammad Saleh Bamoki (143).json"
+  },
+  {
+   "type": "translation",
+   "id": 141,
+   "name": "The Sabiq company",
+   "author": "The Sabiq company",
+   "language": "Indonesian",
+   "iso": "id",
+   "file": "Indonesian/translation - The Sabiq company (141).json"
+  },
+  {
+   "type": "translation",
+   "id": 140,
+   "name": "Montada Islamic Foundation",
+   "author": "Montada Islamic Foundation",
+   "language": "Spanish",
+   "iso": "es",
+   "file": "Spanish/translation - Montada Islamic Foundation (140).json"
+  },
+  {
+   "type": "translation",
+   "id": 214,
+   "name": "Dar Al-Salam Center",
+   "author": "Dar Al-Salam Center",
+   "language": "Bosnian",
+   "iso": "bs",
+   "file": "Bosnian/translation - Dar Al-Salam Center (214).json"
+  },
+  {
+   "type": "translation",
+   "id": 227,
+   "name": "Maulana Abder-Rahim ibn Muhammad",
+   "author": "Maulana Abder-Rahim ibn Muhammad",
+   "language": "Telugu",
+   "iso": "te",
+   "file": "Telugu/translation - Maulana Abder-Rahim ibn Muhammad (227).json"
+  },
+  {
+   "type": "translation",
+   "id": 226,
+   "name": "Muhammad Shafi’i Ansari",
+   "author": "Muhammad Shafi’i Ansari",
+   "language": "Marathi",
+   "iso": "mr",
+   "file": "Marathi/translation - Muhammad Shafi’i Ansari (226).json"
+  },
+  {
+   "type": "translation",
+   "id": 233,
+   "name": "Dar Al-Salam Center",
+   "author": "Dar Al-Salam Center",
+   "language": "Hebrew",
+   "iso": "he",
+   "file": "Hebrew/translation - Dar Al-Salam Center (233).json"
+  },
+  {
+   "type": "translation",
+   "id": 225,
+   "name": "Rabila Al-Umry",
+   "author": "Rabila Al-Umry",
+   "language": "Gujarati",
+   "iso": "gu",
+   "file": "Gujarati/translation - Rabila Al-Umry (225).json"
+  },
+  {
+   "type": "translation",
+   "id": 224,
+   "name": "Abdul-Hamid Haidar & Kanhi Muhammad",
+   "author": "Abdul-Hamid Haidar & Kanhi Muhammad",
+   "language": "Malayalam",
+   "iso": "ml",
+   "file": "Malayalam/translation - Abdul-Hamid Haidar - Kanhi Muhammad (224).json"
+  },
+  {
+   "type": "translation",
+   "id": 232,
+   "name": "African Development Foundation",
+   "author": "African Development Foundation",
+   "language": "Ganda",
+   "iso": "lg",
+   "file": "Ganda/translation - African Development Foundation (232).json"
+  },
+  {
+   "type": "translation",
+   "id": 235,
+   "name": "Malak Faris Abdalsalaam",
+   "author": "Malak Faris Abdalsalaam",
+   "language": "Dutch",
+   "iso": "nl",
+   "file": "Dutch/translation - Malak Faris Abdalsalaam (235).json"
+  },
+  {
+   "type": "translation",
+   "id": 231,
+   "name": "Dr. Abdullah Muhammad Abu Bakr and Sheikh Nasir Khamis",
+   "author": "Dr. Abdullah Muhammad Abu Bakr and Sheikh Nasir Khamis",
+   "language": "Swahili",
+   "iso": "sw",
+   "file": "Swahili/translation - Dr. Abdullah Muhammad Abu Bakr and Sheikh Nasir Khamis (231).json"
+  },
+  {
+   "type": "translation",
+   "id": 230,
+   "name": "Society of Institutes and Universities",
+   "author": "Society of Institutes and Universities",
+   "language": "Thai",
+   "iso": "th",
+   "file": "Thai/translation - Society of Institutes and Universities (230).json"
+  },
+  {
+   "type": "translation",
+   "id": 223,
+   "name": " Tajik translation - Arfy",
+   "author": "Ruwwad Center",
+   "language": "Tajik",
+   "iso": "tg",
+   "file": "Tajik/translation - Ruwwad Center (223).json"
+  },
+  {
+   "type": "translation",
+   "id": 222,
+   "name": "Khalifa Altay",
+   "author": "Khalifa Altay",
+   "language": "Kazakh",
+   "iso": "kk",
+   "file": "Kazakh/translation - Khalifa Altay (222).json"
+  },
+  {
+   "type": "translation",
+   "id": 220,
+   "name": "Ruwwad Center",
+   "author": "Translation Pioneers Center",
+   "language": "Vietnamese",
+   "iso": "vi",
+   "file": "Vietnamese/translation - Translation Pioneers Center (220).json"
+  },
+  {
+   "type": "translation",
+   "id": 144,
+   "name": "Sofian S. Siregar",
+   "author": "Sofian S. Siregar",
+   "language": "Dutch",
+   "iso": "nl",
+   "file": "Dutch/translation - Sofian S. Siregar (144).json"
+  },
+  {
+   "type": "translation",
+   "id": 88,
+   "name": "Hasan Efendi Nahi",
+   "author": "Hasan Efendi Nahi",
+   "language": "Albanian",
+   "iso": "sq",
+   "file": "Albanian/translation - Hasan Efendi Nahi (88).json"
+  },
+  {
+   "type": "translation",
+   "id": 87,
+   "name": "Sadiq and Sani",
+   "author": "Sadiq and Sani",
+   "language": "Amharic",
+   "iso": "am",
+   "file": "Amharic/translation - Sadiq and Sani (87).json"
+  },
+  {
+   "type": "translation",
+   "id": 50,
+   "name": "Jaan Trust Foundation",
+   "author": "Jan Turst Foundation",
+   "language": "Tamil",
+   "iso": "ta",
+   "file": "Tamil/translation - Jan Turst Foundation (50).json"
+  },
+  {
+   "type": "translation",
+   "id": 49,
+   "name": "Ali Muhsin Al-Barwani",
+   "author": "Ali Muhsin Al-Barwani",
+   "language": "Swahili",
+   "iso": "sw",
+   "file": "Swahili/translation - Ali Muhsin Al-Barwani (49).json"
+  },
+  {
+   "type": "translation",
+   "id": 48,
+   "name": "Knut Bernström",
+   "author": "Knut Bernström",
+   "language": "Swedish",
+   "iso": "sv",
+   "file": "Swedish/translation - Knut Bernström (48).json"
+  },
+  {
+   "type": "translation",
+   "id": 128,
+   "name": "Cambodian Muslim Community Development",
+   "author": "Cambodian Muslim Community Development",
+   "language": "Central Khmer",
+   "iso": "km",
+   "file": "Central Khmer/translation - Cambodian Muslim Community Development (128).json"
+  },
+  {
+   "type": "translation",
+   "id": 45,
+   "name": "Russian Translation ( Elmir Kuliev )",
+   "author": "Elmir Kuliev",
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Elmir Kuliev (45).json"
+  },
+  {
+   "type": "translation",
+   "id": 77,
+   "name": "Turkish Translation(Diyanet)",
+   "author": "Diyanet Isleri",
+   "language": "Turkish",
+   "iso": "tr",
+   "file": "Turkish/translation - Diyanet Isleri (77).json"
+  },
+  {
+   "type": "translation",
+   "id": 36,
+   "name": "Korean",
+   "author": "Korean",
+   "language": "Korean",
+   "iso": "ko",
+   "file": "Korean/translation - Korean (36).json"
+  },
+  {
+   "type": "translation",
+   "id": 30,
+   "name": "Finnish",
+   "author": "Finnish",
+   "language": "Finnish",
+   "iso": "fi",
+   "file": "Finnish/translation - Finnish (30).json"
+  },
+  {
+   "type": "translation",
+   "id": 26,
+   "name": "Czech",
+   "author": "Czech",
+   "language": "Czech",
+   "iso": "cs",
+   "file": "Czech/translation - Czech (26).json"
+  },
+  {
+   "type": "translation",
+   "id": 103,
+   "name": "Helmi Nasr",
+   "author": "Helmi Nasr",
+   "language": "Portuguese",
+   "iso": "pt",
+   "file": "Portuguese/translation - Helmi Nasr (103).json"
+  },
+  {
+   "type": "translation",
+   "id": 74,
+   "name": "Abdol Mohammad Ayati",
+   "author": "AbdolMohammad Ayati",
+   "language": "Tajik",
+   "iso": "tg",
+   "file": "Tajik/translation - AbdolMohammad Ayati (74).json"
+  },
+  {
+   "type": "translation",
+   "id": 23,
+   "name": "Azerbaijani (Vasim Məmmədəliyev və Ziya Bünyadov)",
+   "author": "Unknown",
+   "language": "Azeri",
+   "iso": "az",
+   "file": "Azeri/translation - Unknown (23).json"
+  },
+  {
+   "type": "translation",
+   "id": 53,
+   "name": "Tatar",
+   "author": "Tatar",
+   "language": "Tatar",
+   "iso": "tt",
+   "file": "Tatar/translation - Tatar (53).json"
+  },
+  {
+   "type": "translation",
+   "id": 47,
+   "name": "Albanian",
+   "author": "Albanian",
+   "language": "Albanian",
+   "iso": "sq",
+   "file": "Albanian/translation - Albanian (47).json"
+  },
+  {
+   "type": "translation",
+   "id": 44,
+   "name": "Grigore",
+   "author": "George Grigore",
+   "language": "Romanian",
+   "iso": "ro",
+   "file": "Romanian/translation - George Grigore (44).json"
+  },
+  {
+   "type": "translation",
+   "id": 42,
+   "name": "Józef Bielawski",
+   "author": "Józef Bielawski",
+   "language": "Polish",
+   "iso": "pl",
+   "file": "Polish/translation - Józef Bielawski (42).json"
+  },
+  {
+   "type": "translation",
+   "id": 41,
+   "name": "Norwegian",
+   "author": "Norwegian",
+   "language": "Norwegian",
+   "iso": "no",
+   "file": "Norwegian/translation - Norwegian (41).json"
+  },
+  {
+   "type": "translation",
+   "id": 106,
+   "name": "Magomed Magomedov",
+   "author": "Magomed Magomedov",
+   "language": "Chechen",
+   "iso": "ce",
+   "file": "Chechen/translation - Magomed Magomedov (106).json"
+  },
+  {
+   "type": "translation",
+   "id": 236,
+   "name": "Ramdane At Mansour",
+   "author": "Ramdane At Mansour",
+   "language": "Amazigh",
+   "iso": "zgh",
+   "file": "Amazigh/translation - Ramdane At Mansour (236).json"
+  },
+  {
+   "type": "translation",
+   "id": 237,
+   "name": "Tzvetan Theophanov",
+   "author": "Tzvetan Theophanov",
+   "language": "Bulgarian",
+   "iso": "bg",
+   "file": "Bulgarian/translation - Tzvetan Theophanov (237).json"
+  },
+  {
+   "type": "translation",
+   "id": 238,
+   "name": "Taj Mehmood Amroti",
+   "author": "Taj Mehmood Amroti",
+   "language": "Sindhi",
+   "iso": "sd",
+   "file": "Sindhi/translation - Taj Mehmood Amroti (238).json"
+  },
+  {
+   "type": "translation",
+   "id": 125,
+   "name": "Shaykh Abu Rahimah Mikael Aykyuni",
+   "author": "Shaykh Abu Rahimah Mikael Aykyuni",
+   "language": "Yoruba",
+   "iso": "yo",
+   "file": "Yoruba/translation - Shaykh Abu Rahimah Mikael Aykyuni (125).json"
+  },
+  {
+   "type": "translation",
+   "id": 124,
+   "name": "Muslim Shahin",
+   "author": "Muslim Shahin",
+   "language": "Turkish",
+   "iso": "tr",
+   "file": "Turkish/translation - Muslim Shahin (124).json"
+  },
+  {
+   "type": "translation",
+   "id": 46,
+   "name": "Mahmud Muhammad Abduh",
+   "author": "Mahmud Muhammad Abduh",
+   "language": "Somali",
+   "iso": "so",
+   "file": "Somali/translation - Mahmud Muhammad Abduh (46).json"
+  },
+  {
+   "type": "translation",
+   "id": 112,
+   "name": "Shaban Britch",
+   "author": "Shaban Britch",
+   "language": "Turkish",
+   "iso": "tr",
+   "file": "Turkish/translation - Shaban Britch (112).json"
+  },
+  {
+   "type": "translation",
+   "id": 38,
+   "name": "Maranao",
+   "author": "Unknown",
+   "language": "Maranao",
+   "iso": "mrw",
+   "file": "Maranao/translation - Unknown (38).json"
+  },
+  {
+   "type": "translation",
+   "id": 89,
+   "name": "Albanian Translation",
+   "author": "Sherif Ahmeti\t",
+   "language": "Albanian",
+   "iso": "sq",
+   "file": "Albanian/translation - Sherif Ahmeti\t (89).json"
+  },
+  {
+   "type": "translation",
+   "id": 56,
+   "name": "Ma Jain (Simplified)",
+   "author": "Ma Jian",
+   "language": "Chinese",
+   "iso": "zh",
+   "file": "Chinese/translation - Ma Jian (56).json"
+  },
+  {
+   "type": "translation",
+   "id": 32,
+   "name": "Hausa Translation(Abubakar Gumi)",
+   "author": "Abubakar Mahmoud Gumi",
+   "language": "Hausa",
+   "iso": "ha",
+   "file": "Hausa/translation - Abubakar Mahmoud Gumi (32).json"
+  },
+  {
+   "type": "translation",
+   "id": 108,
+   "name": "Ahl Al-Hadith Central Society of Nepal",
+   "author": "Ahl Al-Hadith Central Society of Nepal",
+   "language": "Nepali",
+   "iso": "ne",
+   "file": "Nepali/translation - Ahl Al-Hadith Central Society of Nepal (108).json"
+  },
+  {
+   "type": "translation",
+   "id": 37,
+   "name": "Malay Translation(Abdul Hameed and Kunhi)",
+   "author": "Abdul Hameed and Kunhi Mohammed",
+   "language": "Malayalam",
+   "iso": "ml",
+   "file": "Malayalam/translation - Abdul Hameed and Kunhi Mohammed (37).json"
+  },
+  {
+   "type": "translation",
+   "id": 43,
+   "name": "Portuguese Translation( Samir )",
+   "author": "Samir El-Hayek",
+   "language": "Portuguese",
+   "iso": "pt",
+   "file": "Portuguese/translation - Samir El-Hayek (43).json"
+  },
+  {
+   "type": "translation",
+   "id": 28,
+   "name": "Spanish Translation(Cortes)",
+   "author": "Julio Cortes",
+   "language": "Spanish",
+   "iso": "es",
+   "file": "Spanish/translation - Julio Cortes (28).json"
+  },
+  {
+   "type": "translation",
+   "id": 51,
+   "name": "King Fahad Quran Complex",
+   "author": "King Fahad Quran Complex",
+   "language": "Thai",
+   "iso": "th",
+   "file": "Thai/translation - King Fahad Quran Complex (51).json"
+  },
+  {
+   "type": "translation",
+   "id": 111,
+   "name": "Ghali Apapur Apaghuna",
+   "author": "Ghali Apapur Apaghuna",
+   "language": "Oromo",
+   "iso": "om",
+   "file": "Oromo/translation - Ghali Apapur Apaghuna (111).json"
+  },
+  {
+   "type": "translation",
+   "id": 115,
+   "name": "Abubakar Mahmood Jummi",
+   "author": "Abubakar Mahmood Jummi",
+   "language": "Hausa",
+   "iso": "ha",
+   "file": "Hausa/translation - Abubakar Mahmood Jummi (115).json"
+  },
+  {
+   "type": "translation",
+   "id": 31,
+   "name": "Muhammad Hamidullah",
+   "author": "Muhammad Hamidullah",
+   "language": "French",
+   "iso": "fr",
+   "file": "French/translation - Muhammad Hamidullah (31).json"
+  },
+  {
+   "type": "translation",
+   "id": 29,
+   "name": "Hussein Taji Kal Dari",
+   "author": "Hussein Taji Kal Dari",
+   "language": "Persian",
+   "iso": "fa",
+   "file": "Persian/translation - Hussein Taji Kal Dari (29).json"
+  },
+  {
+   "type": "translation",
+   "id": 208,
+   "name": "Abu Reda Muhammad ibn Ahmad",
+   "author": "Abu Reda Muhammad ibn Ahmad",
+   "language": "German",
+   "iso": "de",
+   "file": "German/translation - Abu Reda Muhammad ibn Ahmad (208).json"
+  },
+  {
+   "type": "translation",
+   "id": 209,
+   "name": "Othman al-Sharif",
+   "author": "Othman al-Sharif",
+   "language": "Italian",
+   "iso": "it",
+   "file": "Italian/translation - Othman al-Sharif (209).json"
+  },
+  {
+   "type": "translation",
+   "id": 133,
+   "name": "Abdul Hameed Baqavi",
+   "author": "Abdul Hameed Baqavi",
+   "language": "Tamil",
+   "iso": "ta",
+   "file": "Tamil/translation - Abdul Hameed Baqavi (133).json"
+  },
+  {
+   "type": "translation",
+   "id": 25,
+   "name": "Muhamed Mehanović",
+   "author": "Muhamed Mehanović",
+   "language": "Bosnian",
+   "iso": "bs",
+   "file": "Bosnian/translation - Muhamed Mehanović (25).json"
+  },
+  {
+   "type": "translation",
+   "id": 221,
+   "name": "Hasan Abdul-Karim",
+   "author": "Hasan Abdul-Karim",
+   "language": "Vietnamese",
+   "iso": "vi",
+   "file": "Vietnamese/translation - Hasan Abdul-Karim (221).json"
+  },
+  {
+   "type": "translation",
+   "id": 219,
+   "name": "Hamed Choi",
+   "author": "Hamed Choi",
+   "language": "Korean",
+   "iso": "ko",
+   "file": "Korean/translation - Hamed Choi (219).json"
+  },
+  {
+   "type": "translation",
+   "id": 52,
+   "name": "Elmalili Hamdi Yazir",
+   "author": "Elmalili Hamdi Yazir\t",
+   "language": "Turkish",
+   "iso": "tr",
+   "file": "Turkish/translation - Elmalili Hamdi Yazir\t (52).json"
+  },
+  {
+   "type": "translation",
+   "id": 213,
+   "name": "Dr. Abu Bakr Muhammad Zakaria",
+   "author": "Dr. Abu Bakr Muhammad Zakaria",
+   "language": "Bengali",
+   "iso": "bn",
+   "file": "Bengali/translation - Dr. Abu Bakr Muhammad Zakaria (213).json"
+  },
+  {
+   "type": "translation",
+   "id": 199,
+   "name": "Noor International Center",
+   "author": "Noor International Center",
+   "language": "Spanish",
+   "iso": "es",
+   "file": "Spanish/translation - Noor International Center (199).json"
+  },
+  {
+   "type": "translation",
+   "id": 218,
+   "name": "Saeed Sato",
+   "author": "Saeed Sato",
+   "language": "Japanese",
+   "iso": "ja",
+   "file": "Japanese/translation - Saeed Sato (218).json"
+  },
+  {
+   "type": "translation",
+   "id": 228,
+   "name": "Ruwwad Center",
+   "author": "Translation Pioneers Center",
+   "language": "Sinhala, Sinhalese",
+   "iso": "si",
+   "file": "Sinhala, Sinhalese/translation - Translation Pioneers Center (228).json"
+  },
+  {
+   "type": "translation",
+   "id": 126,
+   "name": "Besim Korkut",
+   "author": "Besim Korkut",
+   "language": "Bosnian",
+   "iso": "bs",
+   "file": "Bosnian/translation - Besim Korkut (126).json"
+  },
+  {
+   "type": "translation",
+   "id": 122,
+   "name": "Maulana Azizul Haque al-Umari",
+   "author": "Maulana Azizul Haque al-Umari",
+   "language": "Hindi",
+   "iso": "hi",
+   "file": "Hindi/translation - Maulana Azizul Haque al-Umari (122).json"
+  },
+  {
+   "type": "translation",
+   "id": 120,
+   "name": "Shaykh Rafeequl Islam Habibur-Rahman",
+   "author": "Shaykh Rafeequl Islam Habibur-Rahman",
+   "language": "Assamese",
+   "iso": "as",
+   "file": "Assamese/translation - Shaykh Rafeequl Islam Habibur-Rahman (120).json"
+  },
+  {
+   "type": "translation",
+   "id": 118,
+   "name": "Zakaria Abulsalam",
+   "author": "Zakaria Abulsalam",
+   "language": "Pashto",
+   "iso": "ps",
+   "file": "Pashto/translation - Zakaria Abulsalam (118).json"
+  },
+  {
+   "type": "translation",
+   "id": 109,
+   "name": "Muhammad Makin",
+   "author": "Muhammad Makin",
+   "language": "Chinese",
+   "iso": "zh",
+   "file": "Chinese/translation - Muhammad Makin (109).json"
+  },
+  {
+   "type": "translation",
+   "id": 27,
+   "name": "Frank Bubenheim and Nadeem",
+   "author": "Frank Bubenheim and Nadeem",
+   "language": "German",
+   "iso": "de",
+   "file": "German/translation - Frank Bubenheim and Nadeem (27).json"
+  },
+  {
+   "type": "translation",
+   "id": 33,
+   "name": "Indonesian Islamic affairs ministry",
+   "author": "Indonesian Islamic affairs ministry",
+   "language": "Indonesian",
+   "iso": "id",
+   "file": "Indonesian/translation - Indonesian Islamic affairs ministry (33).json"
+  },
+  {
+   "type": "translation",
+   "id": 771,
+   "name": "Kannada Translation",
+   "author": "Kannada Translation",
+   "language": "Kannada",
+   "iso": "kn",
+   "file": "Kannada/translation - Kannada Translation (771).json"
+  },
+  {
+   "type": "translation",
+   "id": 774,
+   "name": "The Rwanda Muslims Association team",
+   "author": "The Rwanda Muslims Association team",
+   "language": "Kinyarwanda",
+   "iso": "rw",
+   "file": "Kinyarwanda/translation - The Rwanda Muslims Association team (774).json"
+  },
+  {
+   "type": "translation",
+   "id": 779,
+   "name": "Rashid Maash",
+   "author": "Rashid Maash",
+   "language": "French",
+   "iso": "fr",
+   "file": "French/translation - Rashid Maash (779).json"
+  },
+  {
+   "type": "translation",
+   "id": 781,
+   "name": "Bulgarian Translation",
+   "author": "Bulgarian Translation",
+   "language": "Bulgarian",
+   "iso": "bg",
+   "file": "Bulgarian/translation - Bulgarian Translation (781).json"
+  },
+  {
+   "type": "translation",
+   "id": 782,
+   "name": "Islamic and Cultural League",
+   "author": "Islamic and Cultural League",
+   "language": "Romanian",
+   "iso": "ro",
+   "file": "Romanian/translation - Islamic and Cultural League (782).json"
+  },
+  {
+   "type": "translation",
+   "id": 784,
+   "name": "Abdullah Basamia",
+   "author": "Abdullah Basamia",
+   "language": "Malay",
+   "iso": "ms",
+   "file": "Malay/translation - Abdullah Basamia (784).json"
+  },
+  {
+   "type": "translation",
+   "id": 785,
+   "name": "Mawlawi Muhammad Anwar Badkhashani",
+   "author": "Mawlawi Muhammad Anwar Badkhashani",
+   "language": "Dari",
+   "iso": "prs",
+   "file": "Dari/translation - Mawlawi Muhammad Anwar Badkhashani (785).json"
+  },
+  {
+   "type": "translation",
+   "id": 786,
+   "name": "Abdullah Hassan Yacoub",
+   "author": "Abdullah Hassan Yacoub",
+   "language": "Somali",
+   "iso": "so",
+   "file": "Somali/translation - Abdullah Hassan Yacoub (786).json"
+  },
+  {
+   "type": "translation",
+   "id": 788,
+   "name": "Macedonian scholars",
+   "author": "Macedonian scholars",
+   "language": "Macedonian",
+   "iso": "mk",
+   "file": "Macedonian/translation - Macedonian scholars (788).json"
+  },
+  {
+   "type": "translation",
+   "id": 795,
+   "name": "Suliman Kanti",
+   "author": "Suliman Kanti",
+   "language": "Bambara",
+   "iso": "bm",
+   "file": "Bambara/translation - Suliman Kanti (795).json"
+  },
+  {
+   "type": "translation",
+   "id": 796,
+   "name": "Baba Mamady Jani",
+   "author": "Baba Mamady Jani",
+   "language": "Bambara",
+   "iso": "bm",
+   "file": "Bambara/translation - Baba Mamady Jani (796).json"
+  },
+  {
+   "type": "translation",
+   "id": 797,
+   "name": "Chewa translation",
+   "author": "Khaled Ibrahim Betala",
+   "language": "Chichewa, Chewa, Nyanja",
+   "iso": "ny",
+   "file": "Chichewa, Chewa, Nyanja/translation - Khaled Ibrahim Betala (797).json"
+  },
+  {
+   "type": "translation",
+   "id": 798,
+   "name": "Abdul Hamid Silika",
+   "author": "Abdul Hamid Silika",
+   "language": "yau,yuw",
+   "iso": "yau",
+   "file": "yau,yuw/translation - Abdul Hamid Silika (798).json"
+  },
+  {
+   "type": "translation",
+   "id": 800,
+   "name": "Fulani translation",
+   "author": "Rowad Translation Center",
+   "language": "Fulah",
+   "iso": "ff",
+   "file": "Fulah/translation - Rowad Translation Center (800).json"
+  },
+  {
+   "type": "translation",
+   "id": 801,
+   "name": "Sheikh Haroun Ismaeel",
+   "author": "Sheikh Haroun Ismaeel",
+   "language": "Asante",
+   "iso": "tw",
+   "file": "Asante/translation - Sheikh Haroun Ismaeel (801).json"
+  },
+  {
+   "type": "translation",
+   "id": 819,
+   "name": "Maulana Wahiduddin Khan",
+   "author": "Maulana Wahiduddin Khan",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Maulana Wahiduddin Khan (819).json"
+  },
+  {
+   "type": "translation",
+   "id": 823,
+   "name": "Maulana Wahiduddin Khan",
+   "author": "Maulana Wahiduddin Khan",
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Maulana Wahiduddin Khan (823).json"
+  },
+  {
+   "type": "translation",
+   "id": 831,
+   "name": "Abul Ala Maududi(Roman Urdu)",
+   "author": "Abul Ala Maududi",
+   "language": "Urdu",
+   "iso": "ur",
+   "file": "Urdu/translation - Abul Ala Maududi (831).json"
+  },
+  {
+   "type": "translation",
+   "id": 840,
+   "name": "Abu Bakr Ibrahim Ali (Bakurube)",
+   "author": "Abu Bakr Ibrahim Ali",
+   "language": "divehi",
+   "iso": "div",
+   "file": "divehi/translation - Abu Bakr Ibrahim Ali (840).json"
+  },
+  {
+   "type": "translation",
+   "id": 853,
+   "name": "Chinese suliman",
+   "author": null,
+   "language": "Chinese",
+   "iso": "zh",
+   "file": "Chinese/translation - Chinese suliman (853).json"
+  },
+  {
+   "type": "translation",
+   "id": 854,
+   "name": "Shaikh Mahmud Abdulkader Hamza",
+   "author": null,
+   "language": "Other",
+   "iso": "und",
+   "file": "Other/translation - Shaikh Mahmud Abdulkader Hamza (854).json"
+  },
+  {
+   "type": "translation",
+   "id": 855,
+   "name": "Lingala translation",
+   "author": null,
+   "language": "Lingala",
+   "iso": "ln",
+   "file": "Lingala/translation - Lingala translation (855).json"
+  },
+  {
+   "type": "translation",
+   "id": 857,
+   "name": "Punjabi arif",
+   "author": null,
+   "language": "Punjabi",
+   "iso": "pa",
+   "file": "Punjabi/translation - Punjabi arif (857).json"
+  },
+  {
+   "type": "translation",
+   "id": 858,
+   "name": "Kyrgyz hakimov",
+   "author": null,
+   "language": "Kyrgyz, Kirghiz",
+   "iso": "ky",
+   "file": "Kyrgyz, Kirghiz/translation - Kyrgyz hakimov (858).json"
+  },
+  {
+   "type": "translation",
+   "id": 904,
+   "name": "Lithuanian Translation",
+   "author": null,
+   "language": "Lithuanian",
+   "iso": "lt",
+   "file": "Lithuanian/translation - Lithuanian Translation (904).json"
+  },
+  {
+   "type": "translation",
+   "id": 918,
+   "name": "A. J. Arberry",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - A. J. Arberry (918).json"
+  },
+  {
+   "type": "translation",
+   "id": 919,
+   "name": "Muhammad Asad",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Muhammad Asad (919).json"
+  },
+  {
+   "type": "translation",
+   "id": 920,
+   "name": "Abdul Majid Daryabadi",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Abdul Majid Daryabadi (920).json"
+  },
+  {
+   "type": "translation",
+   "id": 921,
+   "name": "Professor Shaykh Hasan Al-Fatih Qaribullah",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Professor Shaykh Hasan Al-Fatih Qaribullah (921).json"
+  },
+  {
+   "type": "translation",
+   "id": 922,
+   "name": "Muhammad Sarwar",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Muhammad Sarwar (922).json"
+  },
+  {
+   "type": "translation",
+   "id": 923,
+   "name": "Gordy Semyonovich Sablukov",
+   "author": null,
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Gordy Semyonovich Sablukov (923).json"
+  },
+  {
+   "type": "translation",
+   "id": 924,
+   "name": "Magomed-Nuri Osmanovich Osmanov",
+   "author": null,
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Magomed-Nuri Osmanovich Osmanov (924).json"
+  },
+  {
+   "type": "translation",
+   "id": 926,
+   "name": "Bayanul Furqan(Koshur Quran)",
+   "author": "Mirwaiz Yusuf Shah",
+   "language": "Kashmiri",
+   "iso": "ks",
+   "file": "Kashmiri/translation - Mirwaiz Yusuf Shah (926).json"
+  },
+  {
+   "type": "translation",
+   "id": 942,
+   "name": "Dutch Islamic Center",
+   "author": null,
+   "language": "Dutch",
+   "iso": "nl",
+   "file": "Dutch/translation - Dutch Islamic Center (942).json"
+  },
+  {
+   "type": "translation",
+   "id": 943,
+   "name": "Pashto Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "Pashto",
+   "iso": "ps",
+   "file": "Pashto/translation - Pashto Translation - Rowwad Translation Center (943).json"
+  },
+  {
+   "type": "translation",
+   "id": 944,
+   "name": "Muhammad Hamza Battur",
+   "author": null,
+   "language": "Other",
+   "iso": "und",
+   "file": "Other/translation - Muhammad Hamza Battur (944).json"
+  },
+  {
+   "type": "translation",
+   "id": 945,
+   "name": "Ikirundi gehiti",
+   "author": null,
+   "language": "Rundi",
+   "iso": "rn",
+   "file": "Rundi/translation - Ikirundi gehiti (945).json"
+  },
+  {
+   "type": "translation",
+   "id": 1173,
+   "name": "Moore rwwad",
+   "author": null,
+   "language": "Moore",
+   "iso": "mos",
+   "file": "Moore/translation - Moore rwwad (1173).json"
+  },
+  {
+   "type": "translation",
+   "id": 1198,
+   "name": "Il-Qoran Imqaddes",
+   "author": "World Islamic Call Society",
+   "language": "Maltese",
+   "iso": "mt",
+   "file": "Maltese/translation - World Islamic Call Society (1198).json"
+  },
+  {
+   "type": "translation",
+   "id": 1252,
+   "name": "Greek translation",
+   "author": null,
+   "language": "Greek",
+   "iso": "el",
+   "file": "Greek/translation - Greek translation (1252).json"
+  },
+  {
+   "type": "translation",
+   "id": 1253,
+   "name": "Romanian translation",
+   "author": null,
+   "language": "Romanian",
+   "iso": "ro",
+   "file": "Romanian/translation - Romanian translation (1253).json"
+  },
+  {
+   "type": "translation",
+   "id": 1254,
+   "name": "Russian translation - Aboadel",
+   "author": null,
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Russian translation - Aboadel (1254).json"
+  },
+  {
+   "type": "translation",
+   "id": 1255,
+   "name": "Croatian translation - rwwad",
+   "author": null,
+   "language": "Croatian",
+   "iso": "hr",
+   "file": "Croatian/translation - Croatian translation - rwwad (1255).json"
+  },
+  {
+   "type": "translation",
+   "id": 1256,
+   "name": "Bisayan Translation - Rowwad Center",
+   "author": null,
+   "language": "Filipino",
+   "iso": "fil",
+   "file": "Filipino/translation - Bisayan Translation - Rowwad Center (1256).json"
+  },
+  {
+   "type": "translation",
+   "id": 1257,
+   "name": "Filipino Iranionian translation",
+   "author": null,
+   "language": "Filipino",
+   "iso": "fil",
+   "file": "Filipino/translation - Filipino Iranionian translation (1257).json"
+  },
+  {
+   "type": "translation",
+   "id": 1258,
+   "name": "Maguindanao - rwwad",
+   "author": null,
+   "language": "Magindanawn",
+   "iso": "mdh",
+   "file": "Magindanawn/translation - Maguindanao - rwwad (1258).json"
+  },
+  {
+   "type": "translation",
+   "id": 1259,
+   "name": "Chinese Translation - Basair",
+   "author": null,
+   "language": "Chinese",
+   "iso": "zh",
+   "file": "Chinese/translation - Chinese Translation - Basair (1259).json"
+  },
+  {
+   "type": "translation",
+   "id": 1261,
+   "name": "Khmer translation - Rwwad translation center",
+   "author": null,
+   "language": "Central Khmer",
+   "iso": "km",
+   "file": "Central Khmer/translation - Khmer translation - Rwwad translation center (1261).json"
+  },
+  {
+   "type": "translation",
+   "id": 1263,
+   "name": "Kurdish Translation - Salahuddin",
+   "author": null,
+   "language": "Kurdish",
+   "iso": "ku",
+   "file": "Kurdish/translation - Kurdish Translation - Salahuddin (1263).json"
+  },
+  {
+   "type": "translation",
+   "id": 1264,
+   "name": "Kurdish Kurmanji Translation",
+   "author": null,
+   "language": "Kurdish",
+   "iso": "ku",
+   "file": "Kurdish/translation - Kurdish Kurmanji Translation (1264).json"
+  },
+  {
+   "type": "translation",
+   "id": 1265,
+   "name": "Pashto - Sarfaraz",
+   "author": null,
+   "language": "Pashto",
+   "iso": "ps",
+   "file": "Pashto/translation - Pashto - Sarfaraz (1265).json"
+  },
+  {
+   "type": "translation",
+   "id": 1266,
+   "name": "Kannada translation - Bashir Missouri",
+   "author": null,
+   "language": "Kannada",
+   "iso": "kn",
+   "file": "Kannada/translation - Kannada translation - Bashir Missouri (1266).json"
+  },
+  {
+   "type": "translation",
+   "id": 1267,
+   "name": "Malagasy translation - Rowad",
+   "author": null,
+   "language": "Malagasy",
+   "iso": "mg",
+   "file": "Malagasy/translation - Malagasy translation - Rowad (1267).json"
+  },
+  {
+   "type": "translation",
+   "id": 1268,
+   "name": "Luhya translation",
+   "author": null,
+   "language": "Luhya",
+   "iso": "luy",
+   "file": "Luhya/translation - Luhya translation (1268).json"
+  },
+  {
+   "type": "translation",
+   "id": 1269,
+   "name": "Amharic Translation - Zain",
+   "author": null,
+   "language": "Amharic",
+   "iso": "am",
+   "file": "Amharic/translation - Amharic Translation - Zain (1269).json"
+  },
+  {
+   "type": "translation",
+   "id": 1270,
+   "name": "Muhammad Baba Gutubu",
+   "author": null,
+   "language": "Other",
+   "iso": "und",
+   "file": "Other/translation - Muhammad Baba Gutubu (1270).json"
+  },
+  {
+   "type": "translation",
+   "id": 1557,
+   "name": "Swahili translation - Rowad Translation Center",
+   "author": null,
+   "language": "Swahili",
+   "iso": "sw",
+   "file": "Swahili/translation - Swahili translation - Rowad Translation Center (1557).json"
+  },
+  {
+   "type": "translation",
+   "id": 1560,
+   "name": "Turkish Transliteration",
+   "author": null,
+   "language": "Turkish",
+   "iso": "tr",
+   "file": "Turkish/translation - Turkish Transliteration (1560).json"
+  },
+  {
+   "type": "translation",
+   "id": 1561,
+   "name": "English Transliteration(Tajweed)",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - English Transliteration(Tajweed) (1561).json"
+  },
+  {
+   "type": "translation",
+   "id": 1562,
+   "name": "English Transliteration(RTF markup)",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - English Transliteration(RTF markup) (1562).json"
+  },
+  {
+   "type": "translation",
+   "id": 1565,
+   "name": "English Transliteration(RTF Updated)",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - English Transliteration(RTF Updated) (1565).json"
+  },
+  {
+   "type": "translation",
+   "id": 1566,
+   "name": "Syllables Transliteration",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Syllables Transliteration (1566).json"
+  },
+  {
+   "type": "translation",
+   "id": 1567,
+   "name": "Syllables Transliteration(Old)",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Syllables Transliteration(Old) (1567).json"
+  },
+  {
+   "type": "translation",
+   "id": 1568,
+   "name": "Syllables Transliteration 2",
+   "author": null,
+   "language": "English",
+   "iso": "en",
+   "file": "English/translation - Syllables Transliteration 2 (1568).json"
+  },
+  {
+   "type": "translation",
+   "id": 1623,
+   "name": "Muhammad Azeez ur Rahman",
+   "author": "Muhammad Azeez ur Rahman",
+   "language": "Telugu",
+   "iso": "te",
+   "file": "Telugu/translation - Muhammad Azeez ur Rahman (1623).json"
+  },
+  {
+   "type": "translation",
+   "id": 1627,
+   "name": "Swedish Translation - Rowad Translation",
+   "author": null,
+   "language": "Swedish",
+   "iso": "sv",
+   "file": "Swedish/translation - Swedish Translation - Rowad Translation (1627).json"
+  },
+  {
+   "type": "translation",
+   "id": 1628,
+   "name": "Russian Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "Russian",
+   "iso": "ru",
+   "file": "Russian/translation - Russian Translation - Rowwad Translation Center (1628).json"
+  },
+  {
+   "type": "translation",
+   "id": 1629,
+   "name": "Belarusian Translation - Krivtsov",
+   "author": null,
+   "language": "Belarusian",
+   "iso": "be",
+   "file": "Belarusian/translation - Belarusian Translation - Krivtsov (1629).json"
+  },
+  {
+   "type": "translation",
+   "id": 1632,
+   "name": "Thai Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "Thai",
+   "iso": "th",
+   "file": "Thai/translation - Thai Translation - Rowwad Translation Center (1632).json"
+  },
+  {
+   "type": "translation",
+   "id": 1633,
+   "name": "Tamil Translation - Omar Sharif - Abridged Version",
+   "author": null,
+   "language": "Tamil",
+   "iso": "ta",
+   "file": "Tamil/translation - Tamil Translation - Omar Sharif - Abridged Version (1633).json"
+  },
+  {
+   "type": "translation",
+   "id": 1639,
+   "name": "Kurany Kerim Türkmen Dilinde",
+   "author": "Türkmenistanyň Müftüsiniň Müdiriýeti",
+   "language": "Turkmen",
+   "iso": "tk",
+   "file": "Turkmen/translation - Türkmenistanyň Müftüsiniň Müdiriýeti (1639).json"
+  },
+  {
+   "type": "translation",
+   "id": 1640,
+   "name": "Oromo Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "Oromo",
+   "iso": "om",
+   "file": "Oromo/translation - Oromo Translation - Rowwad Translation Center (1640).json"
+  },
+  {
+   "type": "translation",
+   "id": 1641,
+   "name": "Shona Translation — Dar Al-Ilm Institute",
+   "author": null,
+   "language": "Shona",
+   "iso": "sn",
+   "file": "Shona/translation - Shona Translation — Dar Al-Ilm Institute (1641).json"
+  },
+  {
+   "type": "translation",
+   "id": 1642,
+   "name": "Zulu Translation - Adel Jaffer",
+   "author": null,
+   "language": "Zulu",
+   "iso": "zu",
+   "file": "Zulu/translation - Zulu Translation - Adel Jaffer (1642).json"
+  },
+  {
+   "type": "translation",
+   "id": 1670,
+   "name": "Bengali Translation - Rowwad Translation Center",
+   "author": null,
+   "language": "Bengali",
+   "iso": "bn",
+   "file": "Bengali/translation - Bengali Translation - Rowwad Translation Center (1670).json"
+  },
+  {
+   "type": "tafsir",
+   "id": 169,
+   "name": "Tafsir Ibn Kathir",
+   "author": "Hafiz Ibn Kathir",
+   "language": "English",
+   "iso": "en",
+   "folder": "English/tafsir - Hafiz Ibn Kathir (169)"
+  },
+  {
+   "type": "tafsir",
+   "id": 381,
+   "name": "Tafsir Fathul Majid",
+   "author": "AbdulRahman Bin Hasan Al-Alshaikh",
+   "language": "Bengali",
+   "iso": "bn",
+   "folder": "Bengali/tafsir - AbdulRahman Bin Hasan Al-Alshaikh (381)"
+  },
+  {
+   "type": "tafsir",
+   "id": 14,
+   "name": "Tafsir Ibn Kathir",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Kathir (14)"
+  },
+  {
+   "type": "tafsir",
+   "id": 15,
+   "name": "Tafsir al-Tabari",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir al-Tabari (15)"
+  },
+  {
+   "type": "tafsir",
+   "id": 16,
+   "name": "Tafsir Muyassar",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Muyassar (16)"
+  },
+  {
+   "type": "tafsir",
+   "id": 90,
+   "name": "Tafseer Al Qurtubi",
+   "author": "Qurtubi",
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Qurtubi (90)"
+  },
+  {
+   "type": "tafsir",
+   "id": 92,
+   "name": "Tafsir al-Tahrir wa al-Tanwir",
+   "author": "Tanweer",
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tanweer (92)"
+  },
+  {
+   "type": "tafsir",
+   "id": 93,
+   "name": "Tafsir Al Wasit",
+   "author": "Waseet",
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Waseet (93)"
+  },
+  {
+   "type": "tafsir",
+   "id": 94,
+   "name": "Tafseer Al-Baghawi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafseer Al-Baghawi (94)"
+  },
+  {
+   "type": "tafsir",
+   "id": 164,
+   "name": "Tafseer ibn Kathir",
+   "author": "Tawheed Publication",
+   "language": "Bengali",
+   "iso": "bn",
+   "folder": "Bengali/tafsir - Tawheed Publication (164)"
+  },
+  {
+   "type": "tafsir",
+   "id": 165,
+   "name": "Tafsir Ahsanul Bayaan",
+   "author": "Bayaan Foundation",
+   "language": "Bengali",
+   "iso": "bn",
+   "folder": "Bengali/tafsir - Bayaan Foundation (165)"
+  },
+  {
+   "type": "tafsir",
+   "id": 166,
+   "name": "Tafsir Abu Bakr Zakaria",
+   "author": "King Fahd Quran Printing Complex",
+   "language": "Bengali",
+   "iso": "bn",
+   "folder": "Bengali/tafsir - King Fahd Quran Printing Complex (166)"
+  },
+  {
+   "type": "tafsir",
+   "id": 168,
+   "name": "Maarif-ul-Quran",
+   "author": "Mufti Muhammad Shafi",
+   "language": "English",
+   "iso": "en",
+   "folder": "English/tafsir - Mufti Muhammad Shafi (168)"
+  },
+  {
+   "type": "tafsir",
+   "id": 171,
+   "name": "English Al-Mukhtasar",
+   "author": "Tafsir Center of Quranic Studies",
+   "language": "English",
+   "iso": "en",
+   "folder": "English/tafsir - Tafsir Center of Quranic Studies (171)"
+  },
+  {
+   "type": "tafsir",
+   "id": 157,
+   "name": "Fi Zilal al-Quran",
+   "author": "Sayyid Ibrahim Qutb",
+   "language": "Urdu",
+   "iso": "ur",
+   "folder": "Urdu/tafsir - Sayyid Ibrahim Qutb (157)"
+  },
+  {
+   "type": "tafsir",
+   "id": 159,
+   "name": "Tafsir Bayan ul Quran",
+   "author": "Dr. Israr Ahmad",
+   "language": "Urdu",
+   "iso": "ur",
+   "folder": "Urdu/tafsir - Dr. Israr Ahmad (159)"
+  },
+  {
+   "type": "tafsir",
+   "id": 160,
+   "name": "Tafsir Ibn Kathir",
+   "author": "Hafiz Ibn Kathir",
+   "language": "Urdu",
+   "iso": "ur",
+   "folder": "Urdu/tafsir - Hafiz Ibn Kathir (160)"
+  },
+  {
+   "type": "tafsir",
+   "id": 172,
+   "name": "Turkish Al-Mukhtasar in Interpreting the Noble Quran",
+   "author": "Tafsir Center",
+   "language": "Turkish",
+   "iso": "tr",
+   "folder": "Turkish/tafsir - Tafsir Center (172)"
+  },
+  {
+   "type": "tafsir",
+   "id": 173,
+   "name": "French Abridged Explanation of the Quran",
+   "author": "Tafsir Center for Quranic Studies",
+   "language": "French",
+   "iso": "fr",
+   "folder": "French/tafsir - Tafsir Center for Quranic Studies (173)"
+  },
+  {
+   "type": "tafsir",
+   "id": 174,
+   "name": "Indoniesua Al-Mukhtasar in Interpreting the Noble Quran",
+   "author": "Tafsir Center for Quranic Studies",
+   "language": "Indonesian",
+   "iso": "id",
+   "folder": "Indonesian/tafsir - Tafsir Center for Quranic Studies (174)"
+  },
+  {
+   "type": "tafsir",
+   "id": 175,
+   "name": "Bosnian Abridged Explanation of the Quran",
+   "author": "Tafsir Center",
+   "language": "Bosnian",
+   "iso": "bs",
+   "folder": "Bosnian/tafsir - Tafsir Center (175)"
+  },
+  {
+   "type": "tafsir",
+   "id": 176,
+   "name": "Italian Al-Mukhtasar in interpreting the Noble Quran",
+   "author": "Tafsir Center",
+   "language": "Italian",
+   "iso": "it",
+   "folder": "Italian/tafsir - Tafsir Center (176)"
+  },
+  {
+   "type": "tafsir",
+   "id": 177,
+   "name": "Vietnamese Al-Mukhtasar in interpreting the Noble Quran",
+   "author": "Tafsir Center",
+   "language": "Vietnamese",
+   "iso": "vi",
+   "folder": "Vietnamese/tafsir - Tafsir Center (177)"
+  },
+  {
+   "type": "tafsir",
+   "id": 178,
+   "name": "Russian Al-Mukhtasar",
+   "author": "Tafsir Center for Quranic Studies",
+   "language": "Russian",
+   "iso": "ru",
+   "folder": "Russian/tafsir - Tafsir Center for Quranic Studies (178)"
+  },
+  {
+   "type": "tafsir",
+   "id": 180,
+   "name": "Bengali Abridged Explanation of the Quran",
+   "author": "Tafsir Center for Quranic Studies",
+   "language": "Bengali",
+   "iso": "bn",
+   "folder": "Bengali/tafsir - Tafsir Center for Quranic Studies (180)"
+  },
+  {
+   "type": "tafsir",
+   "id": 181,
+   "name": "Persian Al-Mukhtasar in interpreting the Noble Quran",
+   "author": "Tafsir Center",
+   "language": "Persian",
+   "iso": "fa",
+   "folder": "Persian/tafsir - Tafsir Center (181)"
+  },
+  {
+   "type": "tafsir",
+   "id": 182,
+   "name": "Chinese Abridged Explanation of the Quran",
+   "author": "Tafsir Center of Quranic Studies",
+   "language": "Chinese",
+   "iso": "zh",
+   "folder": "Chinese/tafsir - Tafsir Center of Quranic Studies (182)"
+  },
+  {
+   "type": "tafsir",
+   "id": 183,
+   "name": "Japanese Abridged Explanation of the Quran",
+   "author": "Tafsir Center of Quranic Studies",
+   "language": "Japanese",
+   "iso": "ja",
+   "folder": "Japanese/tafsir - Tafsir Center of Quranic Studies (183)"
+  },
+  {
+   "type": "tafsir",
+   "id": 776,
+   "name": "Spanish Abridged Explanation of the Quran",
+   "author": "Tafsir Center for Quranic Studies",
+   "language": "Spanish",
+   "iso": "es",
+   "folder": "Spanish/tafsir - Tafsir Center for Quranic Studies (776)"
+  },
+  {
+   "type": "tafsir",
+   "id": 790,
+   "name": "Assamese Abridged Explanation of the Quran",
+   "author": "Tafsir Center of Quranic Studies",
+   "language": "Assamese",
+   "iso": "as",
+   "folder": "Assamese/tafsir - Tafsir Center of Quranic Studies (790)"
+  },
+  {
+   "type": "tafsir",
+   "id": 791,
+   "name": "Malayalam Abridged Explanation of the Quran",
+   "author": "Tafsir Center of Quranic Studies",
+   "language": "Malayalam",
+   "iso": "ml",
+   "folder": "Malayalam/tafsir - Tafsir Center of Quranic Studies (791)"
+  },
+  {
+   "type": "tafsir",
+   "id": 792,
+   "name": "Khmer Abridged Explanation of the Quran",
+   "author": "Tafsir Center of Quranic Studies",
+   "language": "Central Khmer",
+   "iso": "km",
+   "folder": "Central Khmer/tafsir - Tafsir Center of Quranic Studies (792)"
+  },
+  {
+   "type": "tafsir",
+   "id": 804,
+   "name": "Rebar Kurdish Tafsir",
+   "author": "Rebar Kurdish Tafsir",
+   "language": "Kurdish",
+   "iso": "ku",
+   "folder": "Kurdish/tafsir - Rebar Kurdish Tafsir (804)"
+  },
+  {
+   "type": "tafsir",
+   "id": 816,
+   "name": "Tafsir Jalalayn",
+   "author": null,
+   "language": "Indonesian",
+   "iso": "id",
+   "folder": "Indonesian/tafsir - Tafsir Jalalayn (816)"
+  },
+  {
+   "type": "tafsir",
+   "id": 817,
+   "name": "Tazkirul Quran(Maulana Wahiduddin Khan)",
+   "author": "Maulana Wahid Uddin Khan",
+   "language": "English",
+   "iso": "en",
+   "folder": "English/tafsir - Maulana Wahid Uddin Khan (817)"
+  },
+  {
+   "type": "tafsir",
+   "id": 818,
+   "name": "Tazkirul Quran(Maulana Wahiduddin Khan)",
+   "author": "Maulana Wahid Uddin Khan",
+   "language": "Urdu",
+   "iso": "ur",
+   "folder": "Urdu/tafsir - Maulana Wahid Uddin Khan (818)"
+  },
+  {
+   "type": "tafsir",
+   "id": 905,
+   "name": "Arabic Al-Mukhtasar in interpreting the Noble Quran",
+   "author": "Tafsir Center for Quranic Studies",
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Center for Quranic Studies (905)"
+  },
+  {
+   "type": "tafsir",
+   "id": 906,
+   "name": "Tafsir As-Saadi",
+   "author": null,
+   "language": "Urdu",
+   "iso": "ur",
+   "folder": "Urdu/tafsir - Tafsir As-Saadi (906)"
+  },
+  {
+   "type": "tafsir",
+   "id": 907,
+   "name": "Tafsir As-Saadi",
+   "author": null,
+   "language": "Turkish",
+   "iso": "tr",
+   "folder": "Turkish/tafsir - Tafsir As-Saadi (907)"
+  },
+  {
+   "type": "tafsir",
+   "id": 908,
+   "name": "Asseraj fi Bayan Gharib AlQuran",
+   "author": "Muhammad Al-Khudairi",
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Muhammad Al-Khudairi (908)"
+  },
+  {
+   "type": "tafsir",
+   "id": 909,
+   "name": "Tafsir As-Saadi",
+   "author": null,
+   "language": "Persian",
+   "iso": "fa",
+   "folder": "Persian/tafsir - Tafsir As-Saadi (909)"
+  },
+  {
+   "type": "tafsir",
+   "id": 910,
+   "name": "Tafsir As-Saadi",
+   "author": null,
+   "language": "Indonesian",
+   "iso": "id",
+   "folder": "Indonesian/tafsir - Tafsir As-Saadi (910)"
+  },
+  {
+   "type": "tafsir",
+   "id": 912,
+   "name": "Tafsir As-Saadi\t",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir As-Saadi\t (912)"
+  },
+  {
+   "type": "tafsir",
+   "id": 913,
+   "name": "Tafsir Ibne Kathir",
+   "author": null,
+   "language": "Russian",
+   "iso": "ru",
+   "folder": "Russian/tafsir - Tafsir Ibne Kathir (913)"
+  },
+  {
+   "type": "tafsir",
+   "id": 914,
+   "name": "Tafsir Ibne Kathir\t",
+   "author": null,
+   "language": "Turkish",
+   "iso": "tr",
+   "folder": "Turkish/tafsir - Tafsir Ibne Kathir\t (914)"
+  },
+  {
+   "type": "tafsir",
+   "id": 915,
+   "name": "Tafsir As-Saadi",
+   "author": null,
+   "language": "Albanian",
+   "iso": "sq",
+   "folder": "Albanian/tafsir - Tafsir As-Saadi (915)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1271,
+   "name": "Azeri Mokhtasar",
+   "author": null,
+   "language": "Azeri",
+   "iso": "az",
+   "folder": "Azeri/tafsir - Azeri Mokhtasar (1271)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1272,
+   "name": "Fulani Mokhtasar",
+   "author": null,
+   "language": "Fulah",
+   "iso": "ff",
+   "folder": "Fulah/tafsir - Fulani Mokhtasar (1272)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1273,
+   "name": "Hindi Mokhtasar",
+   "author": null,
+   "language": "Hindi",
+   "iso": "hi",
+   "folder": "Hindi/tafsir - Hindi Mokhtasar (1273)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1274,
+   "name": "Kurdish Mokhtasar",
+   "author": null,
+   "language": "Kurdish",
+   "iso": "ku",
+   "folder": "Kurdish/tafsir - Kurdish Mokhtasar (1274)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1275,
+   "name": "Kyrgyz Mokhtasar",
+   "author": null,
+   "language": "Kyrgyz, Kirghiz",
+   "iso": "ky",
+   "folder": "Kyrgyz, Kirghiz/tafsir - Kyrgyz Mokhtasar (1275)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1276,
+   "name": "Pashto Mokhtasar",
+   "author": null,
+   "language": "Pashto",
+   "iso": "ps",
+   "folder": "Pashto/tafsir - Pashto Mokhtasar (1276)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1277,
+   "name": "Sinhalese Mokhtasar",
+   "author": null,
+   "language": "Sinhala, Sinhalese",
+   "iso": "si",
+   "folder": "Sinhala, Sinhalese/tafsir - Sinhalese Mokhtasar (1277)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1278,
+   "name": "Serbian Mokhtasar",
+   "author": null,
+   "language": "Serbian",
+   "iso": "sr",
+   "folder": "Serbian/tafsir - Serbian Mokhtasar (1278)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1279,
+   "name": "Tamil Mokhtasar",
+   "author": null,
+   "language": "Tamil",
+   "iso": "ta",
+   "folder": "Tamil/tafsir - Tamil Mokhtasar (1279)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1280,
+   "name": "Telugu Mokhtasar",
+   "author": null,
+   "language": "Telugu",
+   "iso": "te",
+   "folder": "Telugu/tafsir - Telugu Mokhtasar (1280)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1281,
+   "name": "Thai Mokhtasar",
+   "author": null,
+   "language": "Thai",
+   "iso": "th",
+   "folder": "Thai/tafsir - Thai Mokhtasar (1281)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1282,
+   "name": "Uyghur Mokhtasar",
+   "author": null,
+   "language": "Uighur, Uyghur",
+   "iso": "ug",
+   "folder": "Uighur, Uyghur/tafsir - Uyghur Mokhtasar (1282)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1475,
+   "name": "Abu Bakr Jabir Al-Jazairi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Abu Bakr Jabir Al-Jazairi (1475)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1476,
+   "name": "Tadabbur wa 'Amal",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tadabbur wa 'Amal (1476)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1477,
+   "name": "Iraab Al-Muyassar",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Iraab Al-Muyassar (1477)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1478,
+   "name": "Alrab Al-Quran li-Da'as",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Alrab Al-Quran li-Da'as (1478)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1479,
+   "name": "Al Jadwal fi I'rab Al Quran",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al Jadwal fi I'rab Al Quran (1479)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1480,
+   "name": "Al Dur Al Masun Lil Samin Al Halabi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al Dur Al Masun Lil Samin Al Halabi (1480)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1481,
+   "name": "Al Lubab fi Ulum Al Kitab",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al Lubab fi Ulum Al Kitab (1481)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1482,
+   "name": "Al Qira'at Al Mawsoo'ah Al Qur'aniyyah",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al Qira'at Al Mawsoo'ah Al Qur'aniyyah (1482)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1483,
+   "name": "Al Nashr li Ibn Al Jazari",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al Nashr li Ibn Al Jazari (1483)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1484,
+   "name": "I'rab Al Quran li Al Darwish",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - I'rab Al Quran li Al Darwish (1484)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1485,
+   "name": "Tafsir Ibn Uthaymeen",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Uthaymeen (1485)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1486,
+   "name": "Tafsir Jalalayn",
+   "author": "جلال الدين المحلي؛ جلال الدين السيوطي",
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - جلال الدين المحلي؛ جلال الدين السيوطي (1486)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1487,
+   "name": "Tafsir Al-Baydawi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Baydawi (1487)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1488,
+   "name": "Jamia Al-Bayan AlIji",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Jamia Al-Bayan AlIji (1488)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1489,
+   "name": "Tafsir Al-Nasafi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Nasafi (1489)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1490,
+   "name": "Al-Wajiz Wahidi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Wajiz Wahidi (1490)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1491,
+   "name": "Tafsir Ibn Abi Zamanin",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Abi Zamanin (1491)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1492,
+   "name": "Mawsoo'at Al-Tafsir Al-Ma'thoor",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Mawsoo'at Al-Tafsir Al-Ma'thoor (1492)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1493,
+   "name": "Tafsir Ibn Abi Hatim",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Abi Hatim (1493)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1494,
+   "name": "Al-Durr Al-Manthur",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Durr Al-Manthur (1494)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1495,
+   "name": "Fath Al-Bayan li Al-Qanuji",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Fath Al-Bayan li Al-Qanuji (1495)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1496,
+   "name": "Fath Al-Qadir Al-Shawkani",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Fath Al-Qadir Al-Shawkani (1496)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1497,
+   "name": "Tafsir Ibn Juzay",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Juzay (1497)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1498,
+   "name": "Tafsir Al-Alusi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Alusi (1498)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1499,
+   "name": "Tafsir Al-Razi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Razi (1499)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1500,
+   "name": "Adwa' Al-Bayan",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Adwa' Al-Bayan (1500)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1501,
+   "name": "Nazam Al-Durar Al-Biqa'i",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Nazam Al-Durar Al-Biqa'i (1501)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1502,
+   "name": "Al-Muharrar Al-Wajiz Ibn Atiyyah",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Muharrar Al-Wajiz Ibn Atiyyah (1502)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1503,
+   "name": "Al-Bahr Al-Muhit",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Bahr Al-Muhit (1503)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1504,
+   "name": "Al-Basit",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Basit (1504)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1505,
+   "name": "Tafsir Abi Al-Suaood",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Abi Al-Suaood (1505)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1506,
+   "name": "Al-Kashshaf Al-Zamakhshari",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Kashshaf Al-Zamakhshari (1506)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1507,
+   "name": "Tafsir Ibn Al-Jawzi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Al-Jawzi (1507)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1508,
+   "name": "Tafsir Al-Mawardi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Mawardi (1508)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1509,
+   "name": "Tafsir Ibn Al-Qayyim",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Ibn Al-Qayyim (1509)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1511,
+   "name": "Tafsir Al-Sam'ani",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Sam'ani (1511)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1512,
+   "name": "Tafsir Makhi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Makhi (1512)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1513,
+   "name": "Mahasin Al-Ta'wil Al-Qasimi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Mahasin Al-Ta'wil Al-Qasimi (1513)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1514,
+   "name": "Tafsir Al-Tha'alibi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Tha'alibi (1514)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1515,
+   "name": "Tafsir Al-Samarqandi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Samarqandi (1515)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1516,
+   "name": "Tafsir Al-Tha'alibi",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tafsir Al-Tha'alibi (1516)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1517,
+   "name": "Al-Muyassar fi Al-Gharib",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Al-Muyassar fi Al-Gharib (1517)"
+  },
+  {
+   "type": "tafsir",
+   "id": 1518,
+   "name": "Tahlil Kalimat al-Qur'an",
+   "author": null,
+   "language": "Arabic",
+   "iso": "ar",
+   "folder": "Arabic/tafsir - Tahlil Kalimat al-Qur'an (1518)"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_qpc_hafs",
+   "name": "Quran Library — Hafs",
+   "file": "Arabic (mushaf)/Quran Library — Hafs (text_qpc_hafs).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_uthmani",
+   "name": "Uthmani",
+   "file": "Arabic (mushaf)/Uthmani (text_uthmani).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_uthmani_simple",
+   "name": "Uthmani (Simple)",
+   "file": "Arabic (mushaf)/Uthmani (Simple) (text_uthmani_simple).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_imlaei",
+   "name": "Imlaei",
+   "file": "Arabic (mushaf)/Imlaei (text_imlaei).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_imlaei_simple",
+   "name": "Imlaei (Simple)",
+   "file": "Arabic (mushaf)/Imlaei (Simple) (text_imlaei_simple).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_indopak",
+   "name": "Indopak",
+   "file": "Arabic (mushaf)/Indopak (text_indopak).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_indopak_nastaleeq",
+   "name": "Indopak Nastaleeq",
+   "file": "Arabic (mushaf)/Indopak Nastaleeq (text_indopak_nastaleeq).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_qpc_nastaleeq",
+   "name": "Quran Library — Nastaleeq",
+   "file": "Arabic (mushaf)/Quran Library — Nastaleeq (text_qpc_nastaleeq).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_qpc_nastaleeq_hafs",
+   "name": "Quran Library — Nastaleeq Hafs",
+   "file": "Arabic (mushaf)/Quran Library — Nastaleeq Hafs (text_qpc_nastaleeq_hafs).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_digital_khatt",
+   "name": "Digital Khatt",
+   "file": "Arabic (mushaf)/Digital Khatt (text_digital_khatt).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_digital_khatt_v1",
+   "name": "Digital Khatt V1",
+   "file": "Arabic (mushaf)/Digital Khatt V1 (text_digital_khatt_v1).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_digital_khatt_indopak",
+   "name": "Digital Khatt Indopak",
+   "file": "Arabic (mushaf)/Digital Khatt Indopak (text_digital_khatt_indopak).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_uthmani_tajweed",
+   "name": "Tajweed",
+   "file": "Arabic (mushaf)/Tajweed (text_uthmani_tajweed).json"
+  },
+  {
+   "type": "mushaf",
+   "field": "text_qpc_hafs_tajweed",
+   "name": "Quran Library — Hafs Tajweed",
+   "file": "Arabic (mushaf)/Quran Library — Hafs Tajweed (text_qpc_hafs_tajweed).json"
+  },
   {
    "type": "mushaf",
    "field": "qpc_v1",
