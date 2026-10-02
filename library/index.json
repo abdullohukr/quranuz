@@ -1,0 +1,27 @@
+{
+ "source": "https://qul.tarteel.ai (Quranic Universal Library)",
+ "fonts": [],
+ "items": [
+  {
+   "type": "mushaf",
+   "field": "qpc_v1",
+   "name": "Quran Library — V1 (1405)",
+   "file": "Arabic (mushaf)/Quran Library — V1 (1405) (glyph v1).json",
+   "glyph": true
+  },
+  {
+   "type": "mushaf",
+   "field": "qpc_v2",
+   "name": "Quran Library — V2 (1421)",
+   "file": "Arabic (mushaf)/Quran Library — V2 (1421) (glyph v2).json",
+   "glyph": true
+  },
+  {
+   "type": "mushaf",
+   "field": "qpc_v4",
+   "name": "Quran Library — V4 Tajweed",
+   "file": "Arabic (mushaf)/Quran Library — V4 Tajweed (glyph v4).json",
+   "glyph": true
+  }
+ ]
+}
