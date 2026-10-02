@@ -1,0 +1,8 @@
+{
+  "note": "Changing this file on the branch starts .github/workflows/qul.yml. from_run/artifact: rebuild from a previous download instead of scraping.",
+  "run": 8,
+  "only": "",
+  "limit": 0,
+  "from_run": 37047365021,
+  "artifact": "qul-raw-6"
+}

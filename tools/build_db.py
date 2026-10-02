@@ -26,7 +26,7 @@ WEB = os.path.join(ROOT, "web", "data")
 BASMALA = "﷽"
 BRACKETS = {"open": "﴿", "close": "﴾"}
 TRANSLATIONS = [
-    ("alovuddin_mansur", "Алоуддин Мансур", "translation"),
+    ("alovuddin_mansur", "Аловуддин Мансур", "translation"),
     ("muhammadsoqid_muhammayusuf", "Муҳаммад Содиқ Муҳаммад Юсуф", "translation"),
     ("muyassar_tafsiri", "Муяссар тафсири", "tafsir"),
     ("muxtasar_tafsiri", "Мухтасар тафсири", "tafsir"),

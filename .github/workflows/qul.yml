@@ -1,0 +1,91 @@
+name: Import from QUL (qul.tarteel.ai)
+
+# Uses only public QUL pages and API (no login).
+# Starts on push when tools/qul_run.json changes, or manually from the Actions tab.
+on:
+  push:
+    paths: ['tools/qul_run.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: qul-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests fonttools brotli
+      - name: Sync with the branch head and the existing qul-data library
+        run: |
+          git fetch -q origin "${GITHUB_REF_NAME}" && git reset -q --hard "origin/${GITHUB_REF_NAME}"
+          git clone -q --depth 1 -b qul-data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" qul_data_out \
+            || mkdir -p qul_data_out
+      - name: Read run settings
+        id: cfg
+        run: |
+          python3 -c "import json;c=json.load(open('tools/qul_run.json'));print('from_run='+str(c.get('from_run',''))+'\nartifact='+c.get('artifact',''))" >> "$GITHUB_OUTPUT"
+      - name: Reuse the download of a previous run
+        if: ${{ steps.cfg.outputs.from_run != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.cfg.outputs.artifact }}
+          path: qul_raw
+          run-id: ${{ steps.cfg.outputs.from_run }}
+          github-token: ${{ github.token }}
+      - name: Scrape
+        if: ${{ steps.cfg.outputs.from_run == '' }}
+        run: |
+          ONLY=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['only'])")
+          LIMIT=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('limit',0))")
+          python3 tools/scrape_qul.py --only "$ONLY" --limit "$LIMIT"
+      - name: Keep the raw download (even if a later step fails)
+        if: ${{ always() && steps.cfg.outputs.from_run == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qul-raw-${{ github.run_number }}
+          path: qul_raw
+          retention-days: 14
+      - name: Build web data
+        env:
+          QUL_DATA_URL: https://raw.githubusercontent.com/${{ github.repository }}/qul-data/
+        run: python3 tools/build_qul.py
+      - name: Report and samples
+        run: |
+          mkdir -p data/qul
+          if [ -f qul_raw/catalog.json ]; then cp qul_raw/catalog.json data/qul/catalog.json; fi
+          python3 tools/qul_probe_report.py
+      - name: Push data to the qul-data branch
+        run: |
+          cd qul_data_out
+          [ -d .git ] || git init -q -b qul-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          printf '# MyQuran data from QUL (qul.tarteel.ai)\n\nlibrary/<Language>/ - every translation and tafsir, named by translator;\nlibrary/Arabic (mushaf)/ - Quran scripts; library/index.json - list of everything.\n' > README.md
+          git add -A
+          git commit -q -m "QUL data $(date -u +%F)" || echo "no changes"
+          git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:qul-data
+      - name: Upload QPC page-font ZIPs to the "fonts" release
+        if: ${{ hashFiles('qul_release/*.zip') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view fonts >/dev/null 2>&1 || gh release create fonts --title "MyQuran fonts" \
+            --notes "Fonts for MyQuran (Word add-in): QPC V1/V2/V4 page fonts from QUL (qul.tarteel.ai). Use the installer: https://abdullohukr.github.io/quranuz/install.html"
+          gh release upload fonts qul_release/*.zip --clobber
+      - name: Commit catalog and fonts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add data/qul web/data/catalog.json web/data/suras.json web/fonts || true
+          git commit -m "Import data from QUL (qul.tarteel.ai)" || echo "nothing to commit"
+          git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"

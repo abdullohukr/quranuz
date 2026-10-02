@@ -8,10 +8,10 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>5392de1f-c12d-4292-8fb5-64c79333149e</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.1.0.0</Version>
   <ProviderName>quranuz</ProviderName>
   <DefaultLocale>uz-UZ</DefaultLocale>
-  <DisplayName DefaultValue="Қуръон оятлари"/>
+  <DisplayName DefaultValue="MyQuran"/>
   <Description DefaultValue="Оятларни топиш ва ўзбекча таржимаси билан Word ҳужжатига қўйиш"/>
   <IconUrl DefaultValue="https://abdullohukr.github.io/quranuz/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://abdullohukr.github.io/quranuz/assets/icon-64.png"/>
@@ -82,9 +82,9 @@
         <bt:Url id="Repo.Url" DefaultValue="https://github.com/abdullohukr/quranuz"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="GetStarted.Title" DefaultValue="Қуръон оятлари"/>
-        <bt:String id="Group.Label" DefaultValue="Қуръон"/>
-        <bt:String id="Button.Label" DefaultValue="Оятлар"/>
+        <bt:String id="GetStarted.Title" DefaultValue="MyQuran"/>
+        <bt:String id="Group.Label" DefaultValue="MyQuran"/>
+        <bt:String id="Button.Label" DefaultValue="MyQuran"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Бош саҳифадаги «Оятлар» тугмасини босинг."/>
