@@ -34,6 +34,13 @@ jobs:
           ONLY=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['only'])")
           LIMIT=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('limit',0))")
           python3 tools/scrape_qul.py --only "$ONLY" --limit "$LIMIT"
+      - name: Keep the raw download (even if a later step fails)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qul-raw-${{ github.run_number }}
+          path: qul_raw
+          retention-days: 14
       - name: Build web data
         env:
           QUL_DATA_URL: https://raw.githubusercontent.com/${{ github.repository }}/qul-data/
@@ -43,11 +50,6 @@ jobs:
           mkdir -p data/qul
           if [ -f qul_raw/catalog.json ]; then cp qul_raw/catalog.json data/qul/catalog.json; fi
           python3 tools/qul_probe_report.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: qul-raw
-          path: qul_raw
-          retention-days: 7
       - name: Push data to the qul-data branch
         run: |
           cd qul_data_out

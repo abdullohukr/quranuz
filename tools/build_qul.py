@@ -193,6 +193,8 @@ def main():
 
     # ---- tafsirs
     for res in cat["api"]["tafsirs"]:
+        if re.search(r"dependency graph", res.get("name") or "", re.I):
+            continue                      # grammar graphs, not a tafsir
         rows = load(f"tafsir/{res['id']}.json")
         if not rows:
             continue
