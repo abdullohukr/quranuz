@@ -1,2 +1,4 @@
 data/raw_tafsir_one/
 qul_raw/
+qul_data_out/
+__pycache__/

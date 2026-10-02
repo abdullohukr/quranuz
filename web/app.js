@@ -46,7 +46,7 @@
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function getJSON(path) {
-    if (!cache[path]) cache[path] = fetch('data/' + path + (path.indexOf('?') < 0 ? '?v=' + V : ''))
+    if (!cache[path]) cache[path] = fetch((/^https?:/.test(path) ? '' : 'data/') + path + (path.indexOf('?') < 0 ? '?v=' + V : ''))
       .then(function (r) { if (!r.ok) throw new Error(r.status + ' ' + path); return r.json(); })
       .catch(function (e) { delete cache[path]; throw e; });
     return cache[path];
@@ -74,7 +74,10 @@
   function scriptById(id) { return catalog.scripts.filter(function (x) { return x.id === id; })[0] || catalog.scripts[0]; }
   function activeTranslations() { return settings.translations.map(trById).filter(Boolean); }
   function activeTafsirs() { return settings.tafsirs.map(tfById).filter(Boolean); }
-  function scriptName(sc) { return sc.nameKey ? t(sc.nameKey) : sc.name; }
+  function scriptName(sc) {
+    if (sc.nameKey) return t(sc.nameKey);
+    return (sc.label || [sc.name]).map(function (p) { return /^script\./.test(p) ? t(p) : p; }).join('');
+  }
   function suraName(i, lang) {                                    // name of sura i (1-based) for a reference
     if (lang === 'uz' || lang === 'uz_latn') return quran.suras[i - 1][1];
     var dir = (catalog.languages && catalog.languages[lang] || {}).dir;
@@ -94,7 +97,7 @@
   function loadTafsirSura(tf, s) {
     tf.suras = tf.suras || {};
     if (tf.format === 'array') return getJSON(tf.file).then(function (d) { tf.all = d; });
-    return getJSON(tf.dir + s + '.json').then(function (d) { tf.suras[s] = d; });
+    return getJSON(tf.path + s + '.json').then(function (d) { tf.suras[s] = d; });
   }
   function tafsirGetter(tf) {
     return function (s, a) {

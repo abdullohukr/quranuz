@@ -6,8 +6,9 @@
   'use strict';
 
   var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
-  /* ayah end: "۝١٢" (tafsir.one), "١٢" (QPC fonts draw the circle themselves) */
-  var END_MARK = / *(?:۝ ?)?[٠-٩۰-۹]+ *$/;
+  /* ayah end mark: the last token without letters: "۝١٢" (tafsir.one), "١٢" (QPC
+     fonts draw the circle themselves), font-specific marker glyphs (Nastaleeq) */
+  
   var MARKS = /[ؐ-ًؚ-ٟۖ-ۭ࣓-ࣿـ​-‏⁠۝۞۩]/g;
   var AUZA = 'أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّیۡطَـٰنِ ٱلرَّجِیمِ';
   var BASMALA = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ';
@@ -18,7 +19,8 @@
     madda_normal: '537FFF', madda_permissible: '4050FF', madda_necessary: '000EBC', madda_obligatory: '2144C1',
     qalaqah: 'DD0008', ikhafa_shafawi: 'D500B7', ikhafa: '9400A8', idgham_shafawi: '58B800', iqlab: '26BFFD',
     idgham_ghunnah: '169777', idgham_wo_ghunnah: '169200', idgham_mutajanisayn: 'A1A1A1',
-    idgham_mutaqaribayn: 'A1A1A1', ghunnah: 'FF7E1E'
+    idgham_mutaqaribayn: 'A1A1A1', ghunnah: 'FF7E1E', qalqalah: 'DD0008', ikhfa: '9400A8',
+    ikhfa_shafawi: 'D500B7', tafkheem: '0D47A1', idgham_mutajanisain: 'A1A1A1', idgham_mutaqaribain: 'A1A1A1'
   };
 
   function arNum(n) {
@@ -62,7 +64,7 @@
 
   /* "<tajweed class=x>..</tajweed>" -> {text, colors[]} (colour per character) */
   function parseTajweed(raw) {
-    var text = '', colors = [], re = /<(tajweed|span)\s+class=["']?([\w-]+)["']?[^>]*>([\s\S]*?)<\/\1>|<[^>]+>|([^<]+)/g, m;
+    var text = '', colors = [], re = /<(tajweed|rule|r|span)\s+class=["']?([\w-]+)["']?[^>]*>([\s\S]*?)<\/\1>|<[^>]+>|([^<]+)/g, m;
     while ((m = re.exec(raw))) {
       var t = m[3] != null ? m[3].replace(/<[^>]+>/g, '') : (m[4] || '');
       var c = m[3] != null ? (TAJWEED[m[2]] || null) : null;
@@ -194,11 +196,13 @@
 
   /* Word spans of an ayah (end mark excluded). Ordinary spaces only: U+200A inside
      words like وَرِضۡوَ ٰ⁠نࣰا is not a word break. */
+  var LETTER = /[\u0621-\u064A\u066E-\u06D3\u06EE-\u06FF\u0750-\u077F\u08A0-\u08C9]/;
   Quran.prototype.spans = function (s, a) {
-    var t = this.text(s, a), m = t.match(END_MARK), end = m ? m.index : t.length, out = [], re = /[^ ]+/g, w;
-    var body = t.slice(0, end);
-    while ((w = re.exec(body))) out.push({ start: w.index, end: w.index + w[0].length, text: w[0] });
-    return { words: out, mark: m ? m[0].trim() : '', markStart: m ? t.indexOf(m[0].trim(), end) : -1 };
+    var t = this.text(s, a), out = [], re = /[^ \u00a0]+/g, w;
+    while ((w = re.exec(t))) out.push({ start: w.index, end: w.index + w[0].length, text: w[0] });
+    var mark = '';
+    if (out.length > 1 && !LETTER.test(out[out.length - 1].text)) mark = out.pop().text;   // ۝١ / ١ / font marker
+    return { words: out, mark: mark };
   };
   Quran.prototype.words = function (s, a) { return this.spans(s, a).words.map(function (w) { return w.text; }); };
 
@@ -283,7 +287,7 @@
           var runs = [];
           if (i === 0 && label) runs.push({ t: label, bold: true });
           runs.push({ t: p, bold: false });
-          paras.push({ dir: tf.dir || 'ltr', runs: runs });
+          paras.push({ dir: textDir(p, tf.dir || 'ltr'), runs: runs });
         });
       });
     });
@@ -304,11 +308,17 @@
     return out;
   }
 
-  /* Tafsir HTML -> plain paragraphs */
+  /* Arabic quotations inside a tafsir in another language get their own direction */
+  function textDir(p, def) {
+    var ar = (p.match(/[\u0600-\u06FF\u08A0-\u08FF]/g) || []).length, lat = (p.match(/[A-Za-z\u0400-\u04FF]/g) || []).length;
+    return ar > lat * 2 ? 'rtl' : lat > ar * 2 ? 'ltr' : def;
+  }
+
+  /* Tafsir HTML -> plain paragraphs ([[..]] = editor notes, dropped like on tafsir.one) */
   function tafsirParagraphs(html) {
     var t = String(html || '').replace(/\r/g, '')
       .replace(/<\s*br\s*\/?>/gi, '\n').replace(/<\/(p|div|h\d|li|blockquote|tr)>/gi, '\n');
-    t = stripHtml(t);
+    t = stripHtml(t).replace(/ ?\[\[[\s\S]*?\]\]/g, '');
     return t.split(/\n+/).map(function (p) { return p.replace(/[ \t]+/g, ' ').trim(); }).filter(Boolean);
   }
 

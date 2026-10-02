@@ -30,8 +30,9 @@ jobs:
           LIMIT=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('limit',0))")
           python3 tools/scrape_qul.py --only "$ONLY" --limit "$LIMIT"
       - name: Build web data
-        run: |
-          if [ -f tools/build_qul.py ]; then python3 tools/build_qul.py; fi
+        env:
+          QUL_DATA_URL: https://raw.githubusercontent.com/${{ github.repository }}/qul-data/
+        run: python3 tools/build_qul.py
       - name: Report and samples
         run: |
           mkdir -p data/qul
@@ -42,10 +43,21 @@ jobs:
           name: qul-raw
           path: qul_raw
           retention-days: 7
-      - name: Commit
+      - name: Push heavy data to the qul-data branch
+        if: ${{ hashFiles('qul_data_out/**') != '' }}
+        run: |
+          cd qul_data_out
+          git init -q -b qul-data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          printf '# MyQuran data from QUL (qul.tarteel.ai)\n\nlibrary/<Language>/ - every translation and tafsir, named by translator;\nlibrary/Arabic (mushaf)/ - Quran scripts; library/index.json - list of everything.\n' > README.md
+          git add -A
+          git commit -q -m "QUL data $(date -u +%F)"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:qul-data
+      - name: Commit catalog and fonts
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
-          git add data/qul web/data web/fonts || true
+          git add data/qul web/data/catalog.json web/data/suras.json web/fonts || true
           git commit -m "Import data from QUL (qul.tarteel.ai)" || echo "nothing to commit"
           git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"
