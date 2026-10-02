@@ -6,8 +6,20 @@
   'use strict';
 
   var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
-  var END_MARK = / *۝[٠-٩]+ *$/;
+  /* ayah end: "۝١٢" (tafsir.one), "١٢" (QPC fonts draw the circle themselves) */
+  var END_MARK = / *(?:۝ ?)?[٠-٩۰-۹]+ *$/;
   var MARKS = /[ؐ-ًؚ-ٟۖ-ۭ࣓-ࣿـ​-‏⁠۝۞۩]/g;
+  var AUZA = 'أَعُوذُ بِٱللَّهِ مِنَ ٱلشَّیۡطَـٰنِ ٱلرَّجِیمِ';
+  var BASMALA = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ';
+
+  /* Tajweed colours (classes of QUL text_uthmani_tajweed) */
+  var TAJWEED = {
+    ham_wasl: '9A9A9A', slnt: '9A9A9A', laam_shamsiyah: '9A9A9A',
+    madda_normal: '537FFF', madda_permissible: '4050FF', madda_necessary: '000EBC', madda_obligatory: '2144C1',
+    qalaqah: 'DD0008', ikhafa_shafawi: 'D500B7', ikhafa: '9400A8', idgham_shafawi: '58B800', iqlab: '26BFFD',
+    idgham_ghunnah: '169777', idgham_wo_ghunnah: '169200', idgham_mutajanisayn: 'A1A1A1',
+    idgham_mutaqaribayn: 'A1A1A1', ghunnah: 'FF7E1E'
+  };
 
   function arNum(n) {
     return String(n).replace(/[0-9]/g, function (d) { return AR_DIGITS[+d]; });
@@ -22,7 +34,8 @@
      1: dagger alef -> alef (imla'i spelling)          الرحمان العالمين
      2: skeleton: no alef / hamza at all               لرحمن   لعلمين            */
   function normArabic(s, level) {
-    s = toLatinDigits(s).replace(/\s+(?=\u0670)/g, '').replace(/[\u200A\u2060]/g, '').replace(/۝[0-9]+/g, ' ').replace(/[0-9]/g, ' ');
+    s = toLatinDigits(s).replace(/\s+(?=ٰ)/g, '').replace(/[ ⁠]/g, '')
+      .replace(/۝[0-9]+/g, ' ').replace(/[0-9]/g, ' ');
     if (level === 1) s = s.replace(/ٰ/g, 'ا');
     else s = s.replace(/ٰ/g, '');
     s = s.replace(MARKS, '')
@@ -35,28 +48,63 @@
     return s.replace(/\s+/g, ' ').trim();
   }
 
-  function normLatin(s) {
-    return s.toLowerCase()
-      .replace(/[ʻʼ'`’‘]/g, '')
-      .replace(/[^0-9a-zа-яёўқғҳЀ-ӿ\s:-]/g, ' ')
-      .replace(/\s+/g, ' ').trim();
+  /* Any language: lower case, no accents / punctuation. */
+  var reMarks, reNonWord;
+  try { reMarks = new RegExp('\\p{M}', 'gu'); reNonWord = new RegExp('[^\\p{L}\\p{N}\\s]', 'gu'); }
+  catch (e) { reMarks = /[̀-ͯ]/g; reNonWord = /[!-\/:-@\[-`{-~«»“”„‘’…—–]/g; }
+  function normText(s) {
+    s = String(s || '').toLowerCase().replace(/[ʻʼ'`’‘]/g, '');
+    if (s.normalize) s = s.normalize('NFD');
+    return s.replace(reMarks, '').replace(reNonWord, ' ').replace(/\s+/g, ' ').trim();
   }
 
   function isArabic(s) { return /[؀-ۿݐ-ݿࢠ-ࣿ]/.test(s); }
 
+  /* "<tajweed class=x>..</tajweed>" -> {text, colors[]} (colour per character) */
+  function parseTajweed(raw) {
+    var text = '', colors = [], re = /<(tajweed|span)\s+class=["']?([\w-]+)["']?[^>]*>([\s\S]*?)<\/\1>|<[^>]+>|([^<]+)/g, m;
+    while ((m = re.exec(raw))) {
+      var t = m[3] != null ? m[3].replace(/<[^>]+>/g, '') : (m[4] || '');
+      var c = m[3] != null ? (TAJWEED[m[2]] || null) : null;
+      t = t.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+      for (var i = 0; i < t.length; i++) { text += t[i]; colors.push(c); }
+    }
+    return { text: text, colors: colors };
+  }
+
   function Quran(data) {
     this.meta = data.meta;
     this.suras = data.suras;             // [[nameAr, nameUz, ayahCount]]
-    this.ayahs = data.ayahs;             // flat list, 6236 texts with " ۝N"
     this.offsets = [];
     var o = 0;
     for (var i = 0; i < this.suras.length; i++) { this.offsets.push(o); o += this.suras[i][2]; }
-    this._idx = null;
+    this.extraNames = [];                // other languages, for finding a sura by name
+    this.setScript(data.ayahs);
   }
+
+  /* ayahs: 6236 texts; tajweed: texts contain <tajweed class=...> markup */
+  Quran.prototype.setScript = function (ayahs, opts) {
+    opts = opts || {};
+    this.tajweed = !!opts.tajweed;
+    this.colors = null;
+    if (this.tajweed) {
+      this.ayahs = []; this.colors = [];
+      for (var i = 0; i < ayahs.length; i++) {
+        var p = parseTajweed(ayahs[i]);
+        this.ayahs.push(p.text); this.colors.push(p.colors);
+      }
+    } else this.ayahs = ayahs;
+    this._idx = null;
+  };
 
   Quran.prototype.index = function (s, a) { return this.offsets[s - 1] + a - 1; };
   Quran.prototype.text = function (s, a) { return this.ayahs[this.index(s, a)]; };
   Quran.prototype.count = function (s) { return this.suras[s - 1][2]; };
+  Quran.prototype.locate = function (i) {
+    var s = 0; while (s + 1 < this.offsets.length && this.offsets[s + 1] <= i) s++;
+    return { sura: s + 1, aya: i - this.offsets[s] + 1 };
+  };
+  Quran.prototype.addSuraNames = function (names) { if (names && names.length === 114) this.extraNames.push(names); };
 
   Quran.prototype._buildIndex = function () {
     if (this._idx) return this._idx;
@@ -68,21 +116,26 @@
   };
 
   Quran.prototype.findSura = function (name) {
-    var q = normLatin(name), qa = normArabic(name, 0);
+    var q = normText(name), qa = normArabic(name, 0), self = this;
     if (!q && !qa) return 0;
+    function names(i) {
+      var list = [normText(self.suras[i][1])];
+      self.extraNames.forEach(function (n) { list.push(normText(n[i])); list.push(normText(n[i]).replace(/^(al|an|as|at|ad|ar|az|ash|adh) /, '')); });
+      return list;
+    }
     for (var pass = 0; pass < 2; pass++) {
       for (var i = 0; i < this.suras.length; i++) {
-        var uz = normLatin(this.suras[i][1]), ar = normArabic(this.suras[i][0], 0);
-        var arNoAl = ar.replace(/^ال/, '');
-        if (pass === 0 && (q && uz === q || qa && (ar === qa || arNoAl === qa.replace(/^ال/, '')))) return i + 1;
-        if (pass === 1 && (q && q.length >= 2 && uz.indexOf(q) === 0 || qa && qa.length >= 2 && ar.indexOf(qa) >= 0)) return i + 1;
+        var ar = normArabic(this.suras[i][0], 0), list = names(i);
+        if (pass === 0 && (q && list.indexOf(q) >= 0 || qa && (ar === qa || ar.replace(/^ال/, '') === qa.replace(/^ال/, ''))))
+          return i + 1;
+        if (pass === 1 && (q && q.length >= 2 && list.some(function (n) { return n && n.indexOf(q) === 0; }) ||
+                           qa && qa.length >= 2 && ar.indexOf(qa) >= 0)) return i + 1;
       }
     }
     return 0;
   };
 
-  /* Parses references: "2:255", "2 255", "2:1-5", "2.30-37", "Бақара 30-37",
-     "البقرة ٢٥٥", "2" (whole sura start). Returns {sura, from, to} or null. */
+  /* "2:255", "2 255", "2:1-5", "Бақара 30-37", "Al-Baqarah 5", "البقرة ٢٥٥", "2" */
   Quran.prototype.parseRef = function (q) {
     q = toLatinDigits(q.trim());
     var m = q.match(/^(\d{1,3})(?:\s*[:.,\s]\s*(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?)?$/);
@@ -100,103 +153,195 @@
     return { sura: sura, from: from, to: to };
   };
 
-  /* Full search. Returns list of {sura, aya} (max `limit`). */
-  Quran.prototype.search = function (q, translation, limit) {
+  var normCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  function normalized(arr) {
+    var v = normCache && normCache.get(arr);
+    if (!v) { v = arr.map(function (t) { return ' ' + normText(stripHtml(t)) + ' '; }); if (normCache) normCache.set(arr, v); }
+    return v;
+  }
+
+  /* Search: reference, Arabic text (with or without diacritics), or the text of
+     any of the given translations (arrays of 6236 strings, any language). */
+  Quran.prototype.search = function (q, translations, limit) {
     limit = limit || 100;
     q = (q || '').trim();
     if (!q) return [];
-    var ref = this.parseRef(q), out = [], seen = {};
-    function add(i, self) {
+    var ref = this.parseRef(q), out = [], seen = {}, self = this;
+    function add(i) {
       if (seen[i] || out.length >= limit) return;
-      seen[i] = 1;
-      var s = 0; while (s + 1 < self.offsets.length && self.offsets[s + 1] <= i) s++;
-      out.push({ sura: s + 1, aya: i - self.offsets[s] + 1 });
+      seen[i] = 1; out.push(self.locate(i));
     }
-    if (ref) for (var a = ref.from; a <= ref.to; a++) add(this.index(ref.sura, a), this);
+    if (ref) for (var a = ref.from; a <= ref.to; a++) add(this.index(ref.sura, a));
     if (isArabic(q)) {
       var idx = this._buildIndex();
       for (var l = 0; l < 3 && out.length < limit; l++) {
         var nq = normArabic(q, l);
         if (!nq) continue;
-        for (var i = 0; i < idx[l].length; i++) if (idx[l][i].indexOf(nq) >= 0) add(i, this);
+        for (var i = 0; i < idx[l].length; i++) if (idx[l][i].indexOf(nq) >= 0) add(i);
       }
-    } else if (translation && !/^[\d\s:.,\-–—]+$/.test(q)) {
-      var lq = normLatin(q);
-      if (lq.length >= 3)
-        for (var j = 0; j < translation.length && out.length < limit; j++)
-          if (normLatin(translation[j]).indexOf(lq) >= 0) add(j, this);
+    }
+    if (!/^[\d\s:.,\-–—]+$/.test(q)) {
+      var lq = normText(q);
+      if (lq.length >= 2)
+        (translations || []).forEach(function (tr) {
+          if (!tr) return;
+          var n = normalized(tr);
+          for (var j = 0; j < n.length && out.length < limit; j++) if (n[j].indexOf(lq) >= 0) add(j);
+        });
     }
     return out;
   };
 
-  /* Words of an ayah, without the end mark "۝N". */
-  Quran.prototype.words = function (s, a) {
-    // split on ordinary spaces only: U+200A inside words like وَرِضۡوَ ٰ⁠نࣰا is not a word break
-    return this.text(s, a).replace(END_MARK, '').split(/ +/).filter(Boolean);
+  /* Word spans of an ayah (end mark excluded). Ordinary spaces only: U+200A inside
+     words like وَرِضۡوَ ٰ⁠نࣰا is not a word break. */
+  Quran.prototype.spans = function (s, a) {
+    var t = this.text(s, a), m = t.match(END_MARK), end = m ? m.index : t.length, out = [], re = /[^ ]+/g, w;
+    var body = t.slice(0, end);
+    while ((w = re.exec(body))) out.push({ start: w.index, end: w.index + w[0].length, text: w[0] });
+    return { words: out, mark: m ? m[0].trim() : '', markStart: m ? t.indexOf(m[0].trim(), end) : -1 };
   };
+  Quran.prototype.words = function (s, a) { return this.spans(s, a).words.map(function (w) { return w.text; }); };
 
   function stripTrNumber(t) { return t.trim().replace(/^\d+\s*\.\s*/, ''); }
+  function stripHtml(t) {
+    return String(t || '').replace(/<sup[^>]*>[\s\S]*?<\/sup>/g, '').replace(/<a[^>]*>[\s\S]*?<\/a>/g, '')
+      .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  }
 
-  /* sel = {sura, from, to, wordFrom?, wordTo?}  (word indexes are 0-based,
-     wordFrom applies to the first ayah, wordTo to the last one).
-     opts = {brackets: true, translation: [...] | null}                       */
-  Quran.prototype.format = function (sel, opts) {
-    opts = opts || {};
-    var br = this.meta.brackets, parts = [];
-    for (var a = sel.from; a <= sel.to; a++) {
-      var full = this.text(sel.sura, a);
-      var partial = (a === sel.from && sel.wordFrom > 0) ||
-                    (a === sel.to && sel.wordTo != null && sel.wordTo < this.words(sel.sura, a).length - 1);
-      if (!partial) { parts.push(full); continue; }
-      var w = this.words(sel.sura, a);
-      var b = a === sel.from && sel.wordFrom > 0 ? sel.wordFrom : 0;
-      var e = a === sel.to && sel.wordTo != null ? sel.wordTo : w.length - 1;
-      var piece = w.slice(b, e + 1).join(' ');
-      if (e === w.length - 1) piece += ' ' + full.match(END_MARK)[0].trim();
-      parts.push(piece);
+  /* Runs of one piece of an ayah [start, end) with tajweed colours. */
+  Quran.prototype._runs = function (s, a, start, end) {
+    var t = this.text(s, a), cols = this.colors && this.colors[this.index(s, a)], runs = [];
+    for (var i = start; i < end; i++) {
+      var c = cols ? cols[i] : null, last = runs[runs.length - 1];
+      if (last && last.color === c) last.t += t[i];
+      else runs.push({ t: t[i], color: c });
     }
-    var arabic = parts.join(' ');
-    if (opts.brackets !== false) arabic = br.open + arabic + br.close;
-
-    var uz = null, trParts = null;
-    if (opts.translation) {
-      var multi = sel.to > sel.from, tr = [], bounds = [], pos = 1;   // 1 = after «
-      for (var b2 = sel.from; b2 <= sel.to; b2++) {
-        var t = stripTrNumber(opts.translation[this.index(sel.sura, b2)]);
-        tr.push(multi ? b2 + '. ' + t : t);
-        bounds.push(pos); pos += tr[tr.length - 1].length + 1;
-      }
-      var body = tr.join(' ').replace(/[\s.,;:]+$/, '');
-      var range = multi ? sel.from + '-' + sel.to : String(sel.from);
-      var quote = '«' + body + '»', ref = ' (' + this.suras[sel.sura - 1][1] + ': ' + range + ').';
-      uz = quote + ref;
-      trParts = splitParens(quote, bounds).concat([{ text: ref, bold: false, italic: true }]);
-    }
-    return { arabic: arabic, translation: uz, translationParts: trParts };
+    return runs;
   };
 
-  /* Translation formatting: the ayah meaning is bold, explanations in (…) are not.
-     Parentheses are matched in pairs inside each ayah (bounds = start offsets of
-     ayahs); an unmatched "(" or ")" (there are some in the source) is ignored, so it
-     cannot un-bold the rest of the text. Returns [{text, bold, italic}].            */
-  function splitParens(text, bounds) {
-    var plainMask = new Array(text.length), stack = [], b = 1;
-    bounds = bounds || [0];
+  /* sel  = {sura, from, to, wordFrom?, wordTo?}  (0-based word indexes; wordFrom
+            applies to the first ayah, wordTo to the last one)
+     opts = {brackets, auza, basmala, ref,
+             translations: [{data, dir, quotes:[open, close], suraName}],
+             tafsirs: [{name, dir, get(sura, aya) -> {from, to, text} | null}]}
+     Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}: runs = [{t, bold, italic, color}] */
+  Quran.prototype.format = function (sel, opts) {
+    opts = opts || {};
+    var self = this, br = this.meta.brackets, ar = [];
+    function push(t, extra) { var r = { t: t, bold: true }; for (var k in extra) r[k] = extra[k]; ar.push(r); }
+
+    if (opts.auza) push(AUZA + ' ');
+    if (opts.basmala && !(sel.sura === 1 && sel.from === 1)) push(BASMALA + ' ');
+    if (opts.brackets !== false) push(br.open);
+    for (var a = sel.from; a <= sel.to; a++) {
+      var sp = this.spans(sel.sura, a), w = sp.words, t = this.text(sel.sura, a);
+      var b = a === sel.from && sel.wordFrom > 0 ? Math.min(sel.wordFrom, w.length - 1) : 0;
+      var e = a === sel.to && sel.wordTo != null ? Math.min(sel.wordTo, w.length - 1) : w.length - 1;
+      if (a > sel.from) push(' ');
+      var endChar = e === w.length - 1 ? t.length : w[e].end;
+      var pr = this._runs(sel.sura, a, w[b].start, endChar);
+      if (pr.length) pr[pr.length - 1].t = pr[pr.length - 1].t.replace(/ +$/, '');
+      pr.forEach(function (r) { push(r.t, r.color ? { color: r.color } : {}); });
+    }
+    if (opts.brackets !== false) push(br.close);
+    if (opts.ref) {
+      var rng = sel.to > sel.from ? arNum(sel.from) + '-' + arNum(sel.to) : arNum(sel.from);
+      ar.push({ t: ' [' + this.suras[sel.sura - 1][0] + ' ' + rng + ']', bold: false });
+    }
+    ar = mergeRuns(ar);
+
+    var paras = [], multi = sel.to > sel.from;
+    (opts.translations || []).forEach(function (tr) {
+      var parts = [], bounds = [], pos = 1;
+      for (var a2 = sel.from; a2 <= sel.to; a2++) {
+        var x = stripTrNumber(stripHtml(tr.data[self.index(sel.sura, a2)]).replace(/\s+/g, ' '));
+        parts.push(multi ? a2 + '. ' + x : x);
+        bounds.push(pos); pos += parts[parts.length - 1].length + 1;
+      }
+      var q = tr.quotes || ['«', '»'];
+      var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
+      var range = multi ? sel.from + '-' + sel.to : String(sel.from);
+      var runs = splitParens(quote, bounds, q[0].length).concat([{ t: ' (' + tr.suraName + ': ' + range + ').', bold: false, italic: true }]);
+      paras.push({ dir: tr.dir || 'ltr', runs: runs });
+    });
+
+    (opts.tafsirs || []).forEach(function (tf) {
+      var seen = {}, entries = [];
+      for (var a3 = sel.from; a3 <= sel.to; a3++) {
+        var en = tf.get(sel.sura, a3);
+        if (!en || !en.text) continue;
+        var key = en.from + '-' + en.to;
+        if (seen[key]) continue;
+        seen[key] = 1; entries.push(en);
+      }
+      if (!entries.length) return;
+      paras.push({ dir: tf.dir || 'ltr', runs: [{ t: tf.name, bold: true }] });
+      entries.forEach(function (en) {
+        var label = entries.length > 1 || en.from !== en.to ? (en.from === en.to ? en.from : en.from + '-' + en.to) + '. ' : '';
+        tafsirParagraphs(en.text).forEach(function (p, i) {
+          var runs = [];
+          if (i === 0 && label) runs.push({ t: label, bold: true });
+          runs.push({ t: p, bold: false });
+          paras.push({ dir: tf.dir || 'ltr', runs: runs });
+        });
+      });
+    });
+
+    var text = ar.map(function (r) { return r.t; }).join('');
+    paras.forEach(function (p) { text += '\n' + p.runs.map(function (r) { return r.t; }).join(''); });
+    return { arabic: { dir: 'rtl', runs: ar }, paras: paras, text: text };
+  };
+
+  function mergeRuns(runs) {
+    var out = [];
+    runs.forEach(function (r) {
+      if (!r.t) return;
+      var l = out[out.length - 1];
+      if (l && l.bold === r.bold && (l.color || null) === (r.color || null) && !l.italic && !r.italic) l.t += r.t;
+      else out.push(r);
+    });
+    return out;
+  }
+
+  /* Tafsir HTML -> plain paragraphs */
+  function tafsirParagraphs(html) {
+    var t = String(html || '').replace(/\r/g, '')
+      .replace(/<\s*br\s*\/?>/gi, '\n').replace(/<\/(p|div|h\d|li|blockquote|tr)>/gi, '\n');
+    t = stripHtml(t);
+    return t.split(/\n+/).map(function (p) { return p.replace(/[ \t]+/g, ' ').trim(); }).filter(Boolean);
+  }
+
+  /* Translation formatting: the ayah meaning is bold, explanations in (…) and […]
+     are not. Brackets are matched in pairs inside each ayah (bounds = start offsets
+     of ayahs); unmatched ones (there are some in the sources) are ignored, so they
+     cannot un-bold the rest of the text.                                            */
+  function splitParens(text, bounds, first) {
+    var plain = new Array(text.length), stack = [], b = 1, pairs = { ')': '(', ']': '[' };
+    bounds = bounds || [first || 0];
     for (var i = 0; i < text.length; i++) {
       if (b < bounds.length && i === bounds[b]) { stack = []; b++; }
-      if (text[i] === '(') stack.push(i);
-      else if (text[i] === ')' && stack.length) {
-        for (var k = stack.pop(); k <= i; k++) plainMask[k] = true;
+      var ch = text[i];
+      if (ch === '(' || ch === '[') stack.push(i);
+      else if (pairs[ch]) {
+        for (var k = stack.length - 1; k >= 0; k--) {
+          if (text[stack[k]] === pairs[ch]) {
+            for (var x = stack[k]; x <= i; x++) plain[x] = true;
+            stack.length = k;
+            break;
+          }
+        }
       }
     }
     var out = [];
     for (var j = 0; j < text.length; j++) {
-      var bold = !plainMask[j], last = out[out.length - 1];
-      if (last && last.bold === bold) last.text += text[j];
-      else out.push({ text: text[j], bold: bold, italic: false });
+      var bold = !plain[j], last = out[out.length - 1];
+      if (last && last.bold === bold) last.t += text[j];
+      else out.push({ t: text[j], bold: bold, italic: false });
     }
     return out;
   }
 
-  return { Quran: Quran, normArabic: normArabic, arNum: arNum };
+  return { Quran: Quran, normArabic: normArabic, normText: normText, arNum: arNum,
+           tafsirParagraphs: tafsirParagraphs, stripHtml: stripHtml, AUZA: AUZA, BASMALA: BASMALA };
 });

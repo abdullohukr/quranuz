@@ -3,79 +3,109 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Qur'on oyatlari</title>
-<link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=4" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=4">
+<title>MyQuran</title>
+<link rel="icon" href="assets/icon-32.png">
+<link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=5">
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="core.js?v=4"></script>
+<script src="i18n.js?v=5"></script>
+<script src="core.js?v=5"></script>
 </head>
 <body>
 <header>
-  <h1>Қуръон оятлари</h1>
+  <h1>MyQuran</h1>
   <span id="host-badge" class="badge" hidden>Word</span>
-  <button id="settings-btn" class="icon" title="Созламалар" aria-label="Созламалар">⚙</button>
+  <select id="ui-lang" class="ui-lang" aria-label="Language"></select>
+  <button id="settings-btn" class="icon" data-i18n-title="settings" aria-label="Settings">⚙</button>
 </header>
 
 <main>
   <section class="search">
-    <input id="q" type="search" autocomplete="off" dir="auto"
-      placeholder="2:255 · Бақара 30-37 · الرحمن الرحيم · ٱلرَّحۡمَـٰنِ · таржима матни">
+    <input id="q" type="search" autocomplete="off" dir="auto" data-i18n-placeholder="search">
     <div class="pick">
-      <select id="sura" aria-label="Сура"></select>
-      <span class="range"><label>оят <input id="from" type="number" min="1" value="1"></label>
+      <select id="sura" aria-label="Surah"></select>
+      <button id="info-btn" class="icon info" data-i18n-title="surahInfo" aria-label="info">ⓘ</button>
+      <span class="range"><label><span data-i18n="ayah"></span> <input id="from" type="number" min="1" value="1"></label>
       <label>— <input id="to" type="number" min="1" value="1"></label></span>
     </div>
-    <div id="status" class="muted">Юкланмоқда…</div>
+    <div id="status" class="muted" data-i18n="loading"></div>
     <ol id="results"></ol>
   </section>
 
   <section class="selection">
     <div class="sel-head">
       <strong id="sel-title"></strong>
-      <span class="muted small">Сўзларни сичқонча билан белгиланг ёки 1-сўзни, сўнг охирги сўзни босинг</span>
-      <button id="reset-words" class="link" hidden>Тўлиқ оят</button>
+      <span class="muted small" data-i18n="selTip"></span>
+      <button id="reset-words" class="link" hidden data-i18n="fullAyah"></button>
     </div>
+    <p id="script-note" class="note small" hidden data-i18n="ayahByAyah"></p>
     <div id="preview-ar" class="arabic" dir="rtl"></div>
     <div class="actions">
-      <button id="insert" class="primary">Қўйиш</button>
-      <button id="copy">Нусха олиш</button>
+      <button id="insert" class="primary" data-i18n="insert"></button>
+      <button id="copy" data-i18n="copy"></button>
     </div>
-    <div class="out">
-      <p id="out-ar" class="arabic" dir="rtl"></p>
-      <p id="out-uz"></p>
-    </div>
+    <div id="out" class="out"></div>
   </section>
 </main>
 
 <dialog id="settings">
   <form method="dialog">
-    <h2>Созламалар</h2>
-    <label>Таржима (асосий)
-      <select id="s-translation"></select></label>
-    <label><input type="checkbox" id="s-with-tr"> Таржимани қўшиш</label>
-    <label><input type="checkbox" id="s-brackets"> ﴿ ﴾ қавсларни қўшиш</label>
-    <label><input type="checkbox" id="s-newpara"> Автоматик янги абзац (Word)</label>
+    <h2 data-i18n="settings"></h2>
+
+    <label class="row"><span data-i18n="mushaf"></span> <select id="s-script"></select></label>
+
     <fieldset>
-      <legend>Араб матни</legend>
-      <label>Шрифт <input id="s-ar-font" type="text" list="ar-fonts"></label>
-      <datalist id="ar-fonts"><option value="Scheherazade New"><option value="Amiri Quran"></datalist>
-      <p class="small muted">Word'да тўғри кўриниши учун шрифтни компьютерга ўрнатинг:
-        <a href="fonts/ScheherazadeNew-Regular.ttf" download>Regular</a> ·
-        <a href="fonts/ScheherazadeNew-Bold.ttf" download>Bold</a>.
-        KFGQPC шрифтлари бу матнни нотўғри кўрсатади.</p>
-      <label>Ўлчам <input id="s-ar-size" type="number" min="6" max="72"></label>
+      <legend><label><input type="checkbox" id="s-with-tr"> <span data-i18n="withTranslation"></span></label></legend>
+      <input type="search" class="filter" data-list="s-tr-list" data-i18n-placeholder="filter">
+      <div id="s-tr-list" class="checklist"></div>
     </fieldset>
+
     <fieldset>
-      <legend>Таржима матни</legend>
-      <label>Шрифт <input id="s-uz-font" type="text" placeholder="(ҳужжатдагидек)"></label>
-      <label>Ўлчам <input id="s-uz-size" type="number" min="6" max="72"></label>
+      <legend><label><input type="checkbox" id="s-with-tf"> <span data-i18n="withTafsir"></span></label></legend>
+      <input type="search" class="filter" data-list="s-tf-list" data-i18n-placeholder="filter">
+      <div id="s-tf-list" class="checklist"></div>
     </fieldset>
-    <p class="muted small" id="source"></p>
-    <button value="ok" class="primary">Сақлаш</button>
+
+    <fieldset>
+      <legend data-i18n="insertOptions"></legend>
+      <label><input type="checkbox" id="s-brackets"> <span data-i18n="brackets"></span></label>
+      <label><input type="checkbox" id="s-auza"> <span data-i18n="auza"></span></label>
+      <label><input type="checkbox" id="s-basmala"> <span data-i18n="basmala"></span></label>
+      <label><input type="checkbox" id="s-ref"> <span data-i18n="ref"></span></label>
+      <label><input type="checkbox" id="s-newpara"> <span data-i18n="newPara"></span></label>
+    </fieldset>
+
+    <fieldset>
+      <legend data-i18n="arabicText"></legend>
+      <label class="row"><span data-i18n="font"></span> <input id="s-ar-font" type="text" list="ar-fonts"></label>
+      <datalist id="ar-fonts"></datalist>
+      <label class="row"><span data-i18n="size"></span> <input id="s-ar-size" type="number" min="6" max="72"></label>
+      <p class="small muted"><span data-i18n="fontsHelp"></span>:
+        <a href="fonts/MyQuran-fonts.zip" download data-i18n="fontsZip"></a> ·
+        <a href="fonts/ScheherazadeNew-Regular.ttf" download>Scheherazade New</a></p>
+    </fieldset>
+
+    <fieldset>
+      <legend data-i18n="translationText"></legend>
+      <label class="row"><span data-i18n="font"></span> <input id="s-uz-font" type="text" data-i18n-placeholder="docFont"></label>
+      <label class="row"><span data-i18n="size"></span> <input id="s-uz-size" type="number" min="6" max="72"></label>
+    </fieldset>
+
+    <p class="muted small"><span data-i18n="source"></span>: <span id="source"></span></p>
+    <button value="ok" class="primary" data-i18n="save"></button>
+  </form>
+</dialog>
+
+<dialog id="info">
+  <form method="dialog">
+    <h2 id="info-title"></h2>
+    <p id="info-note" class="small muted" hidden data-i18n="noInfo"></p>
+    <div id="info-body" class="info-body"></div>
+    <button value="ok" data-i18n="close"></button>
   </form>
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

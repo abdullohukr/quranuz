@@ -5,8 +5,8 @@
 }
 /* Scheherazade New (SIL, OFL) renders the tafsir.one text correctly: ی, open tanween,
    ۝ + number as one ayah sign. KFGQPC fonts expect another encoding, so not used here. */
-@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2?v=4) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
-@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2?v=4) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Regular.woff2?v=5) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
+@font-face { font-family: 'QuranUz Arabic'; src: url(fonts/ScheherazadeNew-Bold.woff2?v=5) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200A, U+2060; }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #161715; --fg: #ecebe6; --muted: #a09f98; --line: #34352f;
     --accent: #4fb399; --accent-fg: #0d1210; --card: #1e1f1c; --hl: #4a4220; }
@@ -42,11 +42,11 @@ body.office #results { max-height: 32vh; }
   background: var(--card); cursor: pointer; }
 #results li:hover, #results li.active { border-color: var(--accent); }
 #results .ref { font-size: 12px; color: var(--muted); }
-#results .ar { font-family: var(--ar-font); font-size: 20px; direction: rtl; text-align: right; line-height: 1.9;
+#results .ar { font-family: var(--ar-script, var(--ar-font)); font-size: 20px; direction: rtl; text-align: right; line-height: 1.9;
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .selection { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px; align-self: start; }
 .sel-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-.arabic { font-family: var(--ar-font); font-size: 26px; line-height: 2.1; text-align: justify; margin: 8px 0; }
+.arabic { font-family: var(--ar-script, var(--ar-font)); font-size: 26px; line-height: 2.1; text-align: justify; margin: 8px 0; }
 #preview-ar .w { cursor: pointer; border-radius: 4px; }
 #preview-ar .w:hover { outline: 1px dashed var(--accent); }
 #preview-ar .w.off { opacity: .35; }
@@ -68,3 +68,21 @@ fieldset { border: 1px solid var(--line); border-radius: 6px; display: flex; fle
 #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg);
   padding: 8px 14px; border-radius: 6px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 #toast.show { opacity: 1; }
+
+.ui-lang { padding: 4px 6px; font-size: 13px; max-width: 140px; }
+button.info { font-size: 17px; padding: 4px 9px; }
+.note { background: var(--hl); padding: 6px 8px; border-radius: 6px; }
+.basmala { text-align: center; }
+.out p { margin: 6px 0; text-align: justify; }
+dialog { max-width: 560px; }
+dialog .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+dialog .row select, dialog .row input { flex: 1; min-width: 0; }
+fieldset legend label { display: inline-flex; gap: 6px; font-weight: 600; }
+.filter { width: 100%; }
+.checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+.checklist label { display: flex; gap: 6px; align-items: baseline; justify-content: flex-start; padding: 2px 0; }
+.checklist label .lang { margin-inline-start: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.checklist .grp { font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 6px; border-top: 1px solid var(--line); padding-top: 4px; }
+.info-body { max-height: 60vh; overflow: auto; }
+.info-body h2, .info-body h3 { font-size: 15px; margin: 10px 0 4px; }
+.info-body p { margin: 4px 0; }

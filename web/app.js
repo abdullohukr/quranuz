@@ -1,69 +1,188 @@
-/* UI for the website and the Word add-in task pane. */
+/* MyQuran: UI for the website and the Word add-in task pane. */
 (function () {
   'use strict';
+  var V = '5';
   var $ = function (id) { return document.getElementById(id); };
   var DEFAULTS = {
-    translation: 'alovuddin_mansur', withTr: true, brackets: true, newPara: true,
-    arFont: 'Scheherazade New', arSize: 18, uzFont: '', uzSize: 14
+    uiLang: 'uz', script: 'default',
+    withTr: true, translations: ['alovuddin_mansur'],
+    withTafsir: false, tafsirs: [],
+    brackets: true, auza: false, basmala: false, ref: false, newPara: true,
+    arFont: '', arSize: 18, uzFont: '', uzSize: 14
   };
-  var settings = load();
-  var quran, translations = {}, sel = { sura: 1, from: 1, to: 1, wordFrom: 0, wordTo: null };
+  var QUOTES = { en: ['“', '”'], tr: ['“', '”'], id: ['“', '”'], ms: ['“', '”'], az: ['“', '”'], zh: ['“', '”'],
+                 ja: ['「', '」'], ko: ['“', '”'], de: ['„', '“'], nl: ['„', '”'], it: ['«', '»'] };
+  var settings = loadSettings(), i18n = new I18n(settings.uiLang);
+  var quran, catalog = { translations: [], tafsirs: [], scripts: [] }, suraNames = {}, surahInfo = {};
+  var cache = {}, sel = { sura: 1, from: 1, to: 1, wordFrom: 0, wordTo: null };
   var clickStart = null, inWord = false, results = [];
+  var t = function (k, v) { return i18n.t(k, v); };
 
-  function load() {
+  /* ---------- settings (kept in localStorage, so they survive restarts) ---------- */
+  function loadSettings() {
+    var st = Object.assign({}, DEFAULTS);
     try {
-      var st = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem('quranuz-settings') || '{}'));
-      // KFGQPC fonts expect another encoding (ی shows as a dot, ۝ doubles) - switch old default
-      if (/KFGQPC/i.test(st.arFont)) st.arFont = DEFAULTS.arFont;
-      return st;
-    }
-    catch (e) { return Object.assign({}, DEFAULTS); }
+      var saved = JSON.parse(localStorage.getItem('myquran-settings') || 'null');
+      if (!saved) {                                 // migrate from the first version
+        var old = JSON.parse(localStorage.getItem('quranuz-settings') || 'null');
+        if (old) {
+          saved = { brackets: old.brackets, newPara: old.newPara, arSize: old.arSize, uzFont: old.uzFont, uzSize: old.uzSize,
+                    withTr: old.withTr };
+          if (/tafsiri$/.test(old.translation || '')) { saved.tafsirs = [old.translation]; saved.withTafsir = true; }
+          else if (old.translation) saved.translations = [old.translation];
+          if (old.arFont && !/KFGQPC/i.test(old.arFont) && old.arFont !== 'Scheherazade New') saved.arFont = old.arFont;
+        }
+      }
+      if (saved) Object.keys(saved).forEach(function (k) { if (saved[k] !== undefined) st[k] = saved[k]; });
+    } catch (e) {}
+    if (/KFGQPC/i.test(st.arFont)) st.arFont = '';
+    return st;
   }
-  function save() { try { localStorage.setItem('quranuz-settings', JSON.stringify(settings)); } catch (e) {} }
-  function toast(msg) {
-    var t = $('toast'); t.textContent = msg; t.classList.add('show');
-    clearTimeout(toast.t); toast.t = setTimeout(function () { t.classList.remove('show'); }, 1800);
-  }
-  function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function saveSettings() { try { localStorage.setItem('myquran-settings', JSON.stringify(settings)); } catch (e) {} }
 
-  function getTranslation(id) {
-    if (translations[id]) return Promise.resolve(translations[id]);
-    return fetch('data/tr/' + id + '.json?v=4').then(function (r) { return r.json(); })
-      .then(function (d) { translations[id] = d; return d; });
+  function toast(msg) {
+    var el = $('toast'); el.textContent = msg; el.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 2000);
   }
-  function currentTr() { return translations[settings.translation] || null; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function getJSON(path) {
+    if (!cache[path]) cache[path] = fetch('data/' + path + (path.indexOf('?') < 0 ? '?v=' + V : ''))
+      .then(function (r) { if (!r.ok) throw new Error(r.status + ' ' + path); return r.json(); })
+      .catch(function (e) { delete cache[path]; throw e; });
+    return cache[path];
+  }
+  function optional(path, fallback) { return getJSON(path).catch(function () { return fallback; }); }
+
+  /* ---------- interface language ---------- */
+  function applyI18n() {
+    document.documentElement.lang = i18n.code();
+    document.documentElement.dir = i18n.dir();
+    [].forEach.call(document.querySelectorAll('[data-i18n]'), function (el) { el.textContent = t(el.dataset.i18n); });
+    [].forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (el) { el.placeholder = t(el.dataset.i18nPlaceholder); });
+    [].forEach.call(document.querySelectorAll('[data-i18n-title]'), function (el) { el.title = t(el.dataset.i18nTitle); });
+  }
+  $('ui-lang').innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
+  $('ui-lang').value = settings.uiLang;
+  $('ui-lang').addEventListener('change', function () {
+    settings.uiLang = this.value; i18n.set(settings.uiLang); saveSettings();
+    applyI18n(); fillSuraSelect(); fillScriptSelect(); render(); if (results.length) runSearch();
+  });
+
+  /* ---------- catalog helpers ---------- */
+  function trById(id) { return catalog.translations.filter(function (x) { return x.id === id; })[0]; }
+  function tfById(id) { return catalog.tafsirs.filter(function (x) { return x.id === id; })[0]; }
+  function scriptById(id) { return catalog.scripts.filter(function (x) { return x.id === id; })[0] || catalog.scripts[0]; }
+  function activeTranslations() { return settings.translations.map(trById).filter(Boolean); }
+  function activeTafsirs() { return settings.tafsirs.map(tfById).filter(Boolean); }
+  function scriptName(sc) { return sc.nameKey ? t(sc.nameKey) : sc.name; }
+  function suraName(i, lang) {                                    // name of sura i (1-based) for a reference
+    if (lang === 'uz' || lang === 'uz_latn') return quran.suras[i - 1][1];
+    var dir = (catalog.languages && catalog.languages[lang] || {}).dir;
+    if (dir === 'rtl') return quran.suras[i - 1][0];
+    var n = suraNames[lang] && suraNames[lang].simple || suraNames.en && suraNames.en.simple;
+    return n ? n[i - 1] : quran.suras[i - 1][0];
+  }
+  function uiSuraName(i) {
+    var c = i18n.code();
+    if (c === 'uz') return quran.suras[i - 1][1];
+    if (c === 'ar') return quran.suras[i - 1][0];
+    var n = suraNames[c] && suraNames[c].simple || suraNames.en && suraNames.en.simple;
+    return n ? n[i - 1] : quran.suras[i - 1][1];
+  }
+
+  function loadTranslation(tr) { return getJSON(tr.file).then(function (d) { tr.data = d; return d; }); }
+  function loadTafsirSura(tf, s) {
+    tf.suras = tf.suras || {};
+    if (tf.format === 'array') return getJSON(tf.file).then(function (d) { tf.all = d; });
+    return getJSON(tf.dir + s + '.json').then(function (d) { tf.suras[s] = d; });
+  }
+  function tafsirGetter(tf) {
+    return function (s, a) {
+      if (tf.format === 'array') { var x = tf.all && tf.all[quran.index(s, a)]; return x ? { from: a, to: a, text: x.replace(/^\d+\.\s*/, '') } : null; }
+      var list = tf.suras && tf.suras[s] || [];
+      for (var i = 0; i < list.length; i++) if (list[i][0] <= a && a <= list[i][1]) return { from: list[i][0], to: list[i][1], text: list[i][2] };
+      return null;
+    };
+  }
+  /* load everything the current selection needs */
+  function ensureData() {
+    var jobs = [];
+    if (settings.withTr) activeTranslations().forEach(function (tr) { if (!tr.data) jobs.push(loadTranslation(tr)); });
+    if (settings.withTafsir) activeTafsirs().forEach(function (tf) {
+      if (tf.format === 'array' ? !tf.all : !(tf.suras && tf.suras[sel.sura])) jobs.push(loadTafsirSura(tf, sel.sura));
+    });
+    return Promise.all(jobs).catch(function (e) { toast(t('error') + ': ' + e.message); });
+  }
+
+  /* ---------- mushaf (Arabic script) ---------- */
+  var loadedFonts = {};
+  function useScript(id) {
+    var sc = scriptById(id);
+    var done = sc.file ? getJSON(sc.file) : Promise.resolve(sc.ayahs);
+    return done.then(function (ayahs) {
+      quran.setScript(ayahs, { tajweed: !!sc.tajweed });
+      if (sc.font && sc.font.url && !loadedFonts[sc.font.family]) {
+        var st = document.createElement('style');
+        st.textContent = "@font-face{font-family:'" + sc.font.family + "';src:url('" + sc.font.url + "');font-display:swap}";
+        document.head.appendChild(st); loadedFonts[sc.font.family] = 1;
+      }
+      var fam = (sc.font && sc.font.family) ? "'" + sc.font.family + "', " : '';
+      document.documentElement.style.setProperty('--ar-script', fam + "'QuranUz Arabic', 'Scheherazade New', serif");
+      $('script-note').hidden = !sc.ayahByAyah;
+      $('source').textContent = scriptName(sc) + (sc.source ? ' — ' + sc.source : '');
+    });
+  }
+  function arabicFont() {
+    var sc = scriptById(settings.script);
+    return settings.arFont || (sc.font && sc.font.family) || 'Scheherazade New';
+  }
+  function fillScriptSelect() {
+    $('s-script').innerHTML = catalog.scripts.map(function (sc) {
+      return '<option value="' + sc.id + '">' + esc(scriptName(sc)) + (sc.ayahByAyah ? ' *' : '') + '</option>';
+    }).join('');
+    $('s-script').value = settings.script;
+    $('ar-fonts').innerHTML = ['Scheherazade New', 'Amiri Quran'].concat(catalog.scripts.map(function (s) { return s.font && s.font.family; }))
+      .filter(function (x, i, a) { return x && a.indexOf(x) === i; }).map(function (f) { return '<option value="' + esc(f) + '">'; }).join('');
+  }
 
   /* ---------- search ---------- */
   function runSearch() {
     var q = $('q').value;
     var ref = q.trim() && quran.parseRef(q);
-    if (ref) { setSel(ref.sura, ref.from, ref.to); }
-    results = quran.search(q, currentTr(), 200);
+    if (ref) setSel(ref.sura, ref.from, ref.to);
+    var trs = activeTranslations().filter(function (x) { return x.data; }).map(function (x) { return x.data; });
+    results = quran.search(q, trs, 200);
     var list = $('results'); list.innerHTML = '';
-    $('status').textContent = q.trim() ? (results.length ? results.length + ' та натижа' : 'Топилмади') : '';
-    var tr = currentTr();
-    results.slice(0, 200).forEach(function (r, i) {
+    $('status').textContent = q.trim() ? (results.length ? t('results', { n: results.length }) : t('notFound')) : '';
+    var first = activeTranslations().filter(function (x) { return x.data; })[0];
+    results.forEach(function (r, i) {
       var li = document.createElement('li');
       li.dataset.i = i;
-      li.innerHTML = '<div class="ref">' + esc(quran.suras[r.sura - 1][1]) + ' <bdi>' + r.sura + ':' + r.aya +
-        '</bdi> · <bdi>' + esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar">' + esc(quran.text(r.sura, r.aya)) + '</div>' +
-        (tr ? '<div class="small muted">' + esc(tr[quran.index(r.sura, r.aya)].slice(0, 140)) + '…</div>' : '');
+      li.innerHTML = '<div class="ref">' + esc(uiSuraName(r.sura)) + ' <bdi>' + r.sura + ':' + r.aya + '</bdi> · <bdi>' +
+        esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar">' + esc(quran.text(r.sura, r.aya)) + '</div>' +
+        (first ? '<div class="small muted" dir="' + (first.dir || 'auto') + '">' +
+          esc(QuranCore.stripHtml(first.data[quran.index(r.sura, r.aya)]).slice(0, 160)) + '…</div>' : '');
       list.appendChild(li);
     });
   }
   var searchTimer;
-  $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 200); });
+  $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250); });
   $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(); } });
   $('results').addEventListener('click', function (e) {
     var li = e.target.closest('li'); if (!li) return;
     var r = results[+li.dataset.i];
-    // shift-click extends the range inside the same sura
     if (e.shiftKey && r.sura === sel.sura) setSel(r.sura, Math.min(sel.from, r.aya), Math.max(sel.to, r.aya));
     else setSel(r.sura, r.aya, r.aya);
     [].forEach.call($('results').children, function (x) { x.classList.toggle('active', x === li); });
   });
 
   /* ---------- selection ---------- */
+  function fillSuraSelect() {
+    $('sura').innerHTML = quran.suras.map(function (s, i) {
+      return '<option value="' + (i + 1) + '">' + (i + 1) + '. ' + esc(uiSuraName(i + 1)) + ' — ' + esc(s[0]) + '</option>';
+    }).join('');
+    $('sura').value = sel.sura;
+  }
   function setSel(sura, from, to) {
     var c = quran.count(sura);
     from = Math.min(Math.max(1, from | 0), c); to = Math.min(Math.max(from, to | 0), c);
@@ -71,45 +190,67 @@
     clickStart = null;
     $('sura').value = sura; $('from').max = c; $('to').max = c; $('from').value = from; $('to').value = to;
     render();
+    ensureData().then(render);
   }
   $('sura').addEventListener('change', function () { setSel(+this.value, 1, 1); });
-  $('from').addEventListener('change', function () {
-    if (+this.value !== sel.from) setSel(sel.sura, +this.value, Math.max(+this.value, sel.to));
-  });
+  $('from').addEventListener('change', function () { if (+this.value !== sel.from) setSel(sel.sura, +this.value, Math.max(+this.value, sel.to)); });
   $('to').addEventListener('change', function () { if (+this.value !== sel.to) setSel(sel.sura, sel.from, +this.value); });
   $('reset-words').addEventListener('click', function () { setSel(sel.sura, sel.from, sel.to); });
 
-  function wordState(a, w, n) {
+  function wordState(a, w) {
     if (a === sel.from && w < sel.wordFrom) return 'off';
     if (a === sel.to && sel.wordTo != null && w > sel.wordTo) return 'off';
     if (clickStart && clickStart.a === a && clickStart.w === w) return 'start';
     return '';
   }
 
+  function current() {
+    return quran.format(sel, {
+      brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref,
+      translations: settings.withTr ? activeTranslations().filter(function (x) { return x.data; }).map(function (x) {
+        return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'], suraName: suraName(sel.sura, x.lang) };
+      }) : [],
+      tafsirs: settings.withTafsir ? activeTafsirs().map(function (tf) {
+        return { name: tf.name, dir: tf.dir, get: tafsirGetter(tf) };
+      }) : []
+    });
+  }
+
+  function runsHtml(runs) {
+    return runs.map(function (r) {
+      var st = 'font-weight:' + (r.bold ? 'bold' : 'normal') + ';font-style:' + (r.italic ? 'italic' : 'normal') + (r.color ? ';color:#' + r.color : '');
+      return '<span style="' + st + '">' + esc(r.t) + '</span>';
+    }).join('');
+  }
+
   function render() {
+    if (!quran) return;
     var s = sel.sura;
-    $('sel-title').innerHTML = esc(quran.suras[s - 1][1]) + ' <bdi>' + esc(quran.suras[s - 1][0]) + '</bdi> <bdi>' + s + ':' +
+    $('sel-title').innerHTML = esc(uiSuraName(s)) + ' <bdi>' + esc(quran.suras[s - 1][0]) + '</bdi> <bdi>' + s + ':' +
       (sel.to > sel.from ? sel.from + '-' + sel.to : sel.from) + '</bdi>';
     var html = '';
-    if (sel.from === 1 && s !== 1 && s !== 9) html += '<div class="muted" style="text-align:center">' + quran.meta.basmala + '</div>';
+    if (sel.from === 1 && s !== 1 && s !== 9) html += '<div class="muted basmala">' + quran.meta.basmala + '</div>';
     for (var a = sel.from; a <= sel.to; a++) {
-      var words = quran.words(s, a), full = quran.text(s, a);
-      words.forEach(function (w, i) {
-        html += '<span class="w ' + wordState(a, i, words.length) + '" data-a="' + a + '" data-w="' + i + '">' + esc(w) + '</span> ';
+      var sp = quran.spans(s, a), cols = quran.colors && quran.colors[quran.index(s, a)], text = quran.text(s, a);
+      sp.words.forEach(function (w, i) {
+        var inner = '';
+        if (cols) quran._runs(s, a, w.start, w.end).forEach(function (r) {
+          inner += r.color ? '<span style="color:#' + r.color + '">' + esc(r.t) + '</span>' : esc(r.t);
+        }); else inner = esc(w.text);
+        html += '<span class="w ' + wordState(a, i) + '" data-a="' + a + '" data-w="' + i + '">' + inner + '</span> ';
       });
-      html += '<span class="num">' + esc(full.match(/۝[٠-٩]+ *$/)[0]) + '</span> ';
+      if (sp.mark) html += '<span class="num">' + esc(sp.mark) + '</span> ';
     }
     $('preview-ar').innerHTML = html;
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
-    var out = quran.format(sel, { brackets: settings.brackets, translation: settings.withTr ? currentTr() : null });
-    $('out-ar').textContent = out.arabic;
-    $('out-uz').innerHTML = out.translation ? partsHtml(out.translationParts) : '';
-    $('out-ar').style.fontFamily = settings.arFont ? "'" + settings.arFont + "', var(--ar-font)" : '';
+    var out = current(), o = '<p class="arabic" dir="rtl">' + runsHtml(out.arabic.runs) + '</p>';
+    out.paras.forEach(function (p) { o += '<p dir="' + p.dir + '">' + runsHtml(p.runs) + '</p>'; });
+    $('out').innerHTML = o;
   }
 
   /* Word selection: click first word then last word, or drag across words with the mouse. */
   function applyRange(st, en) {
-    if (en.a < st.a || (en.a === st.a && en.w < st.w)) { var t = st; st = en; en = t; }
+    if (en.a < st.a || (en.a === st.a && en.w < st.w)) { var x = st; st = en; en = x; }
     sel.from = st.a; sel.wordFrom = st.w; sel.to = en.a; sel.wordTo = en.w;
     clickStart = null;
     $('from').value = sel.from; $('to').value = sel.to;
@@ -131,11 +272,10 @@
   }
   function paintDrag() {
     var lo = drag.start, hi = drag.end;
-    if (hi.a < lo.a || (hi.a === lo.a && hi.w < lo.w)) { var t = lo; lo = hi; hi = t; }
+    if (hi.a < lo.a || (hi.a === lo.a && hi.w < lo.w)) { var x = lo; lo = hi; hi = x; }
     [].forEach.call($('preview-ar').querySelectorAll('.w'), function (el) {
       var a = +el.dataset.a, w = +el.dataset.w;
-      var inside = (a > lo.a || (a === lo.a && w >= lo.w)) && (a < hi.a || (a === hi.a && w <= hi.w));
-      el.classList.toggle('drag', inside);
+      el.classList.toggle('drag', (a > lo.a || (a === lo.a && w >= lo.w)) && (a < hi.a || (a === hi.a && w <= hi.w)));
     });
   }
   $('preview-ar').addEventListener('pointerdown', function (e) {
@@ -158,34 +298,29 @@
     $('preview-ar').classList.remove('dragging');
     if (d.moved) applyRange(d.start, d.end); else clickWord(d.start.a, d.start.w);
   });
-  document.addEventListener('pointercancel', function () {
-    drag = null; $('preview-ar').classList.remove('dragging'); render();
-  });
+  document.addEventListener('pointercancel', function () { drag = null; $('preview-ar').classList.remove('dragging'); render(); });
 
-  /* ---------- output ---------- */
-  function current() {
-    return quran.format(sel, { brackets: settings.brackets, translation: settings.withTr ? currentTr() : null });
-  }
-
+  /* ---------- output: Word (OOXML), clipboard (HTML + text) ---------- */
   function xmlEsc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  /* fmt = {bold, italic}; set explicitly on/off so nothing is inherited from the cursor position */
-  function runXml(text, font, size, rtl, fmt) {
+  /* every property is set explicitly, so nothing is inherited from the cursor position */
+  function runXml(r, font, size, rtl) {
     var f = font ? '<w:rFonts w:ascii="' + xmlEsc(font) + '" w:hAnsi="' + xmlEsc(font) + '" w:cs="' + xmlEsc(font) + '"/>' : '';
     var v = function (on) { return on ? '' : ' w:val="0"'; };
-    var bi = '<w:b' + v(fmt.bold) + '/><w:bCs' + v(fmt.bold) + '/><w:i' + v(fmt.italic) + '/><w:iCs' + v(fmt.italic) + '/>';
+    var c = r.color ? '<w:color w:val="' + r.color + '"/>' : '';
     var sz = size ? '<w:sz w:val="' + Math.round(size * 2) + '"/><w:szCs w:val="' + Math.round(size * 2) + '"/>' : '';
-    return '<w:r><w:rPr>' + f + bi + sz + (rtl ? '<w:rtl/>' : '<w:rtl w:val="0"/>') + '</w:rPr><w:t xml:space="preserve">' + xmlEsc(text) + '</w:t></w:r>';
+    return '<w:r><w:rPr>' + f + '<w:b' + v(r.bold) + '/><w:bCs' + v(r.bold) + '/><w:i' + v(r.italic) + '/><w:iCs' + v(r.italic) + '/>' +
+      c + sz + '<w:rtl' + v(rtl) + '/></w:rPr><w:t xml:space="preserve">' + xmlEsc(r.t) + '</w:t></w:r>';
+  }
+  function paraXml(p, font, size) {
+    var rtl = p.dir === 'rtl';
+    return '<w:p><w:pPr><w:bidi' + (rtl ? '' : ' w:val="0"') + '/><w:jc w:val="both"/></w:pPr>' +
+      p.runs.map(function (r) { return runXml(r, font, size, rtl); }).join('') + '</w:p>';
   }
   function buildOoxml(out) {
-    var body = '<w:p><w:pPr><w:bidi/><w:jc w:val="both"/></w:pPr>' +
-      runXml(out.arabic, settings.arFont, settings.arSize, true, { bold: true, italic: false }) + '</w:p>';
-    if (out.translation)
-      body += '<w:p><w:pPr><w:bidi w:val="0"/><w:jc w:val="both"/></w:pPr>' + out.translationParts.map(function (p) {
-        return runXml(p.text, settings.uzFont, settings.uzSize, false, p);
-      }).join('') + '</w:p>';
+    var body = paraXml(out.arabic, arabicFont(), settings.arSize);
+    out.paras.forEach(function (p) { body += paraXml(p, settings.uzFont, settings.uzSize); });
     // Word merges the LAST inserted paragraph into the paragraph at the cursor and gives it
-    // that paragraph's properties (e.g. RTL). An empty last paragraph takes that role, so
-    // the Arabic (RTL) and translation (LTR) paragraphs keep their own properties.
+    // that paragraph's properties; an empty last paragraph takes that role.
     body += '<w:p/>';
     return '<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">' +
       '<pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml"><pkg:xmlData>' +
@@ -196,20 +331,15 @@
       '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
       '</w:body></w:document></pkg:xmlData></pkg:part></pkg:package>';
   }
-  function partsHtml(parts) {
-    return parts.map(function (p) {
-      return '<span style="font-weight:' + (p.bold ? 'bold' : 'normal') + ';font-style:' + (p.italic ? 'italic' : 'normal') + '">' + esc(p.text) + '</span>';
-    }).join('');
-  }
   function buildHtml(out) {
-    var ar = '<p dir="rtl" style="text-align:justify;font-weight:bold;' + (settings.arFont ? "font-family:'" + esc(settings.arFont) + "';" : '') +
-      'font-size:' + settings.arSize + 'pt">' + esc(out.arabic) + '</p>';
-    var uz = out.translation ? '<p dir="ltr" style="text-align:justify;' + (settings.uzFont ? "font-family:'" + esc(settings.uzFont) + "';" : '') +
-      'font-size:' + settings.uzSize + 'pt">' + partsHtml(out.translationParts) + '</p>' : '';
-    return ar + uz;
+    var ar = '<p dir="rtl" style="text-align:justify;font-family:\'' + esc(arabicFont()) + '\';font-size:' + settings.arSize + 'pt">' +
+      runsHtml(out.arabic.runs) + '</p>';
+    out.paras.forEach(function (p) {
+      ar += '<p dir="' + p.dir + '" style="text-align:justify;' + (settings.uzFont ? "font-family:'" + esc(settings.uzFont) + "';" : '') +
+        'font-size:' + settings.uzSize + 'pt">' + runsHtml(p.runs) + '</p>';
+    });
+    return ar;
   }
-  function plain(out) { return out.arabic + (out.translation ? '\n' + out.translation : ''); }
-
   function insertWord(out) {
     return Word.run(function (ctx) {
       var target = ctx.document.getSelection();
@@ -217,8 +347,7 @@
       target.insertOoxml(buildOoxml(out), 'Replace');
       return ctx.sync();
     }).catch(function () {
-      // fallback for hosts without OOXML support
-      return Word.run(function (ctx) {
+      return Word.run(function (ctx) {                       // hosts without OOXML support
         var target = ctx.document.getSelection();
         if (settings.newPara) target = target.paragraphs.getLast().insertParagraph('', 'After');
         target.insertHtml(buildHtml(out), 'Replace');
@@ -226,9 +355,8 @@
       });
     });
   }
-
   function copy(out) {
-    var html = buildHtml(out), text = plain(out);
+    var html = buildHtml(out), text = out.text;
     if (navigator.clipboard && window.ClipboardItem) {
       return navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
@@ -239,51 +367,126 @@
     ta.select(); document.execCommand('copy'); ta.remove();
     return Promise.resolve();
   }
-
   $('insert').addEventListener('click', function () {
-    var out = current();
-    (inWord ? insertWord(out) : copy(out))
-      .then(function () { toast(inWord ? 'Қўйилди' : 'Нусха олинди — исталган жойга қўйинг (Ctrl+V)'); })
-      .catch(function (e) { toast('Хато: ' + e.message); });
+    ensureData().then(function () {
+      var out = current();
+      return (inWord ? insertWord(out) : copy(out)).then(function () { toast(inWord ? t('inserted') : t('copiedPaste')); });
+    }).catch(function (e) { toast(t('error') + ': ' + e.message); });
   });
   $('copy').addEventListener('click', function () {
-    copy(current()).then(function () { toast('Нусха олинди'); }).catch(function (e) { toast('Хато: ' + e.message); });
+    ensureData().then(function () { return copy(current()); }).then(function () { toast(t('copied')); })
+      .catch(function (e) { toast(t('error') + ': ' + e.message); });
   });
 
-  /* ---------- settings ---------- */
-  var S = { translation: 's-translation', withTr: 's-with-tr', brackets: 's-brackets', newPara: 's-newpara',
-            arFont: 's-ar-font', arSize: 's-ar-size', uzFont: 's-uz-font', uzSize: 's-uz-size' };
-  $('settings-btn').addEventListener('click', function () {
-    Object.keys(S).forEach(function (k) {
-      var el = $(S[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k];
+  /* ---------- settings dialog ---------- */
+  var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
+            ref: 's-ref', newPara: 's-newpara', arFont: 's-ar-font', arSize: 's-ar-size', uzFont: 's-uz-font', uzSize: 's-uz-size' };
+  function checklist(el, items, chosen) {
+    var byLang = {}, order = [];
+    items.forEach(function (x) {
+      var k = x.langName || x.lang || '';
+      if (!byLang[k]) { byLang[k] = []; order.push(k); }
+      byLang[k].push(x);
     });
+    var html = '';
+    var first = chosen.map(function (id) { return items.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
+    first.forEach(function (x) { html += item(x, true); });
+    order.forEach(function (k) {
+      var rest = byLang[k].filter(function (x) { return chosen.indexOf(x.id) < 0; });
+      if (!rest.length) return;
+      html += '<div class="grp">' + esc(k) + '</div>';
+      rest.forEach(function (x) { html += item(x, false); });
+    });
+    el.innerHTML = html;
+    function item(x, on) {
+      var label = x.name + (x.author && x.name.indexOf(x.author) < 0 ? ' — ' + x.author : '');
+      return '<label data-s="' + esc((label + ' ' + (x.langName || '') + ' ' + (x.lang || '')).toLowerCase()) + '">' +
+        '<input type="checkbox" value="' + esc(x.id) + '"' + (on ? ' checked' : '') + '> <span>' + esc(label) +
+        '</span> <span class="lang">' + esc(x.langName || x.lang || '') + '</span></label>';
+    }
+  }
+  function picked(el, before) {
+    var now = [].map.call(el.querySelectorAll('input:checked'), function (i) { return i.value; });
+    return before.filter(function (id) { return now.indexOf(id) >= 0; }).concat(now.filter(function (id) { return before.indexOf(id) < 0; }));
+  }
+  [].forEach.call(document.querySelectorAll('.filter'), function (inp) {
+    inp.addEventListener('input', function () {
+      var q = inp.value.trim().toLowerCase(), list = $(inp.dataset.list);
+      [].forEach.call(list.children, function (el) { el.hidden = !!q && (el.classList.contains('grp') || (el.dataset.s || '').indexOf(q) < 0); });
+    });
+  });
+  $('settings-btn').addEventListener('click', function () {
+    Object.keys(B).forEach(function (k) {
+      var el = $(B[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k];
+    });
+    $('s-ar-font').placeholder = arabicFont();
+    fillScriptSelect();
+    checklist($('s-tr-list'), catalog.translations, settings.translations);
+    checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
     $('settings').showModal();
   });
   $('settings').addEventListener('close', function () {
-    Object.keys(S).forEach(function (k) {
-      var el = $(S[k]);
-      settings[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value : el.value;
+    Object.keys(B).forEach(function (k) {
+      var el = $(B[k]);
+      settings[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value : el.value.trim();
     });
-    save();
-    getTranslation(settings.translation).then(function () { render(); });
+    settings.translations = picked($('s-tr-list'), settings.translations);
+    settings.tafsirs = picked($('s-tf-list'), settings.tafsirs);
+    var scriptChanged = settings.script !== $('s-script').value;
+    settings.script = $('s-script').value;
+    saveSettings();
+    (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); });
   });
+
+  /* ---------- surah info ---------- */
+  $('info-btn').addEventListener('click', function () {
+    var c = i18n.code(), s = sel.sura;
+    optional('surah_info/' + c + '.json', null).then(function (d) {
+      var fallback = !d || !d[s];
+      return (fallback ? optional('surah_info/en.json', {}) : Promise.resolve(d)).then(function (x) {
+        var info = x[s] || {};
+        $('info-title').innerHTML = esc(uiSuraName(s)) + ' <bdi>' + esc(quran.suras[s - 1][0]) + '</bdi>';
+        $('info-note').hidden = !(fallback && c !== 'en');
+        $('info-body').innerHTML = safeHtml(info.text || '');
+        $('info-body').dir = fallback ? 'ltr' : i18n.dir();
+        $('info').showModal();
+      });
+    });
+  });
+  function safeHtml(h) {      // keep simple formatting tags only
+    return String(h).replace(/<(\/?)(\w+)[^>]*>/g, function (m, close, tag) {
+      return /^(h[1-6]|p|ul|ol|li|b|strong|i|em|br|blockquote|span)$/i.test(tag) ? '<' + close + tag.toLowerCase() + '>' : '';
+    });
+  }
 
   /* ---------- init ---------- */
   function init() {
-    fetch('data/quran.json?v=4').then(function (r) { return r.json(); }).then(function (data) {
+    applyI18n();
+    Promise.all([getJSON('quran.json'), optional('catalog.json', null), optional('suras.json', {})]).then(function (r) {
+      var data = r[0], cat = r[1], names = r[2];
       quran = new QuranCore.Quran(data);
-      $('sura').innerHTML = data.suras.map(function (s, i) {
-        return '<option value="' + (i + 1) + '">' + (i + 1) + '. ' + esc(s[1]) + ' — ' + esc(s[0]) + '</option>';
-      }).join('');
-      $('s-translation').innerHTML = data.meta.translations.map(function (t) {
-        return '<option value="' + t.id + '">' + esc(t.name) + (t.kind === 'tafsir' ? ' (тафсир)' : '') + '</option>';
-      }).join('');
-      $('source').textContent = 'Араб матни манбаси: ' + data.meta.source;
+      suraNames = names || {};
+      Object.keys(suraNames).forEach(function (k) { quran.addSuraNames(suraNames[k].simple); });
+      // local (Uzbek) resources from quran.json, plus QUL resources from catalog.json
+      data.meta.translations.forEach(function (x) {
+        var item = { id: x.id, name: x.name, lang: 'uz', langName: 'Ўзбекча', dir: 'ltr', file: 'tr/' + x.id + '.json', format: 'array' };
+        (x.kind === 'tafsir' ? catalog.tafsirs : catalog.translations).push(item);
+      });
+      catalog.scripts.push({ id: 'default', nameKey: 'script.default', ayahs: data.ayahs, source: data.meta.source,
+                             font: { family: 'Scheherazade New' } });
+      if (cat) {
+        catalog.translations = catalog.translations.concat(cat.translations || []);
+        catalog.tafsirs = catalog.tafsirs.concat(cat.tafsirs || []);
+        catalog.scripts = catalog.scripts.concat(cat.scripts || []);
+        catalog.languages = cat.languages || {};
+      }
+      fillSuraSelect(); fillScriptSelect();
       $('status').textContent = '';
+      return useScript(settings.script);
+    }).then(function () {
       setSel(1, 1, 1);
-      return getTranslation(settings.translation);
-    }).then(function () { render(); setTimeout(function () { quran._buildIndex(); }, 50); })
-      .catch(function (e) { $('status').textContent = 'Маълумот юкланмади: ' + e.message; });
+      setTimeout(function () { quran._buildIndex(); }, 50);
+    }).catch(function (e) { $('status').textContent = t('error') + ': ' + e.message; });
   }
 
   if (window.Office && Office.onReady) {
