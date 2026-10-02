@@ -25,9 +25,9 @@
     <button data-set="uz" class="on">Ўзбекча</button><button data-set="ru">Русский</button><button data-set="en">English</button>
   </div>
 
-  <p data-l="uz">Ўрнатувчи бир марта ишга туширилади ва қуйидагиларни ўрнатади: <b>барча шрифтлар</b> (мусҳафлар, QPC V1/V2/V4 саҳифа шрифтлари — хоҳишга кўра) ва <b>Word учун MyQuran қўшимчаси</b>. Администратор ҳуқуқи керак эмас.</p>
-  <p data-l="ru">Установщик запускается один раз и ставит: <b>все шрифты</b> (мусхафы, страничные шрифты QPC V1/V2/V4 — по выбору) и <b>надстройку MyQuran для Word</b>. Права администратора не нужны.</p>
-  <p data-l="en">Run the installer once. It installs <b>all fonts</b> (mushaf fonts, QPC V1/V2/V4 page fonts — optional) and the <b>MyQuran add-in for Word</b>. No administrator rights needed.</p>
+  <p data-l="uz">Ўрнатувчи бир марта ишга туширилади ва қуйидагиларни ўрнатади: <b>барча шрифтлар</b> (мусҳафлар ва QPC V1/V2/V4 саҳифа шрифтлари) — алоҳида <b>MyQuran</b> папкасига, ва <b>Word учун MyQuran қўшимчаси</b>. Администратор ҳуқуқи керак эмас.</p>
+  <p data-l="ru">Установщик запускается один раз и ставит: <b>все шрифты</b> (мусхафы и страничные шрифты QPC V1/V2/V4) — в отдельную папку <b>MyQuran</b>, и <b>надстройку MyQuran для Word</b>. Права администратора не нужны.</p>
+  <p data-l="en">Run the installer once. It installs <b>all fonts</b> (mushaf fonts and QPC V1/V2/V4 page fonts) into a separate <b>MyQuran</b> folder, and the <b>MyQuran add-in for Word</b>. No administrator rights needed.</p>
 
   <section class="os">
     <h2>Windows 10 / 11</h2>
@@ -63,6 +63,14 @@
       <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V2-fonts.zip">QPC V2</a> ·
       <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V4-fonts.zip">QPC V4</a> ·
       <a href="manifest.xml" download>manifest.xml</a></p>
+  </section>
+
+  <section class="os">
+    <h2 data-l="uz">Ўчириш</h2><h2 data-l="ru">Удаление</h2><h2 data-l="en">Uninstall</h2>
+    <p class="small">Windows (PowerShell):</p>
+    <pre>irm https://abdullohukr.github.io/quranuz/win-uninstall.txt | iex</pre>
+    <p class="small">macOS (Terminal):</p>
+    <pre>curl -fsSL https://abdullohukr.github.io/quranuz/mac-uninstall.sh | bash</pre>
   </section>
 </div>
 <script>

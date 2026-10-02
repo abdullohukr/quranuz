@@ -1,14 +1,24 @@
-# MyQuran installer for Windows: fonts (+ optional QPC page fonts) and the Word add-in.
+# MyQuran installer for Windows: all fonts (incl. QPC V1/V2/V4 page fonts) and the Word add-in.
 # No administrator rights needed. Run in PowerShell:
 #   irm https://abdullohukr.github.io/quranuz/win.txt | iex
+# Fonts go to their own folder %LOCALAPPDATA%\MyQuran\Fonts and are registered for the
+# current user. Uninstall:  irm https://abdullohukr.github.io/quranuz/win-uninstall.txt | iex
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $Site = 'https://abdullohukr.github.io/quranuz'
 $Rel  = 'https://github.com/abdullohukr/quranuz/releases/download/fonts'
-$FontDir = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts'
+$Home2 = Join-Path $env:LOCALAPPDATA 'MyQuran'
+$FontDir = Join-Path $Home2 'Fonts'
 $FontReg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
 $Tmp = Join-Path $env:TEMP ('myquran-' + [guid]::NewGuid())
 New-Item -ItemType Directory -Force -Path $FontDir, $Tmp | Out-Null
+if (-not (Test-Path $FontReg)) { New-Item -Force -Path $FontReg | Out-Null }
+
+# make new fonts usable right away (otherwise only after the next sign-in)
+Add-Type -Namespace MyQuran -Name Gdi -MemberDefinition @'
+[DllImport("gdi32.dll", CharSet = CharSet.Unicode)] public static extern int AddFontResourceW(string file);
+[DllImport("user32.dll")] public static extern int SendMessageTimeoutW(System.IntPtr h, uint m, System.IntPtr w, System.IntPtr l, uint f, uint t, out System.IntPtr r);
+'@
 
 function Install-Zip($url) {
   $zip = Join-Path $Tmp 'f.zip'; $dir = Join-Path $Tmp 'x'
@@ -19,30 +29,29 @@ function Install-Zip($url) {
     $dst = Join-Path $FontDir $_.Name
     Copy-Item $_.FullName $dst -Force
     $kind = if ($_.Extension -eq '.otf') { ' (OpenType)' } else { ' (TrueType)' }
-    New-ItemProperty -Path $FontReg -Name ($_.BaseName + $kind) -Value $dst -PropertyType String -Force | Out-Null
+    New-ItemProperty -Path $FontReg -Name ('MyQuran ' + $_.BaseName + $kind) -Value $dst -PropertyType String -Force | Out-Null
+    [void][MyQuran.Gdi]::AddFontResourceW($dst)
   }
 }
-function Ask($q) { $a = Read-Host "$q [Y/n]"; return ($a -eq '' -or $a -match '^[YyДдHh]') }
 
-Write-Host "`n1/3  MyQuran fonts / шрифтлар / шрифты" -ForegroundColor Cyan
+Write-Host "`n1/3  MyQuran fonts -> $FontDir" -ForegroundColor Cyan
 Install-Zip "$Site/fonts/MyQuran-fonts.zip"
 
-Write-Host "`n2/3  QPC page fonts (Quran Library V1, V2, V4: 3 x 604 fonts)" -ForegroundColor Cyan
-foreach ($v in 'V1', 'V2', 'V4') {
-  if (Ask "Install QPC $v? / Ўрнатилсинми? / Установить?") { Install-Zip "$Rel/MyQuran-QPC-$v-fonts.zip" }
-}
+Write-Host "`n2/3  QPC page fonts: Quran Library V1, V2, V4 (3 x 604)" -ForegroundColor Cyan
+foreach ($v in 'V1', 'V2', 'V4') { Write-Host "QPC $v"; Install-Zip "$Rel/MyQuran-QPC-$v-fonts.zip" }
 
 Write-Host "`n3/3  Word add-in MyQuran" -ForegroundColor Cyan
-$AddinDir = Join-Path $env:LOCALAPPDATA 'MyQuran'
-New-Item -ItemType Directory -Force -Path $AddinDir | Out-Null
-$Manifest = Join-Path $AddinDir 'manifest.xml'
+$Manifest = Join-Path $Home2 'manifest.xml'
 Invoke-WebRequest -UseBasicParsing "$Site/manifest.xml" -OutFile $Manifest
 $Id = ([xml](Get-Content $Manifest -Raw)).OfficeApp.Id
 $Dev = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
 New-Item -Force -Path $Dev | Out-Null
 New-ItemProperty -Path $Dev -Name $Id -Value $Manifest -PropertyType String -Force | Out-Null
 
+$r = [IntPtr]::Zero
+[void][MyQuran.Gdi]::SendMessageTimeoutW([IntPtr]0xffff, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero, 2, 1000, [ref]$r)  # WM_FONTCHANGE
 Remove-Item -Recurse -Force $Tmp
-Write-Host "`nDone. Restart Word, then Home -> MyQuran." -ForegroundColor Green
+Write-Host ("`n" + (Get-ChildItem $FontDir).Count + " fonts in $FontDir")
+Write-Host "Done. Restart Word, then Home -> MyQuran." -ForegroundColor Green
 Write-Host "Тайёр. Word'ни қайта ишга туширинг, сўнг Главная -> MyQuran."
 Write-Host "Готово. Перезапустите Word, затем Главная -> MyQuran."
