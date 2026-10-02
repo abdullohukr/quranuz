@@ -433,7 +433,8 @@
     });
     el.innerHTML = html;
     function item(x, on) {
-      var label = x.name + (x.author && x.name.indexOf(x.author) < 0 ? ' — ' + x.author : '');
+      var label = x.name + (x.author && x.name.indexOf(x.author) < 0 ? ' — ' + x.author : '') +
+        (x.partial ? ' (' + x.partial + '/6236)' : '');
       return '<label data-s="' + esc((label + ' ' + langLabel(x) + ' ' + (x.lang || '')).toLowerCase()) + '">' +
         '<input type="checkbox" value="' + esc(x.id) + '"' + (on ? ' checked' : '') + '> <span>' + esc(label) +
         '</span> <span class="lang">' + esc(x.langEn || x.langName || x.lang || '') + '</span></label>';

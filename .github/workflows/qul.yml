@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: qul-${{ github.ref }}
@@ -29,13 +30,26 @@ jobs:
           git fetch -q origin "${GITHUB_REF_NAME}" && git reset -q --hard "origin/${GITHUB_REF_NAME}"
           git clone -q --depth 1 -b qul-data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" qul_data_out \
             || mkdir -p qul_data_out
+      - name: Read run settings
+        id: cfg
+        run: |
+          python3 -c "import json;c=json.load(open('tools/qul_run.json'));print('from_run='+str(c.get('from_run',''))+'\nartifact='+c.get('artifact',''))" >> "$GITHUB_OUTPUT"
+      - name: Reuse the download of a previous run
+        if: ${{ steps.cfg.outputs.from_run != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.cfg.outputs.artifact }}
+          path: qul_raw
+          run-id: ${{ steps.cfg.outputs.from_run }}
+          github-token: ${{ github.token }}
       - name: Scrape
+        if: ${{ steps.cfg.outputs.from_run == '' }}
         run: |
           ONLY=$(python3 -c "import json;print(json.load(open('tools/qul_run.json'))['only'])")
           LIMIT=$(python3 -c "import json;print(json.load(open('tools/qul_run.json')).get('limit',0))")
           python3 tools/scrape_qul.py --only "$ONLY" --limit "$LIMIT"
       - name: Keep the raw download (even if a later step fails)
-        if: always()
+        if: ${{ always() && steps.cfg.outputs.from_run == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: qul-raw-${{ github.run_number }}

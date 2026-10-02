@@ -280,9 +280,11 @@
       var parts = [], bounds = [], pos = 1;
       for (var a2 = sel.from; a2 <= sel.to; a2++) {
         var x = stripTrNumber(stripHtml(tr.data[self.index(sel.sura, a2)]).replace(/\s+/g, ' '));
+        if (!x) continue;                       // partial translations: ayah missing
         parts.push(multi ? a2 + '. ' + x : x);
         bounds.push(pos); pos += parts[parts.length - 1].length + 1;
       }
+      if (!parts.length) return;
       var q = tr.quotes || ['«', '»'];
       var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
       var range = multi ? sel.from + '-' + sel.to : String(sel.from);

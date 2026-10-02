@@ -115,6 +115,29 @@ def page_family(name, p):
     return {"v1": f"QCF_P{p:03d}", "v2": f"QCF2{p:03d}", "v4": f"QCF4{p:03d}_COLOR"}[name]
 
 
+# QUL has no language for these translations; identified by reading the texts
+LANG_BY_TEXT = {  # id: (QUL language name or own key, iso, English name, native name)
+    854: ("afar", "", "", ""),            # "Yalli", "Rabbi le", "Fulte Racmattaay"
+    944: ("kannada", "", "", ""),         # Kannada script
+    1270: ("dagbani", "", "", ""),        # "Naawuni", "Alkur'aani", "ŋɔ"
+    1256: ("cebuano", "ceb", "Cebuano (Bisaya)", "Binisaya"),   # "Ang Tanang pagdayeg alang lamang sa Allah"
+    1257: ("iranun", "ill", "Iranun", "Iranun"),                # "So Bantogan na ruk o Allah"
+}
+MIN_AYAHS = 3000          # translations with fewer ayahs are skipped; partial ones are marked
+
+
+def text_dir(texts, default):
+    """Direction from the script of the text itself (e.g. Kurdish in Arabic script)."""
+    sample = " ".join(t for t in texts[:400] if t)
+    rtl = len(re.findall(r"[\u0590-\u08FF]", sample))
+    ltr = len(re.findall(r"[A-Za-z\u00C0-\u024F\u0400-\u04FF\u0900-\u0DFF\u0E00-\u0FFF\u1100-\u11FF\u3040-\u9FFF\uAC00-\uD7AF]", sample))
+    if rtl > ltr * 2:
+        return "rtl"
+    if ltr > rtl * 2:
+        return "ltr"
+    return default
+
+
 GLYPHS = {  # QPC page-by-page mushafs (one font per page): label, CDN folder
     "v1": (["script.quranLibrary", " — V1 (1405)"], "v1"),
     "v2": (["script.quranLibrary", " — V2 (1421)"], "v2"),
@@ -135,6 +158,21 @@ def main():
     prev = json.load(open(cat_path, encoding="utf-8")) if os.path.exists(cat_path) else {}
     idx_path = os.path.join(LIB, "index.json")
     prev_index = json.load(open(idx_path, encoding="utf-8")) if os.path.exists(idx_path) else {}
+    # parts rebuilt in this run replace their old files in the library (names may change)
+    def clean(pattern, keep=lambda p: False):
+        for p in glob.glob(os.path.join(LIB, pattern)):
+            if keep(p):
+                continue
+            shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
+    if have["translation"]:
+        clean("*/translation - *.json")
+    if have["tafsir"]:
+        clean("*/tafsir - *")
+    if have["scripts"]:
+        clean("Arabic (mushaf)/*.json", keep=lambda p: "(glyph " in p)
+    if have["glyph"]:
+        clean("Arabic (mushaf)/*(glyph *).json")
+
     langs = {}
     for l in cat["api"]["languages"]:
         langs[l["name"].lower()] = l
@@ -148,6 +186,8 @@ def main():
             by_word.setdefault(part.strip(), l["name"].lower())
 
     def infer_lang(res):
+        if res.get("id") in LANG_BY_TEXT:
+            return LANG_BY_TEXT[res["id"]][0]
         lang = (res.get("language") or res.get("language_name") or "").lower()
         if lang:
             return lang
@@ -160,6 +200,9 @@ def main():
         return ""
 
     def lang_of(name):
+        for _id, (n, iso, en, native) in LANG_BY_TEXT.items():
+            if name == n and iso and n not in langs:     # language QUL does not list
+                return {"lang": iso, "langName": native, "langEn": en, "dir": "ltr"}
         if not name:
             return {"lang": "und", "langName": "Other", "langEn": "Other", "dir": "ltr"}
         l = langs.get((name or "").lower(), {})
@@ -177,8 +220,9 @@ def main():
         if not data:
             continue
         texts = [plain(data.get(k, "")) for k in KEYS]
-        if sum(1 for x in texts if x) < 6000:
-            print("incomplete translation, skipped:", res["id"], res["name"])
+        filled = sum(1 for x in texts if x)
+        if filled < MIN_AYAHS:
+            print("too incomplete, skipped:", res["id"], res["name"], filled)
             continue
         lname = infer_lang(res)
         if lname == "uzbek":
@@ -188,8 +232,13 @@ def main():
         dump(os.path.join(LIB, rel), texts)
         index.append({"type": "translation", "id": res["id"], "name": res["name"], "author": res.get("author_name"),
                       "language": li["langEn"], "iso": li["lang"], "file": rel})
-        out["translations"].append(dict(li, id=f"qul-{res['id']}", name=res["name"], author=res.get("author_name") or "",
-                                         file=url(rel), format="array"))
+        item = dict(li, id=f"qul-{res['id']}", name=res["name"], author=res.get("author_name") or "",
+                    file=url(rel), format="array")
+        item["dir"] = text_dir(texts, li["dir"])
+        if filled < 6236:
+            item["partial"] = filled
+            print("partial translation:", res["id"], res["name"], filled)
+        out["translations"].append(item)
 
     # ---- tafsirs
     for res in cat["api"]["tafsirs"]:
@@ -228,8 +277,9 @@ def main():
             dump(os.path.join(LIB, rel, f"{s}.json"), lst)
         index.append({"type": "tafsir", "id": res["id"], "name": res["name"], "author": res.get("author_name"),
                       "language": li["langEn"], "iso": li["lang"], "folder": rel})
+        sample = [x[2] for lst in list(per.values())[:3] for x in lst[:20]]
         out["tafsirs"].append(dict(li, id=f"qulq-{res['id']}", name=res["name"], author=res.get("author_name") or "",
-                                   dir=url(rel + "/"), textDir=li["dir"], format="range"))
+                                   dir=url(rel + "/"), textDir=text_dir(sample, li["dir"]), format="range"))
     for x in out["tafsirs"]:                       # 'dir' above is the folder; text direction:
         x["path"], x["dir"] = x["dir"], x.pop("textDir")
 
