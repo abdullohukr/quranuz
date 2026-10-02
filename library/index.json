@@ -1256,9 +1256,9 @@
    "id": 798,
    "name": "Abdul Hamid Silika",
    "author": "Abdul Hamid Silika",
-   "language": "yau,yuw",
-   "iso": "yau",
-   "file": "yau,yuw/translation - Abdul Hamid Silika (798).json"
+   "language": "Yau, Yuwana",
+   "iso": "yao",
+   "file": "Yau, Yuwana/translation - Abdul Hamid Silika (798).json"
   },
   {
    "type": "translation",
@@ -1310,9 +1310,9 @@
    "id": 840,
    "name": "Abu Bakr Ibrahim Ali (Bakurube)",
    "author": "Abu Bakr Ibrahim Ali",
-   "language": "divehi",
-   "iso": "div",
-   "file": "divehi/translation - Abu Bakr Ibrahim Ali (840).json"
+   "language": "Divehi, Dhivehi, Maldivian",
+   "iso": "dv",
+   "file": "Divehi, Dhivehi, Maldivian/translation - Abu Bakr Ibrahim Ali (840).json"
   },
   {
    "type": "translation",
