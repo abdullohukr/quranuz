@@ -1,6 +1,6 @@
 # MyQuran installer for Windows: fonts (+ optional QPC page fonts) and the Word add-in.
 # No administrator rights needed. Run in PowerShell:
-#   irm https://abdullohukr.github.io/quranuz/install/install.ps1 | iex
+#   irm https://abdullohukr.github.io/quranuz/win.txt | iex
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $Site = 'https://abdullohukr.github.io/quranuz'
@@ -12,7 +12,7 @@ New-Item -ItemType Directory -Force -Path $FontDir, $Tmp | Out-Null
 
 function Install-Zip($url) {
   $zip = Join-Path $Tmp 'f.zip'; $dir = Join-Path $Tmp 'x'
-  Invoke-WebRequest -UseBasicParsing $url -OutFile $zip
+  try { Invoke-WebRequest -UseBasicParsing $url -OutFile $zip } catch { Write-Host "  ! not available: $url" -ForegroundColor Yellow; return }
   if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
   Expand-Archive -Force $zip $dir
   Get-ChildItem $dir -Recurse -Include *.ttf, *.otf | ForEach-Object {

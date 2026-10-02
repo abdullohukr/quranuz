@@ -1,6 +1,6 @@
 #!/bin/bash
 # MyQuran installer for macOS: fonts (+ optional QPC page fonts) and the Word add-in.
-# Run in Terminal:  curl -fsSL https://abdullohukr.github.io/quranuz/install/install.sh | bash
+# Run in Terminal:  curl -fsSL https://abdullohukr.github.io/quranuz/mac.sh | bash
 set -e
 SITE="https://abdullohukr.github.io/quranuz"
 REL="https://github.com/abdullohukr/quranuz/releases/download/fonts"
@@ -12,7 +12,7 @@ mkdir -p "$FONTS"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 install_zip() {   # $1 url
-  curl -fL --progress-bar "$1" -o "$TMP/f.zip"
+  if ! curl -fL --progress-bar "$1" -o "$TMP/f.zip"; then echo "  ! not available: $1"; return 0; fi
   rm -rf "$TMP/x" && mkdir -p "$TMP/x" && unzip -q -o "$TMP/f.zip" -d "$TMP/x"
   find "$TMP/x" \( -iname '*.ttf' -o -iname '*.otf' \) -exec cp -f {} "$FONTS/" \;
 }
