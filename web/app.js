@@ -403,28 +403,35 @@
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
             ref: 's-ref', newPara: 's-newpara', arFont: 's-ar-font', arSize: 's-ar-size', uzFont: 's-uz-font', uzSize: 's-uz-size' };
+  /* Group label: English language name (+ native name), e.g. "Russian — Русский" */
+  function langLabel(x) {
+    var en = x.langEn || x.langName || x.lang || '', nat = x.langName || '';
+    return nat && nat !== en ? en + ' — ' + nat : en;
+  }
   function checklist(el, items, chosen) {
     var byLang = {}, order = [];
     items.forEach(function (x) {
-      var k = x.langName || x.lang || '';
+      var k = langLabel(x);
       if (!byLang[k]) { byLang[k] = []; order.push(k); }
       byLang[k].push(x);
     });
+    // languages in alphabetical order ("Other" last); chosen items stay in their place
+    order.sort(function (a, b) {
+      if (/^Other/.test(a) !== /^Other/.test(b)) return /^Other/.test(a) ? 1 : -1;
+      return a.localeCompare(b);
+    });
+    order.forEach(function (k) { byLang[k].sort(function (a, b) { return (a.name || '').localeCompare(b.name || ''); }); });
     var html = '';
-    var first = chosen.map(function (id) { return items.filter(function (x) { return x.id === id; })[0]; }).filter(Boolean);
-    first.forEach(function (x) { html += item(x, true); });
     order.forEach(function (k) {
-      var rest = byLang[k].filter(function (x) { return chosen.indexOf(x.id) < 0; });
-      if (!rest.length) return;
       html += '<div class="grp">' + esc(k) + '</div>';
-      rest.forEach(function (x) { html += item(x, false); });
+      byLang[k].forEach(function (x) { html += item(x, chosen.indexOf(x.id) >= 0); });
     });
     el.innerHTML = html;
     function item(x, on) {
       var label = x.name + (x.author && x.name.indexOf(x.author) < 0 ? ' — ' + x.author : '');
-      return '<label data-s="' + esc((label + ' ' + (x.langName || '') + ' ' + (x.lang || '')).toLowerCase()) + '">' +
+      return '<label data-s="' + esc((label + ' ' + langLabel(x) + ' ' + (x.lang || '')).toLowerCase()) + '">' +
         '<input type="checkbox" value="' + esc(x.id) + '"' + (on ? ' checked' : '') + '> <span>' + esc(label) +
-        '</span> <span class="lang">' + esc(x.langName || x.lang || '') + '</span></label>';
+        '</span> <span class="lang">' + esc(x.langEn || x.langName || x.lang || '') + '</span></label>';
     }
   }
   function picked(el, before) {
@@ -491,7 +498,7 @@
       Object.keys(suraNames).forEach(function (k) { quran.addSuraNames(suraNames[k].simple); });
       // local (Uzbek) resources from quran.json, plus QUL resources from catalog.json
       data.meta.translations.forEach(function (x) {
-        var item = { id: x.id, name: x.name, lang: 'uz', langName: 'Ўзбекча', dir: 'ltr', file: 'tr/' + x.id + '.json', format: 'array' };
+        var item = { id: x.id, name: x.name, lang: 'uz', langName: 'Ўзбекча', langEn: 'Uzbek', dir: 'ltr', file: 'tr/' + x.id + '.json', format: 'array' };
         (x.kind === 'tafsir' ? catalog.tafsirs : catalog.translations).push(item);
       });
       catalog.scripts.push({ id: 'default', nameKey: 'script.default', ayahs: data.ayahs, source: data.meta.source,

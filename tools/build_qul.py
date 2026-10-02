@@ -138,7 +138,30 @@ def main():
     langs = {}
     for l in cat["api"]["languages"]:
         langs[l["name"].lower()] = l
+    # some QUL translations have no language in the API: take it from the name
+    ALIAS = {"ikirundi": "rundi", "kirundi": "rundi", "maguindanao": "magindanawn", "bisayan": "filipino",
+             "iranionian": "filipino", "iranun": "filipino", "khmer": "central khmer", "kyrgyz": "kyrgyz, kirghiz",
+             "sinhala": "sinhala, sinhalese", "uyghur": "uighur, uyghur", "uighur": "uighur, uyghur"}
+    by_word = {}
+    for l in cat["api"]["languages"]:
+        for part in l["name"].lower().replace("(", ",").replace(")", "").split(","):
+            by_word.setdefault(part.strip(), l["name"].lower())
+
+    def infer_lang(res):
+        lang = (res.get("language") or res.get("language_name") or "").lower()
+        if lang:
+            return lang
+        for w in re.findall(r"[a-z]+", (res.get("name") or "").lower()):
+            w = ALIAS.get(w, w)
+            if w in by_word:
+                return by_word[w]
+            if w in langs:
+                return w
+        return ""
+
     def lang_of(name):
+        if not name:
+            return {"lang": "und", "langName": "Other", "langEn": "Other", "dir": "ltr"}
         l = langs.get((name or "").lower(), {})
         return {"lang": l.get("iso_code") or norm(name)[:3], "langName": l.get("native_name") or l.get("name") or name,
                 "langEn": l.get("name") or name, "dir": l.get("direction") or "ltr"}
@@ -157,7 +180,10 @@ def main():
         if sum(1 for x in texts if x) < 6000:
             print("incomplete translation, skipped:", res["id"], res["name"])
             continue
-        li = lang_of(res.get("language"))
+        lname = infer_lang(res)
+        if lname == "uzbek":
+            continue                      # Uzbek: only the project's own translations
+        li = lang_of(lname)
         rel = f"{safe(li['langEn'])}/translation - {safe(res.get('author_name') or res['name'])} ({res['id']}).json"
         dump(os.path.join(LIB, rel), texts)
         index.append({"type": "translation", "id": res["id"], "name": res["name"], "author": res.get("author_name"),
@@ -170,7 +196,10 @@ def main():
         rows = load(f"tafsir/{res['id']}.json")
         if not rows:
             continue
-        li = lang_of(res.get("language_name"))
+        lname = infer_lang(res)
+        if lname == "uzbek":
+            continue
+        li = lang_of(lname)
         per = {}
         seen = set()
         for row in rows:
