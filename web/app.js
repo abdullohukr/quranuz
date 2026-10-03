@@ -35,8 +35,16 @@
       }
       if (saved) Object.keys(saved).forEach(function (k) { if (saved[k] !== undefined) st[k] = saved[k]; });
     } catch (e) {}
-    if (/KFGQPC/i.test(st.arFont)) st.arFont = '';
+    fixFont(st);
     return st;
+  }
+  /* The tafsir.one text is not encoded for KFGQPC fonts (ی, ۝ + digits): in KFGQPC it shows dots
+     and double circles. Asking for KFGQPC therefore selects the Quran Library Hafs mushaf, whose
+     text is made for that font (the Hafs mushafs already use it).                              */
+  function fixFont(st) {
+    if (!/KFGQPC|Uthmanic/i.test(st.arFont || '')) return;
+    if (!/^text_qpc_hafs/.test(st.script)) st.script = 'text_qpc_hafs';
+    st.arFont = '';
   }
   function saveSettings() { try { localStorage.setItem('myquran-settings', JSON.stringify(settings)); } catch (e) {} }
 
@@ -456,6 +464,7 @@
       var el = $(B[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k];
     });
     $('s-ar-font').placeholder = arabicFont();
+    $('s-ar-font').dataset.was = settings.arFont;
     fillScriptSelect();
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
@@ -470,6 +479,10 @@
     settings.tafsirs = picked($('s-tf-list'), settings.tafsirs);
     var scriptChanged = settings.script !== $('s-script').value;
     settings.script = $('s-script').value;
+    if (scriptChanged && settings.arFont === $('s-ar-font').dataset.was) settings.arFont = '';   // font follows the mushaf
+    var before = settings.script;
+    fixFont(settings);
+    if (settings.script !== before) scriptChanged = true;
     saveSettings();
     (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); });
   });

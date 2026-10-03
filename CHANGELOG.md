@@ -6,8 +6,12 @@
   per entry, no title paragraph; several translations/tafsirs are separated only by paragraphs.
 - Isti'adhah and the `[الفاتحة ١]` reference use Scheherazade New, not the mushaf font; the basmalah is
   taken from the selected mushaf and separated from the isti'adhah by ". ".
-- macOS installer: an older copy of a MyQuran font in `~/Library/Fonts` (e.g. an old KFGQPC Hafs that
-  shows dots instead of letters) is moved to `~/MyQuran-old-fonts` and replaced; no "restart the Mac" note.
+- Installers (macOS, Windows): every run is a clean reinstall of all fonts; other copies of the same fonts
+  in the user's font folders are moved to `~/MyQuran-old-fonts` (Windows: `%LOCALAPPDATA%\MyQuran\OldFonts`);
+  Word is closed first; no "restart the Mac" note.
+- The tafsir.one text is not encoded for KFGQPC (in KFGQPC `ی` shows dots and `۝١` a double circle): choosing
+  the KFGQPC font now switches to the Quran Library — Hafs mushaf, made for that font. The font field
+  follows the mushaf (reset when the mushaf changes).
 
 ## 2.0 — MyQuran
 
