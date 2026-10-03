@@ -8,7 +8,9 @@
     withTr: true, translations: ['alovuddin_mansur'],
     withTafsir: false, tafsirs: [],
     brackets: true, auza: false, basmala: false, ref: false, newPara: true,
-    arFont: '', arSize: 18, uzFont: '', uzSize: 14
+    arFont: '', arSize: 18, arBold: false, uzFont: '', uzSize: 14,
+    auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0,   // 0 / '': automatic
+    glyphNoteOff: false
   };
   var QUOTES = { en: ['“', '”'], tr: ['“', '”'], id: ['“', '”'], ms: ['“', '”'], az: ['“', '”'], zh: ['“', '”'],
                  ja: ['「', '」'], ko: ['“', '”'], de: ['„', '“'], nl: ['„', '”'], it: ['«', '»'] };
@@ -86,17 +88,38 @@
     if (sc.nameKey) return t(sc.nameKey);
     return (sc.label || [sc.name]).map(function (p) { return /^script\./.test(p) ? t(p) : p; }).join('');
   }
-  function suraName(i, lang) {                                    // name of sura i (1-based) for a reference
-    if (lang === 'uz' || lang === 'uz_latn') return quran.suras[i - 1][1];
-    var dir = (catalog.languages && catalog.languages[lang] || {}).dir;
-    if (dir === 'rtl') return quran.suras[i - 1][0];
-    var n = suraNames[lang] && suraNames[lang].simple || suraNames.en && suraNames.en.simple;
+  /* Russian surah names (Cyrillic languages without their own list use them) */
+  var RU_NAMES = ('Аль-Фатиха|Аль-Бакара|Аль Имран|Ан-Ниса|Аль-Маида|Аль-Анам|Аль-Араф|Аль-Анфаль|Ат-Тауба|Юнус|Худ|Юсуф|' +
+    'Ар-Раад|Ибрахим|Аль-Хиджр|Ан-Нахль|Аль-Исра|Аль-Кахф|Марьям|Та Ха|Аль-Анбия|Аль-Хадж|Аль-Муминун|Ан-Нур|Аль-Фуркан|' +
+    'Аш-Шуара|Ан-Намль|Аль-Касас|Аль-Анкабут|Ар-Рум|Лукман|Ас-Саджда|Аль-Ахзаб|Саба|Фатыр|Йа Син|Ас-Саффат|Сад|Аз-Зумар|' +
+    'Гафир|Фуссилат|Аш-Шура|Аз-Зухруф|Ад-Духан|Аль-Джасия|Аль-Ахкаф|Мухаммад|Аль-Фатх|Аль-Худжурат|Каф|Аз-Зарият|Ат-Тур|' +
+    'Ан-Наджм|Аль-Камар|Ар-Рахман|Аль-Вакиа|Аль-Хадид|Аль-Муджадила|Аль-Хашр|Аль-Мумтахана|Ас-Сафф|Аль-Джумуа|' +
+    'Аль-Мунафикун|Ат-Тагабун|Ат-Талак|Ат-Тахрим|Аль-Мульк|Аль-Калам|Аль-Хакка|Аль-Мааридж|Нух|Аль-Джинн|Аль-Муззаммиль|' +
+    'Аль-Муддассир|Аль-Кияма|Аль-Инсан|Аль-Мурсалят|Ан-Наба|Ан-Назиат|Абаса|Ат-Таквир|Аль-Инфитар|Аль-Мутаффифин|' +
+    'Аль-Иншикак|Аль-Бурудж|Ат-Тарик|Аль-Аля|Аль-Гашия|Аль-Фаджр|Аль-Балад|Аш-Шамс|Аль-Лейль|Ад-Духа|Аш-Шарх|Ат-Тин|' +
+    'Аль-Алак|Аль-Кадр|Аль-Баййина|Аз-Зальзаля|Аль-Адият|Аль-Кариа|Ат-Такасур|Аль-Аср|Аль-Хумаза|Аль-Филь|Курайш|' +
+    'Аль-Маун|Аль-Каусар|Аль-Кафирун|Ан-Наср|Аль-Масад|Аль-Ихлас|Аль-Фаляк|Ан-Нас').split('|');
+  function scriptOf(text) {                                       // 'arab' | 'cyrl' | 'latn' | '' (by letters)
+    var s = QuranCore.stripHtml(text || '').slice(0, 400);
+    var ar = (s.match(/[\u0600-\u06FF]/g) || []).length, cy = (s.match(/[\u0400-\u04FF]/g) || []).length,
+        la = (s.match(/[A-Za-z\u00C0-\u024F]/g) || []).length, max = Math.max(ar, cy, la);
+    return !max ? '' : max === ar ? 'arab' : max === cy ? 'cyrl' : 'latn';
+  }
+  /* Name of sura i (1-based) for a reference: the language's own names if we have them, otherwise
+     in the script of the text: Arabic script -> Arabic, Cyrillic -> Cyrillic, else Latin. */
+  function suraName(i, lang, sample) {
+    var sc = scriptOf(sample) || ((catalog.languages && catalog.languages[lang] || {}).dir === 'rtl' ? 'arab' : '');
+    if (lang === 'uz' && sc !== 'latn') return quran.suras[i - 1][1];
+    if (lang === 'ru' || (sc === 'cyrl' && lang !== 'uz')) return RU_NAMES[i - 1];
+    if (sc === 'arab') return quran.suras[i - 1][0];
+    var n = suraNames.en && suraNames.en.simple;
     return n ? n[i - 1] : quran.suras[i - 1][0];
   }
   function uiSuraName(i) {
     var c = i18n.code();
-    if (c === 'uz') return quran.suras[i - 1][1];
-    if (c === 'ar') return quran.suras[i - 1][0];
+    if (c === 'uz' && settings.uiLang !== 'uz_latn') return quran.suras[i - 1][1];
+    if (c === 'ar' || c === 'fa' || c === 'ur') return quran.suras[i - 1][0];
+    if (c === 'ru' || c === 'kk' || c === 'ky' || c === 'tg') return RU_NAMES[i - 1];
     var n = suraNames[c] && suraNames[c].simple || suraNames.en && suraNames.en.simple;
     return n ? n[i - 1] : quran.suras[i - 1][1];
   }
@@ -140,11 +163,23 @@
       var fam = (sc.font && sc.font.family) ? "'" + sc.font.family + "', " : '';
       document.documentElement.style.setProperty('--ar-script', fam + "'QuranUz Arabic', 'Scheherazade New', serif");
       $('script-note').hidden = !sc.ayahByAyah;
-      $('glyph-note').hidden = !sc.glyph;
+      $('glyph-note').hidden = !sc.glyph || settings.glyphNoteOff || pageFontsInstalled(sc);
       if (sc.glyph) $('glyph-zip').href = sc.fontsZip || '#';
       $('source').textContent = scriptName(sc) + (sc.source ? ' — ' + sc.source : '');
     });
   }
+  /* Are the page fonts installed on this computer? A local font changes the width of its glyphs
+     compared with the fallback (the web fonts loaded below have other family names). */
+  function pageFontsInstalled(sc) {
+    try {
+      var ctx = document.createElement('canvas').getContext('2d'), w = sc.ayahs ? null : quran.text(1, 1);
+      var txt = (w || '').replace(/[\u200F ]/g, '').slice(0, 6) || '\uFB51\uFB52\uFB53';
+      ctx.font = '40px monospace'; var a = ctx.measureText(txt).width;
+      ctx.font = "40px '" + sc.pageFont.families[0] + "', monospace"; var b = ctx.measureText(txt).width;
+      return Math.abs(a - b) > 0.5;
+    } catch (e) { return false; }
+  }
+
   /* QPC page fonts: one web font per Mushaf page, loaded when a page is shown */
   function pageFamily(page) {
     var sc = scriptById(settings.script), fam = 'MQ-' + sc.id + '-p' + page;
@@ -185,11 +220,20 @@
       var li = document.createElement('li');
       li.dataset.i = i;
       li.innerHTML = '<div class="ref">' + esc(uiSuraName(r.sura)) + ' <bdi>' + r.sura + ':' + r.aya + '</bdi> · <bdi>' +
-        esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar">' + esc(quran.text(r.sura, r.aya)) + '</div>' +
-        (first ? '<div class="small muted" dir="' + (first.dir || 'auto') + '">' +
+        esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar" dir="rtl">' + ayahHtml(r.sura, r.aya) + '</div>' +
+        (settings.withTr && first ? '<div class="small muted" dir="' + (first.dir || 'auto') + '">' +
           esc(QuranCore.stripHtml(first.data[quran.index(r.sura, r.aya)]).slice(0, 160)) + '…</div>' : '');
       list.appendChild(li);
     });
+  }
+  /* an ayah in the chosen mushaf (page fonts, tajweed colours) */
+  function ayahHtml(s, a) {
+    var t = quran.text(s, a);
+    if (!quran.pages && !quran.colors) return esc(t);
+    return quran._runs(s, a, 0, t.length).map(function (r) {
+      var st = (r.color ? 'color:#' + r.color + ';' : '') + (r.page ? 'font-family:' + pageFamily(r.page) : '');
+      return st ? '<span style="' + st + '">' + esc(r.t) + '</span>' : esc(r.t);
+    }).join('');
   }
   var searchTimer;
   $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250); });
@@ -231,21 +275,49 @@
   }
 
   function current() {
+    var sc = scriptById(settings.script);
     return quran.format(sel, {
-      brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref,
+      brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref, bold: settings.arBold,
+      // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
+      basmalaText: settings.basmalaFont && sc.glyph ? QuranCore.BASMALA : null,
       translations: settings.withTr ? activeTranslations().filter(function (x) { return x.data; }).map(function (x) {
-        return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'], suraName: suraName(sel.sura, x.lang) };
+        return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'],
+                 suraName: suraName(sel.sura, x.lang, x.data[quran.index(sel.sura, sel.from)]) };
       }) : [],
       tafsirs: settings.withTafsir ? activeTafsirs().map(function (tf) {
-        return { name: tf.name, dir: tf.dir, quotes: QUOTES[tf.lang] || ['«', '»'], suraName: suraName(sel.sura, tf.lang), get: tafsirGetter(tf) };
+        var get = tafsirGetter(tf), first = get(sel.sura, sel.from);
+        return { name: tf.name, dir: tf.dir, quotes: QUOTES[tf.lang] || ['«', '»'],
+                 suraName: suraName(sel.sura, tf.lang, first && first.text), get: get };
       }) : []
     });
   }
+  /* font and size of an Arabic run (A'udhu, basmala and the reference can have their own) */
+  function runFont(r, font) {
+    if (r.role === 'auza') return settings.auzaFont || PLAIN_AR;
+    if (r.role === 'ref') return settings.refFont || PLAIN_AR;
+    if (r.role === 'basmala' && settings.basmalaFont) return settings.basmalaFont;
+    if (r.page) return wordFont(r.page);
+    return r.plain ? PLAIN_AR : font;
+  }
+  function runSize(r) {
+    var base = +settings.arSize || 18;
+    if (r.role === 'auza') return +settings.auzaSize || base;
+    if (r.role === 'basmala') return +settings.basmalaSize || base;
+    if (r.role === 'ref') return +settings.refSize || Math.round(base * 0.7);
+    return base;
+  }
 
-  function runsHtml(runs) {
+  /* pt: font sizes in points (clipboard); otherwise relative to the paragraph (preview) */
+  function runsHtml(runs, pt) {
+    var base = +settings.arSize || 18;
     return runs.map(function (r) {
-      var st = 'font-weight:' + (r.bold ? 'bold' : 'normal') + ';font-style:' + (r.italic ? 'italic' : 'normal') + (r.color ? ';color:#' + r.color : '') +
-        (r.page ? ';font-family:' + pageFamily(r.page) : r.plain ? ";font-family:'" + PLAIN_AR + "','QuranUz Arabic'" : '');
+      var st = 'font-weight:' + (r.bold ? 'bold' : 'normal') + ';font-style:' + (r.italic ? 'italic' : 'normal') + (r.color ? ';color:#' + r.color : '');
+      if (r.role || r.plain || r.page) {
+        var f = runFont(r, arabicFont());
+        st += ';font-family:' + (r.page && f === wordFont(r.page) ? pageFamily(r.page) : "'" + esc(f) + "','QuranUz Arabic'");
+        var size = runSize(r);
+        if (size !== base) st += ';font-size:' + (pt ? size + 'pt' : (size / base).toFixed(3) + 'em');
+      }
       return '<span style="' + st + '">' + esc(r.t) + '</span>';
     }).join('');
   }
@@ -342,13 +414,13 @@
     return '<w:r><w:rPr>' + f + '<w:b' + v(r.bold) + '/><w:bCs' + v(r.bold) + '/><w:i' + v(r.italic) + '/><w:iCs' + v(r.italic) + '/>' +
       c + sz + '<w:rtl' + v(rtl) + '/></w:rPr><w:t xml:space="preserve">' + xmlEsc(r.t) + '</w:t></w:r>';
   }
-  function paraXml(p, font, size) {
+  function paraXml(p, font, size, arabic) {
     var rtl = p.dir === 'rtl';
     return '<w:p><w:pPr><w:bidi' + (rtl ? '' : ' w:val="0"') + '/><w:jc w:val="both"/></w:pPr>' +
-      p.runs.map(function (r) { return runXml(r, r.page ? wordFont(r.page) : r.plain ? PLAIN_AR : font, size, rtl); }).join('') + '</w:p>';
+      p.runs.map(function (r) { return arabic ? runXml(r, runFont(r, font), runSize(r), rtl) : runXml(r, font, size, rtl); }).join('') + '</w:p>';
   }
   function buildOoxml(out) {
-    var body = paraXml(out.arabic, arabicFont(), settings.arSize);
+    var body = paraXml(out.arabic, arabicFont(), settings.arSize, true);
     out.paras.forEach(function (p) { body += paraXml(p, settings.uzFont, settings.uzSize); });
     // Word merges the LAST inserted paragraph into the paragraph at the cursor and gives it
     // that paragraph's properties; an empty last paragraph takes that role.
@@ -364,7 +436,7 @@
   }
   function buildHtml(out) {
     var ar = '<p dir="rtl" style="text-align:justify;font-family:\'' + esc(arabicFont()) + '\';font-size:' + settings.arSize + 'pt">' +
-      runsHtml(out.arabic.runs) + '</p>';
+      runsHtml(out.arabic.runs, true) + '</p>';
     out.paras.forEach(function (p) {
       ar += '<p dir="' + p.dir + '" style="text-align:justify;' + (settings.uzFont ? "font-family:'" + esc(settings.uzFont) + "';" : '') +
         'font-size:' + settings.uzSize + 'pt">' + runsHtml(p.runs) + '</p>';
@@ -411,7 +483,9 @@
 
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
-            ref: 's-ref', newPara: 's-newpara', arFont: 's-ar-font', arSize: 's-ar-size', uzFont: 's-uz-font', uzSize: 's-uz-size' };
+            ref: 's-ref', newPara: 's-newpara', arFont: 's-ar-font', arSize: 's-ar-size', arBold: 's-ar-bold',
+            uzFont: 's-uz-font', uzSize: 's-uz-size', auzaFont: 's-auza-font', auzaSize: 's-auza-size',
+            basmalaFont: 's-basmala-font', basmalaSize: 's-basmala-size', refFont: 's-ref-font', refSize: 's-ref-size' };
   /* Group label: English language name (+ native name), e.g. "Russian — Русский" */
   function langLabel(x) {
     var en = x.langEn || x.langName || x.lang || '', nat = x.langName || '';
@@ -461,19 +535,28 @@
   });
   $('settings-btn').addEventListener('click', function () {
     Object.keys(B).forEach(function (k) {
-      var el = $(B[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k];
+      var el = $(B[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k] || '';
     });
     $('s-ar-font').placeholder = arabicFont();
     $('s-ar-font').dataset.was = settings.arFont;
+    $('s-ref-size').placeholder = Math.round((+settings.arSize || 18) * 0.7);
+    $('s-auza-size').placeholder = $('s-basmala-size').placeholder = +settings.arSize || 18;
     fillScriptSelect();
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
     $('settings').showModal();
   });
-  $('settings').addEventListener('close', function () {
+  /* Settings are applied on every change and on Save: the dialog's "close" event is not fired in
+     every WebView (it never came in the Word task pane, so nothing was saved). */
+  var applyTimer;
+  function applyLater() { clearTimeout(applyTimer); applyTimer = setTimeout(applySettings, 150); }
+  $('settings').addEventListener('change', function (e) { if (!e.target.classList.contains('filter')) applyLater(); });
+  $('settings').addEventListener('submit', function () { clearTimeout(applyTimer); applySettings(); });
+  $('settings').addEventListener('close', function () { clearTimeout(applyTimer); applySettings(); });
+  function applySettings() {
     Object.keys(B).forEach(function (k) {
       var el = $(B[k]);
-      settings[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value : el.value.trim();
+      settings[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value || (DEFAULTS[k] || 0) : el.value.trim();
     });
     settings.translations = picked($('s-tr-list'), settings.translations);
     settings.tafsirs = picked($('s-tf-list'), settings.tafsirs);
@@ -484,8 +567,9 @@
     fixFont(settings);
     if (settings.script !== before) scriptChanged = true;
     saveSettings();
-    (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); });
-  });
+    (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); if (results.length) runSearch(); });
+  }
+  $('glyph-off').addEventListener('click', function () { settings.glyphNoteOff = true; saveSettings(); $('glyph-note').hidden = true; });
 
   /* ---------- surah info ---------- */
   $('info-btn').addEventListener('click', function () {

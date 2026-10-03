@@ -246,26 +246,31 @@
 
   /* sel  = {sura, from, to, wordFrom?, wordTo?}  (0-based word indexes; wordFrom
             applies to the first ayah, wordTo to the last one)
-     opts = {brackets, auza, basmala, ref,
+     opts = {brackets, auza, basmala, ref, bold, basmalaText?,
              translations: [{data, dir, quotes:[open, close], suraName}],
              tafsirs: [{name, dir, quotes, suraName, get(sura, aya) -> {from, to, text} | null}]}
-     Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}: runs = [{t, bold, italic, color, page, plain}] */
+     Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}:
+       runs = [{t, bold, italic, color, page, plain, role}]; role: 'auza' | 'basmala' | 'ref' | 'sep'
+       (the caller chooses font and size per role)                                                  */
   Quran.prototype.format = function (sel, opts) {
     opts = opts || {};
-    var self = this, br = this.meta.brackets, ar = [];
-    function push(t, extra) { var r = { t: t, bold: true }; for (var k in extra) r[k] = extra[k]; ar.push(r); }
+    var self = this, br = this.meta.brackets, ar = [], bold = !!opts.bold;
+    function push(t, extra) { var r = { t: t, bold: bold }; for (var k in extra) r[k] = extra[k]; ar.push(r); }
 
     // A'udhu and the reference are not Quran text: plain Arabic font (r.plain), not the Mushaf one
-    if (opts.auza) push(AUZA, { plain: true });
+    if (opts.auza) push(AUZA, { plain: true, role: 'auza' });
     if (opts.basmala && !(sel.sura === 1 && sel.from === 1)) {
-      if (opts.auza) push('. ', { plain: true });
-      var bw = this.spans(1, 1).words;                 // the basmala in the chosen Mushaf (1:1 without its number)
-      this._runs(1, 1, bw[0].start, bw[bw.length - 1].end).forEach(function (r) {
-        var x = {}; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
-        push(r.t, x);
-      });
+      if (opts.auza) push('. ', { plain: true, role: 'auza' });
+      if (opts.basmalaText) push(opts.basmalaText, { plain: true, role: 'basmala' });   // a font chosen for it
+      else {
+        var bw = this.spans(1, 1).words;               // the basmala in the chosen Mushaf (1:1 without its number)
+        this._runs(1, 1, bw[0].start, bw[bw.length - 1].end).forEach(function (r) {
+          var x = { role: 'basmala' }; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
+          push(r.t, x);
+        });
+      }
     }
-    if (ar.length) push(' ', { plain: true });
+    if (ar.length) push(' ', { plain: true, role: 'sep' });
     if (opts.brackets !== false) push(br.open);
     for (var a = sel.from; a <= sel.to; a++) {
       var sp = this.spans(sel.sura, a), w = sp.words, t = this.text(sel.sura, a);
@@ -283,45 +288,52 @@
     if (opts.brackets !== false) push(br.close);
     if (opts.ref) {
       var rng = sel.to > sel.from ? arNum(sel.from) + '-' + arNum(sel.to) : arNum(sel.from);
-      ar.push({ t: ' [' + this.suras[sel.sura - 1][0] + ' ' + rng + ']', bold: false, plain: true });
+      push(' ', { plain: true, role: 'sep', bold: false });
+      push('[' + this.suras[sel.sura - 1][0] + ' ' + rng + ']', { plain: true, role: 'ref', bold: false });
     }
     ar = mergeRuns(ar);
 
-    var paras = [], multi = sel.to > sel.from;
-    var range = multi ? sel.from + '-' + sel.to : String(sel.from);
-    /* «meaning (explanation) …» (Sura: 1-2).  -- the same layout for translations and tafsirs */
-    function quoted(parts, bounds, q, suraName, rng) {
+    var paras = [];
+    /* «meaning (explanation) …» (Sura: 1-2).  -- the same layout for translations and tafsirs:
+       one ayah: no number inside; several: "1. … 2. …" (a commentary on a group: "1-3. …"),
+       the sura name and the range at the end */
+    function quoted(items, q, suraName) {
+      var multi = items.length > 1 || items[0].from !== items[0].to;
+      var from = items[0].from, to = items[items.length - 1].to;
+      var parts = [], bounds = [], pos = q[0].length;
+      items.forEach(function (it) {
+        var num = it.from === it.to ? String(it.from) : it.from + '-' + it.to;
+        parts.push(multi ? num + '. ' + it.text : it.text);
+        bounds.push(pos); pos += parts[parts.length - 1].length + 1;
+      });
       var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
+      var rng = from === to ? String(from) : from + '-' + to;
       return splitParens(quote, bounds, q[0].length).concat([{ t: ' (' + suraName + ': ' + rng + ').', bold: false, italic: true }]);
     }
     (opts.translations || []).forEach(function (tr) {
-      var parts = [], bounds = [], pos = 1;
+      var items = [];
       for (var a2 = sel.from; a2 <= sel.to; a2++) {
         var x = stripTrNumber(stripHtml(tr.data[self.index(sel.sura, a2)]).replace(/\s+/g, ' '));
-        if (!x) continue;                       // partial translations: ayah missing
-        parts.push(multi ? a2 + '. ' + x : x);
-        bounds.push(pos); pos += parts[parts.length - 1].length + 1;
+        if (x) items.push({ from: a2, to: a2, text: x });     // partial translations: ayah missing
       }
-      if (!parts.length) return;
-      paras.push({ dir: tr.dir || 'ltr', runs: quoted(parts, bounds, tr.quotes || ['«', '»'], tr.suraName, range) });
+      if (items.length) paras.push({ dir: tr.dir || 'ltr', runs: quoted(items, tr.quotes || ['«', '»'], tr.suraName) });
     });
 
-    // one paragraph per commentary entry (an entry may explain a group of ayahs)
+    // a commentary entry may explain a group of ayahs: each entry once, all in one paragraph
     (opts.tafsirs || []).forEach(function (tf) {
-      var seen = {}, entries = [];
+      var seen = {}, items = [];
       for (var a3 = sel.from; a3 <= sel.to; a3++) {
         var en = tf.get(sel.sura, a3);
         if (!en || !en.text) continue;
         var key = en.from + '-' + en.to;
         if (seen[key]) continue;
-        seen[key] = 1; entries.push(en);
-      }
-      entries.forEach(function (en) {
+        seen[key] = 1;
         var text = tafsirParagraphs(en.text).join(' ');
-        if (!text) return;
-        var rng = en.from === en.to ? String(en.from) : en.from + '-' + en.to;
-        paras.push({ dir: textDir(text, tf.dir || 'ltr'), runs: quoted([text], [1], tf.quotes || ['«', '»'], tf.suraName || tf.name, rng) });
-      });
+        if (text) items.push({ from: en.from, to: en.to, text: text });
+      }
+      if (!items.length) return;
+      var all = items.map(function (it) { return it.text; }).join(' ');
+      paras.push({ dir: textDir(all, tf.dir || 'ltr'), runs: quoted(items, tf.quotes || ['«', '»'], tf.suraName || tf.name) });
     });
 
     var text = ar.map(function (r) { return r.t; }).join('');
@@ -335,7 +347,7 @@
       if (!r.t) return;
       var l = out[out.length - 1];
       if (l && l.bold === r.bold && (l.color || null) === (r.color || null) && (l.page || null) === (r.page || null) &&
-          !l.plain === !r.plain && !l.italic && !r.italic) l.t += r.t;
+          !l.plain === !r.plain && (l.role || null) === (r.role || null) && !l.italic && !r.italic) l.t += r.t;
       else out.push(r);
     });
     return out;

@@ -3,7 +3,7 @@
   'use strict';
   var L = {};
 
-  L.uz = { _name: 'Ўзбекча', title: 'MyQuran',
+  L.uz = { arBold: 'Оятлар қалин (bold)', extraFonts: 'Аъузу, басмала ва ҳавола шрифти', refShort: 'Сура ва оят [يونس ١]', mushafFont: 'мусҳаф шрифти', extraFontsHelp: 'Бўш қолса: автоматик (ҳавола араб матнидан кичикроқ).', glyphInstalled: 'Шрифтлар ўрнатилган — яшириш', _name: 'Ўзбекча', title: 'MyQuran',
     search: '2:255 · Бақара 30-37 · الرحمن الرحيم · таржима матни', ayah: 'оят', results: '{n} та натижа',
     notFound: 'Топилмади', loading: 'Юкланмоқда…', selTip: 'Сўзларни сичқонча билан белгиланг ёки 1-сўзни, сўнг охирги сўзни босинг',
     fullAyah: 'Тўлиқ оят', insert: 'Қўйиш', copy: 'Нусха олиш', copied: 'Нусха олинди', copiedPaste: 'Нусха олинди — исталган жойга қўйинг (Ctrl+V)',
@@ -19,7 +19,7 @@
     'script.default': 'Мадина мусҳафи (tafsir.one)', 'script.quranLibrary': 'Quran Library', 'script.tajweed': 'Тажвид', glyphNote: 'Бу мусҳаф ҳар саҳифа учун алоҳида шрифтдан фойдаланади. Word\'да тўғри кўриниши учун унинг 604 шрифтини ўрнатинг:', glyphZip: 'Шрифтлар (ZIP)', installer: 'Ўрнатувчи (Mac / Windows)',
     'script.simple': 'Оддий (имлоий)' };
 
-  L.uz_latn = { _name: 'Oʻzbekcha (lotin)', title: 'MyQuran',
+  L.uz_latn = { arBold: 'Oyatlar qalin (bold)', extraFonts: 'Aʼuzu, basmala va havola shrifti', refShort: 'Sura va oyat [يونس ١]', mushafFont: 'mushaf shrifti', extraFontsHelp: 'Boʻsh qolsa: avtomatik (havola arab matnidan kichikroq).', glyphInstalled: 'Shriftlar oʻrnatilgan — yashirish', _name: 'Oʻzbekcha (lotin)', title: 'MyQuran',
     search: '2:255 · Baqara 30-37 · الرحمن الرحيم · tarjima matni', ayah: 'oyat', results: '{n} ta natija',
     notFound: 'Topilmadi', loading: 'Yuklanmoqda…', selTip: 'Soʻzlarni sichqoncha bilan belgilang yoki 1-soʻzni, soʻng oxirgi soʻzni bosing',
     fullAyah: 'Toʻliq oyat', insert: 'Qoʻyish', copy: 'Nusxa olish', copied: 'Nusxa olindi', copiedPaste: 'Nusxa olindi — istalgan joyga qoʻying (Ctrl+V)',
@@ -35,7 +35,7 @@
     'script.default': 'Madina mushafi (tafsir.one)', 'script.tajweed': 'Tajvid', glyphNote: 'Bu mushaf har sahifa uchun alohida shriftdan foydalanadi. Word’da toʻgʻri koʻrinishi uchun uning 604 shriftini oʻrnating:', glyphZip: 'Shriftlar (ZIP)', installer: 'Oʻrnatuvchi (Mac / Windows)',
     'script.simple': 'Oddiy (imloiy)' };
 
-  L.en = { _name: 'English', search: '2:255 · Baqarah 30-37 · الرحمن الرحيم · translation text', ayah: 'ayah',
+  L.en = { arBold: 'Ayahs in bold', extraFonts: 'Font of isti‘adhah, basmalah and reference', refShort: 'Surah and ayah [يونس ١]', mushafFont: 'mushaf font', extraFontsHelp: 'Empty: automatic (the reference is smaller than the Arabic text).', glyphInstalled: 'Fonts are installed — hide', _name: 'English', search: '2:255 · Baqarah 30-37 · الرحمن الرحيم · translation text', ayah: 'ayah',
     results: '{n} results', notFound: 'Nothing found', loading: 'Loading…', selTip: 'Drag over words with the mouse, or click the first and then the last word',
     fullAyah: 'Whole ayah', insert: 'Insert', copy: 'Copy', copied: 'Copied', copiedPaste: 'Copied — paste anywhere (Ctrl+V)',
     inserted: 'Inserted', error: 'Error', settings: 'Settings', uiLang: 'Interface language', mushaf: 'Mushaf (Arabic text)',
@@ -65,7 +65,7 @@
     'script.default': 'مصحف المدينة (tafsir.one)', 'script.quranLibrary': 'مكتبة القرآن', 'script.tajweed': 'التجويد', glyphNote: 'يستخدم هذا المصحف خطًا مستقلًا لكل صفحة. ثبّت خطوطه الـ604 ليظهر صحيحًا في Word:', glyphZip: 'الخطوط (ZIP)', installer: 'أداة التثبيت (Mac / Windows)',
     'script.simple': 'إملائي' };
 
-  L.ru = { _name: 'Русский', search: '2:255 · Бакара 30-37 · الرحمن الرحيم · текст перевода', ayah: 'аят',
+  L.ru = { arBold: 'Аяты жирным', extraFonts: 'Шрифт аузу, басмалы и ссылки', refShort: 'Сура и аят [يونس ١]', mushafFont: 'шрифт мусхафа', extraFontsHelp: 'Пусто — автоматически (ссылка меньше арабского текста).', glyphInstalled: 'Шрифты установлены — скрыть', _name: 'Русский', search: '2:255 · Бакара 30-37 · الرحمن الرحيم · текст перевода', ayah: 'аят',
     results: 'Найдено: {n}', notFound: 'Ничего не найдено', loading: 'Загрузка…', selTip: 'Выделите слова мышью или нажмите первое, затем последнее слово',
     fullAyah: 'Весь аят', insert: 'Вставить', copy: 'Копировать', copied: 'Скопировано', copiedPaste: 'Скопировано — вставьте куда нужно (Ctrl+V)',
     inserted: 'Вставлено', error: 'Ошибка', settings: 'Настройки', uiLang: 'Язык интерфейса', mushaf: 'Мусхаф (арабский текст)',

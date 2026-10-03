@@ -1,5 +1,18 @@
 # Changelog / Ўзгаришлар
 
+## 2.0.3
+
+- Settings were not always saved (the dialog's `close` event does not fire in some WebViews), so the
+  default Alovuddin Mansur translation stayed on; settings are now applied on every change and on Save.
+- Tafsir is inserted like a translation: one paragraph per tafsir, `1. … 2. …` (a commentary on a group:
+  `1-3. …`) and *(Surah: 1-3).* at the end.
+- Surah names in references follow the text: Uzbek → Uzbek names, Russian and other Cyrillic texts →
+  Russian names (Аль-Бакара), Arabic script → Arabic, everything else → Latin (Al-Baqarah).
+- Arabic text is regular by default (option "Ayahs in bold"); the `[البقرة ١]` reference is smaller;
+  isti'adhah, basmalah and the reference have their own font and size settings.
+- QPC V1 / V2 / V4: search results are shown in the page fonts; the "install 604 fonts" note is hidden
+  when the fonts are installed and can be dismissed.
+
 ## 2.0.2
 
 - macOS: Word for Mac (16.111) did not use fonts that were only copied to `~/Library/Fonts` (Arabic text
