@@ -57,7 +57,7 @@ body.office #results { max-height: 32vh; }
 #preview-ar .num { color: var(--accent); }
 .actions { display: flex; gap: 8px; margin: 10px 0; }
 .out { border-top: 1px solid var(--line); padding-top: 8px; }
-.out .arabic { font-size: 22px; font-weight: 700; }
+.out .arabic { font-size: 22px; }
 dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); max-width: 420px; width: calc(100% - 32px); }
 dialog form { display: flex; flex-direction: column; gap: 10px; }
 dialog h2 { margin: 0; font-size: 17px; }
@@ -77,6 +77,11 @@ button.info { font-size: 17px; padding: 4px 9px; }
 dialog { max-width: 560px; }
 dialog .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 dialog .row select, dialog .row input { flex: 1; min-width: 0; }
+dialog .fontrow { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
+dialog .fontrow span { flex: 0 0 6.5em; }
+dialog .fontrow input[type=text] { flex: 1; min-width: 0; }
+dialog .fontrow input[type=number] { width: 4.5em; }
+.note button.link { font-size: inherit; }
 fieldset legend label { display: inline-flex; gap: 6px; font-weight: 600; }
 .filter { width: 100%; }
 .checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }

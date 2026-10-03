@@ -6,10 +6,10 @@
 <title>MyQuran</title>
 <link rel="icon" href="assets/icon-32.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=9">
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="i18n.js?v=7"></script>
-<script src="core.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
+<script src="core.js?v=9"></script>
 </head>
 <body>
 <header>
@@ -40,7 +40,8 @@
     </div>
     <p id="script-note" class="note small" hidden data-i18n="ayahByAyah"></p>
     <p id="glyph-note" class="note small" hidden><span data-i18n="glyphNote"></span>
-      <a id="glyph-zip" href="#" download data-i18n="glyphZip"></a> · <a href="install.html" target="_blank" data-i18n="installer"></a></p>
+      <a id="glyph-zip" href="#" download data-i18n="glyphZip"></a> · <a href="install.html" target="_blank" data-i18n="installer"></a>
+      · <button id="glyph-off" class="link" type="button" data-i18n="glyphInstalled"></button></p>
     <div id="preview-ar" class="arabic" dir="rtl"></div>
     <div class="actions">
       <button id="insert" class="primary" data-i18n="insert"></button>
@@ -82,10 +83,25 @@
       <label class="row"><span data-i18n="font"></span> <input id="s-ar-font" type="text" list="ar-fonts"></label>
       <datalist id="ar-fonts"></datalist>
       <label class="row"><span data-i18n="size"></span> <input id="s-ar-size" type="number" min="6" max="72"></label>
+      <label><input type="checkbox" id="s-ar-bold"> <span data-i18n="arBold"></span></label>
       <p class="small muted"><span data-i18n="fontsHelp"></span>:
         <a href="fonts/MyQuran-fonts.zip" download data-i18n="fontsZip"></a> ·
         <a href="fonts/ScheherazadeNew-Regular.ttf" download>Scheherazade New</a> ·
         <a href="install.html" target="_blank" data-i18n="installer"></a></p>
+    </fieldset>
+
+    <fieldset>
+      <legend data-i18n="extraFonts"></legend>
+      <div class="fontrow"><span data-i18n="auza"></span>
+        <input id="s-auza-font" type="text" list="ar-fonts" placeholder="Scheherazade New" aria-label="font">
+        <input id="s-auza-size" type="number" min="6" max="72" aria-label="size"></div>
+      <div class="fontrow"><span data-i18n="basmala"></span>
+        <input id="s-basmala-font" type="text" list="ar-fonts" data-i18n-placeholder="mushafFont" aria-label="font">
+        <input id="s-basmala-size" type="number" min="6" max="72" aria-label="size"></div>
+      <div class="fontrow"><span data-i18n="refShort"></span>
+        <input id="s-ref-font" type="text" list="ar-fonts" placeholder="Scheherazade New" aria-label="font">
+        <input id="s-ref-size" type="number" min="6" max="72" aria-label="size"></div>
+      <p class="small muted" data-i18n="extraFontsHelp"></p>
     </fieldset>
 
     <fieldset>
@@ -109,6 +125,6 @@
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
