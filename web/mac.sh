@@ -112,6 +112,8 @@ launchctl bootstrap "gui/$(id -u)" "$AGENT" >/dev/null 2>&1 || true
 echo "  $(osascript -l JavaScript "$APP/register-fonts.js")"
 # Word remembers fonts it could not find; the cache is rebuilt on the next start
 rm -f "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/Microsoft/fontLookupCache"*.plist
+# Word shows the task pane from its WebKit cache; clear it so the current version is loaded
+rm -rf "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/WebKit/NetworkCache"
 
 echo; echo "$(ls "$FONTS" | wc -l | tr -d ' ') fonts in $FONTS"
 say "Done. Quit Word (Cmd+Q) and open it again. Home -> MyQuran.

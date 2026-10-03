@@ -1,5 +1,12 @@
 # Changelog / Ўзгаришлар
 
+## 2.1.1
+
+- Word for Mac kept showing the old task pane after an update: it serves the pane from its WebKit cache
+  (`Caches/WebKit/NetworkCache`) without asking the server. The pane now reads `version.json` past the
+  cache and, when the site is newer, reloads itself at `index.html?v=N` (once). The macOS installer clears
+  that cache; the help gives the right command.
+
 ## 2.1
 
 - **Help** (? button): a separate page in all 22 interface languages — about, installation, how to use,
