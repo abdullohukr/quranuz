@@ -246,7 +246,7 @@
 
   /* sel  = {sura, from, to, wordFrom?, wordTo?}  (0-based word indexes; wordFrom
             applies to the first ayah, wordTo to the last one)
-     opts = {brackets, auza, basmala, ref, bold, basmalaText?,
+     opts = {brackets, auza, basmala, ref, trRef, bold, basmalaText?,
              translations: [{data, dir, quotes:[open, close], suraName}],
              tafsirs: [{name, dir, quotes, suraName, get(sura, aya) -> {from, to, text} | null}]}
      Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}:
@@ -308,7 +308,8 @@
       });
       var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
       var rng = from === to ? String(from) : from + '-' + to;
-      return splitParens(quote, bounds, q[0].length).concat([{ t: ' (' + suraName + ': ' + rng + ').', bold: false, italic: true }]);
+      var runs = splitParens(quote, bounds, q[0].length);
+      return opts.trRef === false ? runs : runs.concat([{ t: ' (' + suraName + ': ' + rng + ').', bold: false, italic: true }]);
     }
     (opts.translations || []).forEach(function (tr) {
       var items = [];

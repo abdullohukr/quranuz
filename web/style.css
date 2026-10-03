@@ -56,8 +56,6 @@ body.office #results { max-height: 32vh; }
 #preview-ar.dragging .w { opacity: 1; }
 #preview-ar .num { color: var(--accent); }
 .actions { display: flex; gap: 8px; margin: 10px 0; }
-.out { border-top: 1px solid var(--line); padding-top: 8px; }
-.out .arabic { font-size: 22px; }
 dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); max-width: 420px; width: calc(100% - 32px); }
 dialog form { display: flex; flex-direction: column; gap: 10px; }
 dialog h2 { margin: 0; font-size: 17px; }
@@ -73,7 +71,6 @@ fieldset { border: 1px solid var(--line); border-radius: 6px; display: flex; fle
 button.info { font-size: 17px; padding: 4px 9px; }
 .note { background: var(--hl); padding: 6px 8px; border-radius: 6px; }
 .basmala { text-align: center; }
-.out p { margin: 6px 0; text-align: justify; }
 dialog { max-width: 560px; }
 dialog .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 dialog .row select, dialog .row input { flex: 1; min-width: 0; }
@@ -92,3 +89,7 @@ fieldset legend label { display: inline-flex; gap: 6px; font-weight: 600; }
 .info-body { max-height: 60vh; overflow: auto; }
 .info-body h2, .info-body h3 { font-size: 15px; margin: 10px 0 4px; }
 .info-body p { margin: 4px 0; }
+
+[hidden] { display: none !important; }
+.author { text-align: center; color: var(--muted); font-size: 12px; margin: 16px 0 8px; }
+.author a { color: inherit; }

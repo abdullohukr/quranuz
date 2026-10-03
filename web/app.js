@@ -7,15 +7,14 @@
     uiLang: 'uz', script: 'default',
     withTr: true, translations: ['alovuddin_mansur'],
     withTafsir: false, tafsirs: [],
-    brackets: true, auza: false, basmala: false, ref: false, newPara: true,
+    brackets: true, auza: false, basmala: false, ref: false, trRef: true, newPara: true,
     arFont: '', arSize: 18, arBold: false, uzFont: '', uzSize: 14,
-    auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0,   // 0 / '': automatic
-    glyphNoteOff: false
+    auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0    // 0 / '': automatic
   };
   var QUOTES = { en: ['“', '”'], tr: ['“', '”'], id: ['“', '”'], ms: ['“', '”'], az: ['“', '”'], zh: ['“', '”'],
                  ja: ['「', '」'], ko: ['“', '”'], de: ['„', '“'], nl: ['„', '”'], it: ['«', '»'] };
   var settings = loadSettings(), i18n = new I18n(settings.uiLang);
-  var quran, catalog = { translations: [], tafsirs: [], scripts: [] }, suraNames = {}, surahInfo = {};
+  var quran, catalog = { translations: [], tafsirs: [], scripts: [] }, suraNames = {}, surahInfo = {}, langNames = {};
   var cache = {}, sel = { sura: 1, from: 1, to: 1, wordFrom: 0, wordTo: null };
   var clickStart = null, inWord = false, results = [];
   var t = function (k, v) { return i18n.t(k, v); };
@@ -71,11 +70,30 @@
     [].forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (el) { el.placeholder = t(el.dataset.i18nPlaceholder); });
     [].forEach.call(document.querySelectorAll('[data-i18n-title]'), function (el) { el.title = t(el.dataset.i18nTitle); });
   }
-  $('ui-lang').innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
-  $('ui-lang').value = settings.uiLang;
-  $('ui-lang').addEventListener('change', function () {
-    settings.uiLang = this.value; i18n.set(settings.uiLang); saveSettings();
+  ['ui-lang', 's-ui-lang'].forEach(function (id) {
+    $(id).innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
+    $(id).value = settings.uiLang;
+    $(id).addEventListener('change', function () { setUiLang(this.value); });
+  });
+  function setUiLang(lang) {
+    settings.uiLang = lang; i18n.set(lang); saveSettings();
+    $('ui-lang').value = $('s-ui-lang').value = lang;
     applyI18n(); fillSuraSelect(); fillScriptSelect(); render(); if (results.length) runSearch();
+    if ($('settings').open) {                        // language names in the lists follow the interface
+      checklist($('s-tr-list'), catalog.translations, settings.translations);
+      checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
+      syncLists();
+      [].forEach.call(document.querySelectorAll('.filter'), function (f) { f.dispatchEvent(new Event('input')); });
+    }
+  }
+
+  /* Help: a separate page, opened in the browser (from Word too) */
+  $('help-btn').addEventListener('click', function () {
+    var url = new URL('help.html?lang=' + settings.uiLang, location.href).href;
+    try {
+      if (inWord && Office.context.ui.openBrowserWindow) { Office.context.ui.openBrowserWindow(url); return; }
+    } catch (e) {}
+    window.open(url, '_blank');
   });
 
   /* ---------- catalog helpers ---------- */
@@ -163,23 +181,8 @@
       var fam = (sc.font && sc.font.family) ? "'" + sc.font.family + "', " : '';
       document.documentElement.style.setProperty('--ar-script', fam + "'QuranUz Arabic', 'Scheherazade New', serif");
       $('script-note').hidden = !sc.ayahByAyah;
-      $('glyph-note').hidden = !sc.glyph || settings.glyphNoteOff || pageFontsInstalled(sc);
-      if (sc.glyph) $('glyph-zip').href = sc.fontsZip || '#';
-      $('source').textContent = scriptName(sc) + (sc.source ? ' — ' + sc.source : '');
     });
   }
-  /* Are the page fonts installed on this computer? A local font changes the width of its glyphs
-     compared with the fallback (the web fonts loaded below have other family names). */
-  function pageFontsInstalled(sc) {
-    try {
-      var ctx = document.createElement('canvas').getContext('2d'), w = sc.ayahs ? null : quran.text(1, 1);
-      var txt = (w || '').replace(/[\u200F ]/g, '').slice(0, 6) || '\uFB51\uFB52\uFB53';
-      ctx.font = '40px monospace'; var a = ctx.measureText(txt).width;
-      ctx.font = "40px '" + sc.pageFont.families[0] + "', monospace"; var b = ctx.measureText(txt).width;
-      return Math.abs(a - b) > 0.5;
-    } catch (e) { return false; }
-  }
-
   /* QPC page fonts: one web font per Mushaf page, loaded when a page is shown */
   function pageFamily(page) {
     var sc = scriptById(settings.script), fam = 'MQ-' + sc.id + '-p' + page;
@@ -277,7 +280,8 @@
   function current() {
     var sc = scriptById(settings.script);
     return quran.format(sel, {
-      brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref, bold: settings.arBold,
+      brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref, trRef: settings.trRef,
+      bold: settings.arBold,
       // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
       basmalaText: settings.basmalaFont && sc.glyph ? QuranCore.BASMALA : null,
       translations: settings.withTr ? activeTranslations().filter(function (x) { return x.data; }).map(function (x) {
@@ -346,9 +350,6 @@
     }
     $('preview-ar').innerHTML = html;
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
-    var out = current(), o = '<p class="arabic" dir="rtl">' + runsHtml(out.arabic.runs) + '</p>';
-    out.paras.forEach(function (p) { o += '<p dir="' + p.dir + '">' + runsHtml(p.runs) + '</p>'; });
-    $('out').innerHTML = o;
   }
 
   /* Word selection: click first word then last word, or drag across words with the mouse. */
@@ -483,13 +484,15 @@
 
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
-            ref: 's-ref', newPara: 's-newpara', arFont: 's-ar-font', arSize: 's-ar-size', arBold: 's-ar-bold',
+            ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', arFont: 's-ar-font', arSize: 's-ar-size', arBold: 's-ar-bold',
             uzFont: 's-uz-font', uzSize: 's-uz-size', auzaFont: 's-auza-font', auzaSize: 's-auza-size',
             basmalaFont: 's-basmala-font', basmalaSize: 's-basmala-size', refFont: 's-ref-font', refSize: 's-ref-size' };
-  /* Group label: English language name (+ native name), e.g. "Russian — Русский" */
+  /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
   function langLabel(x) {
-    var en = x.langEn || x.langName || x.lang || '', nat = x.langName || '';
-    return nat && nat !== en ? en + ' — ' + nat : en;
+    var ui = langNames.ui && langNames.ui[settings.uiLang] || {};
+    var loc = ui[x.lang] || x.langEn || x.langName || x.lang || '';
+    var nat = langNames.native && langNames.native[x.lang] || x.langName || '';
+    return nat && nat.toLowerCase() !== loc.toLowerCase() ? loc + ' (' + nat + ')' : loc;
   }
   function checklist(el, items, chosen) {
     var byLang = {}, order = [];
@@ -511,16 +514,17 @@
     order.forEach(function (k) {
       var rest = byLang[k].filter(function (x) { return chosen.indexOf(x.id) < 0; });
       if (!rest.length) return;
-      html += '<div class="grp">' + esc(k) + '</div>';
+      html += '<div class="grp" data-g="' + esc(k) + '">' + esc(k) + '</div>';
       rest.forEach(function (x) { html += item(x, false); });
     });
     el.innerHTML = html;
     function item(x, on) {
       var label = x.name + (x.author && x.name.indexOf(x.author) < 0 ? ' — ' + x.author : '') +
         (x.partial ? ' (' + x.partial + '/6236)' : '');
-      return '<label data-s="' + esc((label + ' ' + langLabel(x) + ' ' + (x.lang || '')).toLowerCase()) + '">' +
+      var lang = langLabel(x);
+      return '<label data-g="' + esc(on ? '' : lang) + '" data-s="' + esc([label, lang, x.langEn, x.langName, x.lang].join(' ').toLowerCase()) + '">' +
         '<input type="checkbox" value="' + esc(x.id) + '"' + (on ? ' checked' : '') + '> <span>' + esc(label) +
-        '</span> <span class="lang">' + esc(x.langEn || x.langName || x.lang || '') + '</span></label>';
+        '</span> <span class="lang">' + esc(lang) + '</span></label>';
     }
   }
   function picked(el, before) {
@@ -529,8 +533,12 @@
   }
   [].forEach.call(document.querySelectorAll('.filter'), function (inp) {
     inp.addEventListener('input', function () {
-      var q = inp.value.trim().toLowerCase(), list = $(inp.dataset.list);
-      [].forEach.call(list.children, function (el) { el.hidden = !!q && (el.classList.contains('grp') || (el.dataset.s || '').indexOf(q) < 0); });
+      var q = inp.value.trim().toLowerCase(), list = $(inp.dataset.list), groups = {};
+      [].forEach.call(list.querySelectorAll('label'), function (el) {
+        el.hidden = !!q && (el.dataset.s || '').indexOf(q) < 0;
+        if (!el.hidden) groups[el.dataset.g] = 1;
+      });
+      [].forEach.call(list.querySelectorAll('.grp'), function (el) { el.hidden = !!q && !groups[el.dataset.g]; });
     });
   });
   $('settings-btn').addEventListener('click', function () {
@@ -542,6 +550,8 @@
     $('s-ref-size').placeholder = Math.round((+settings.arSize || 18) * 0.7);
     $('s-auza-size').placeholder = $('s-basmala-size').placeholder = +settings.arSize || 18;
     fillScriptSelect();
+    $('s-ui-lang').value = settings.uiLang;
+    [].forEach.call(document.querySelectorAll('.filter'), function (f) { f.value = ''; });
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
     syncLists();
@@ -565,7 +575,9 @@
     $('s-tr-list').classList.toggle('off', !$('s-with-tr').checked);
     $('s-tf-list').classList.toggle('off', !$('s-with-tf').checked);
   }
-  $('settings').addEventListener('change', function (e) { if (!e.target.classList.contains('filter')) applyLater(); });
+  $('settings').addEventListener('change', function (e) {
+    if (!e.target.classList.contains('filter') && e.target.id !== 's-ui-lang') applyLater();
+  });
   $('settings').addEventListener('submit', function () { clearTimeout(applyTimer); applySettings(); });
   $('settings').addEventListener('close', function () { clearTimeout(applyTimer); applySettings(); });
   function applySettings() {
@@ -584,7 +596,6 @@
     saveSettings();
     (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); if (results.length) runSearch(); });
   }
-  $('glyph-off').addEventListener('click', function () { settings.glyphNoteOff = true; saveSettings(); $('glyph-note').hidden = true; });
 
   /* ---------- surah info ---------- */
   $('info-btn').addEventListener('click', function () {
@@ -610,8 +621,9 @@
   /* ---------- init ---------- */
   function init() {
     applyI18n();
-    Promise.all([getJSON('quran.json'), optional('catalog.json', null), optional('suras.json', {})]).then(function (r) {
+    Promise.all([getJSON('quran.json'), optional('catalog.json', null), optional('suras.json', {}), optional('langnames.json', {})]).then(function (r) {
       var data = r[0], cat = r[1], names = r[2];
+      langNames = r[3] || {};
       quran = new QuranCore.Quran(data);
       suraNames = names || {};
       Object.keys(suraNames).forEach(function (k) { quran.addSuraNames(suraNames[k].simple); });
