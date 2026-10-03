@@ -649,6 +649,20 @@
     }).catch(function (e) { $('status').textContent = t('error') + ': ' + e.message; });
   }
 
+  /* Word for Mac serves the task pane from its WebKit cache without asking the server, so after an
+     update it kept showing the old version. version.json is read past the cache; when the site has
+     a newer version the page reloads at a new address (index.html?v=N), which nothing has cached. */
+  function checkVersion() {
+    var meta = document.querySelector('meta[name="myquran-version"]'), mine = meta && meta.content;
+    if (!mine || !window.fetch) return;
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.v || d.v === mine) return;
+      try { if (sessionStorage.getItem('myquran-reload') === d.v) return; sessionStorage.setItem('myquran-reload', d.v); } catch (e) {}
+      location.replace(location.pathname + '?v=' + encodeURIComponent(d.v) + location.hash);
+    }).catch(function () {});
+  }
+  checkVersion();
+
   if (window.Office && Office.onReady) {
     Office.onReady(function (info) {
       inWord = info && info.host === Office.HostType.Word;
