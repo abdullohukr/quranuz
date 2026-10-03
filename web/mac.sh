@@ -1,7 +1,9 @@
 #!/bin/bash
 # MyQuran installer for macOS: all fonts (incl. QPC V1/V2/V4 page fonts) and the Word add-in.
 # Run in Terminal:  curl -fsSL https://abdullohukr.github.io/quranuz/mac.sh | bash
-# Fonts go to their own folder ~/Library/Fonts/MyQuran (macOS also reads sub-folders).
+# Fonts go to their own folder ~/Library/Fonts/MyQuran. Word for Mac (16.x) does not use font
+# files that are only copied there: they are also registered with CoreText, now and at every
+# login (LaunchAgent uz.myquran.fonts), like Font Book does.
 # Every run is a clean reinstall: the MyQuran folder is recreated and other copies of the
 # same fonts in the home folder are moved to ~/MyQuran-old-fonts (duplicate fonts make Word
 # show "We weren't able to load all of your fonts").
@@ -12,6 +14,8 @@ REL="https://github.com/abdullohukr/quranuz/releases/download/fonts"
 FONTS="$HOME/Library/Fonts/MyQuran"
 OLD="$HOME/MyQuran-old-fonts"          # older copies of our fonts are moved here, not deleted
 WEF="$HOME/Library/Containers/com.microsoft.Word/Data/Documents/wef"
+APP="$HOME/Library/Application Support/MyQuran"
+AGENT="$HOME/Library/LaunchAgents/uz.myquran.fonts.plist"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -76,10 +80,38 @@ say "3/4  Word add-in MyQuran"
 mkdir -p "$WEF"
 curl -fsSL "$SITE/manifest.xml" -o "$WEF/MyQuran.xml"
 
-say "4/4  Refreshing the font cache"
-atsutil databases -removeUser >/dev/null 2>&1 || true
-atsutil server -shutdown >/dev/null 2>&1 || true
-atsutil server -ping >/dev/null 2>&1 || true
+say "4/4  Registering the fonts for Word / Шрифтлар Word учун рўйхатдан ўтказилмоқда"
+mkdir -p "$APP" "$HOME/Library/LaunchAgents"
+# JXA: register every font of the folder for the login session (Word reads only registered user fonts)
+cat > "$APP/register-fonts.js" <<'EOF'
+ObjC.import('CoreText'); ObjC.import('Foundation');
+var dir = $.NSHomeDirectory().js + '/Library/Fonts/MyQuran';
+var list = $.NSFileManager.defaultManager.contentsOfDirectoryAtPathError(dir, null);
+var urls = $.NSMutableArray.array, n = 0;
+(list.isNil() ? [] : list.js).forEach(function (f) {
+  if (/\.(ttf|otf)$/i.test(f.js)) { urls.addObject($.NSURL.fileURLWithPath(dir + '/' + f.js)); n++; }
+});
+$.CTFontManagerUnregisterFontsForURLs(urls, 3, null);
+$.CTFontManagerRegisterFontsForURLs(urls, 3, null);   // 3 = kCTFontManagerScopeSession
+n + ' fonts registered';
+EOF
+cat > "$AGENT" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>uz.myquran.fonts</string>
+  <key>ProgramArguments</key><array>
+    <string>/usr/bin/osascript</string><string>-l</string><string>JavaScript</string>
+    <string>$APP/register-fonts.js</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+</dict></plist>
+EOF
+launchctl bootout "gui/$(id -u)/uz.myquran.fonts" >/dev/null 2>&1 || true
+launchctl bootstrap "gui/$(id -u)" "$AGENT" >/dev/null 2>&1 || true
+echo "  $(osascript -l JavaScript "$APP/register-fonts.js")"
+# Word remembers fonts it could not find; the cache is rebuilt on the next start
+rm -f "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/Microsoft/fontLookupCache"*.plist
 
 echo; echo "$(ls "$FONTS" | wc -l | tr -d ' ') fonts in $FONTS"
 say "Done. Quit Word (Cmd+Q) and open it again. Home -> MyQuran.

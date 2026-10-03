@@ -94,12 +94,15 @@
     if (opts.glyph) {
       /* QPC page mushafs: ayah = [[page, glyph], ...]. Glyphs are Private Use characters
          (bidi class L): RLM around every word keeps the words right-to-left in Word and
-         in the browser while the characters of a word stay in order. */
+         in the browser while the characters of a word stay in order. The space between
+         words has no page (ordinary font): the space glyph of the V1/V4 page fonts is
+         very wide on some pages and almost empty on others. */
       this.ayahs = []; this.pages = [];
       for (var g = 0; g < ayahs.length; g++) {
         var txt = '', pg = [];
         ayahs[g].forEach(function (w, k) {
-          var piece = (k ? ' ' : '') + '\u200F' + w[1] + '\u200F';
+          if (k) { txt += ' '; pg.push(null); }
+          var piece = '\u200F' + w[1] + '\u200F';
           txt += piece;
           for (var c = 0; c < piece.length; c++) pg.push(w[0]);
         });
