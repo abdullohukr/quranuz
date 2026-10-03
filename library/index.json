@@ -64,6 +64,27 @@
  ],
  "items": [
   {
+   "type": "mushaf",
+   "field": "qpc_v1",
+   "name": "Quran Library — V1 (1405)",
+   "file": "Arabic (mushaf)/Quran Library — V1 (1405) (glyph v1).json",
+   "glyph": true
+  },
+  {
+   "type": "mushaf",
+   "field": "qpc_v2",
+   "name": "Quran Library — V2 (1421)",
+   "file": "Arabic (mushaf)/Quran Library — V2 (1421) (glyph v2).json",
+   "glyph": true
+  },
+  {
+   "type": "mushaf",
+   "field": "qpc_v4",
+   "name": "Quran Library — V4 Tajweed",
+   "file": "Arabic (mushaf)/Quran Library — V4 Tajweed (glyph v4).json",
+   "glyph": true
+  },
+  {
    "type": "translation",
    "id": 149,
    "name": "Fadel Soliman, Bridges’ translation",
@@ -2828,27 +2849,6 @@
    "field": "text_qpc_hafs_tajweed",
    "name": "Quran Library — Hafs Tajweed",
    "file": "Arabic (mushaf)/Quran Library — Hafs Tajweed (text_qpc_hafs_tajweed).json"
-  },
-  {
-   "type": "mushaf",
-   "field": "qpc_v1",
-   "name": "Quran Library — V1 (1405)",
-   "file": "Arabic (mushaf)/Quran Library — V1 (1405) (glyph v1).json",
-   "glyph": true
-  },
-  {
-   "type": "mushaf",
-   "field": "qpc_v2",
-   "name": "Quran Library — V2 (1421)",
-   "file": "Arabic (mushaf)/Quran Library — V2 (1421) (glyph v2).json",
-   "glyph": true
-  },
-  {
-   "type": "mushaf",
-   "field": "qpc_v4",
-   "name": "Quran Library — V4 Tajweed",
-   "file": "Arabic (mushaf)/Quran Library — V4 Tajweed (glyph v4).json",
-   "glyph": true
   }
  ]
 }
