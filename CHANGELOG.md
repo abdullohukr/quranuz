@@ -1,5 +1,10 @@
 # Changelog / Ўзгаришлар
 
+## 2.1.2
+
+- The interface language is chosen only in Settings (the selector in the header is removed).
+- After changing the language the main window no longer shows a stuck "Loading…".
+
 ## 2.1.1
 
 - Word for Mac kept showing the old task pane after an update: it serves the pane from its WebKit cache

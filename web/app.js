@@ -70,15 +70,15 @@
     [].forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (el) { el.placeholder = t(el.dataset.i18nPlaceholder); });
     [].forEach.call(document.querySelectorAll('[data-i18n-title]'), function (el) { el.title = t(el.dataset.i18nTitle); });
   }
-  ['ui-lang', 's-ui-lang'].forEach(function (id) {
-    $(id).innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
-    $(id).value = settings.uiLang;
-    $(id).addEventListener('change', function () { setUiLang(this.value); });
-  });
+  $('s-ui-lang').innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
+  $('s-ui-lang').value = settings.uiLang;
+  $('s-ui-lang').addEventListener('change', function () { setUiLang(this.value); });
   function setUiLang(lang) {
     settings.uiLang = lang; i18n.set(lang); saveSettings();
-    $('ui-lang').value = $('s-ui-lang').value = lang;
-    applyI18n(); fillSuraSelect(); fillScriptSelect(); render(); if (results.length) runSearch();
+    $('s-ui-lang').value = lang;
+    applyI18n(); fillSuraSelect(); fillScriptSelect(); render();
+    if (quran) $('status').textContent = '';          // applyI18n put the "Loading…" text back
+    if (results.length) runSearch();
     if ($('settings').open) {                        // language names in the lists follow the interface
       checklist($('s-tr-list'), catalog.translations, settings.translations);
       checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
