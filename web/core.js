@@ -245,15 +245,24 @@
             applies to the first ayah, wordTo to the last one)
      opts = {brackets, auza, basmala, ref,
              translations: [{data, dir, quotes:[open, close], suraName}],
-             tafsirs: [{name, dir, get(sura, aya) -> {from, to, text} | null}]}
-     Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}: runs = [{t, bold, italic, color}] */
+             tafsirs: [{name, dir, quotes, suraName, get(sura, aya) -> {from, to, text} | null}]}
+     Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}: runs = [{t, bold, italic, color, page, plain}] */
   Quran.prototype.format = function (sel, opts) {
     opts = opts || {};
     var self = this, br = this.meta.brackets, ar = [];
     function push(t, extra) { var r = { t: t, bold: true }; for (var k in extra) r[k] = extra[k]; ar.push(r); }
 
-    if (opts.auza) push(AUZA + ' ');
-    if (opts.basmala && !(sel.sura === 1 && sel.from === 1)) push(BASMALA + ' ');
+    // A'udhu and the reference are not Quran text: plain Arabic font (r.plain), not the Mushaf one
+    if (opts.auza) push(AUZA, { plain: true });
+    if (opts.basmala && !(sel.sura === 1 && sel.from === 1)) {
+      if (opts.auza) push('. ', { plain: true });
+      var bw = this.spans(1, 1).words;                 // the basmala in the chosen Mushaf (1:1 without its number)
+      this._runs(1, 1, bw[0].start, bw[bw.length - 1].end).forEach(function (r) {
+        var x = {}; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
+        push(r.t, x);
+      });
+    }
+    if (ar.length) push(' ', { plain: true });
     if (opts.brackets !== false) push(br.open);
     for (var a = sel.from; a <= sel.to; a++) {
       var sp = this.spans(sel.sura, a), w = sp.words, t = this.text(sel.sura, a);
@@ -271,11 +280,17 @@
     if (opts.brackets !== false) push(br.close);
     if (opts.ref) {
       var rng = sel.to > sel.from ? arNum(sel.from) + '-' + arNum(sel.to) : arNum(sel.from);
-      ar.push({ t: ' [' + this.suras[sel.sura - 1][0] + ' ' + rng + ']', bold: false });
+      ar.push({ t: ' [' + this.suras[sel.sura - 1][0] + ' ' + rng + ']', bold: false, plain: true });
     }
     ar = mergeRuns(ar);
 
     var paras = [], multi = sel.to > sel.from;
+    var range = multi ? sel.from + '-' + sel.to : String(sel.from);
+    /* «meaning (explanation) …» (Sura: 1-2).  -- the same layout for translations and tafsirs */
+    function quoted(parts, bounds, q, suraName, rng) {
+      var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
+      return splitParens(quote, bounds, q[0].length).concat([{ t: ' (' + suraName + ': ' + rng + ').', bold: false, italic: true }]);
+    }
     (opts.translations || []).forEach(function (tr) {
       var parts = [], bounds = [], pos = 1;
       for (var a2 = sel.from; a2 <= sel.to; a2++) {
@@ -285,13 +300,10 @@
         bounds.push(pos); pos += parts[parts.length - 1].length + 1;
       }
       if (!parts.length) return;
-      var q = tr.quotes || ['«', '»'];
-      var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
-      var range = multi ? sel.from + '-' + sel.to : String(sel.from);
-      var runs = splitParens(quote, bounds, q[0].length).concat([{ t: ' (' + tr.suraName + ': ' + range + ').', bold: false, italic: true }]);
-      paras.push({ dir: tr.dir || 'ltr', runs: runs });
+      paras.push({ dir: tr.dir || 'ltr', runs: quoted(parts, bounds, tr.quotes || ['«', '»'], tr.suraName, range) });
     });
 
+    // one paragraph per commentary entry (an entry may explain a group of ayahs)
     (opts.tafsirs || []).forEach(function (tf) {
       var seen = {}, entries = [];
       for (var a3 = sel.from; a3 <= sel.to; a3++) {
@@ -301,16 +313,11 @@
         if (seen[key]) continue;
         seen[key] = 1; entries.push(en);
       }
-      if (!entries.length) return;
-      paras.push({ dir: tf.dir || 'ltr', runs: [{ t: tf.name, bold: true }] });
       entries.forEach(function (en) {
-        var label = entries.length > 1 || en.from !== en.to ? (en.from === en.to ? en.from : en.from + '-' + en.to) + '. ' : '';
-        tafsirParagraphs(en.text).forEach(function (p, i) {
-          var runs = [];
-          if (i === 0 && label) runs.push({ t: label, bold: true });
-          runs.push({ t: p, bold: false });
-          paras.push({ dir: textDir(p, tf.dir || 'ltr'), runs: runs });
-        });
+        var text = tafsirParagraphs(en.text).join(' ');
+        if (!text) return;
+        var rng = en.from === en.to ? String(en.from) : en.from + '-' + en.to;
+        paras.push({ dir: textDir(text, tf.dir || 'ltr'), runs: quoted([text], [1], tf.quotes || ['«', '»'], tf.suraName || tf.name, rng) });
       });
     });
 
@@ -325,7 +332,7 @@
       if (!r.t) return;
       var l = out[out.length - 1];
       if (l && l.bold === r.bold && (l.color || null) === (r.color || null) && (l.page || null) === (r.page || null) &&
-          !l.italic && !r.italic) l.t += r.t;
+          !l.plain === !r.plain && !l.italic && !r.italic) l.t += r.t;
       else out.push(r);
     });
     return out;
