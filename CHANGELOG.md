@@ -1,5 +1,27 @@
 # Changelog / Ўзгаришлар
 
+## 2.0.2
+
+- macOS: Word for Mac (16.111) did not use fonts that were only copied to `~/Library/Fonts` (Arabic text
+  fell back to Sakkal Majalla / Geeza Pro). The installer now also registers every MyQuran font with
+  CoreText, at once and at every login (LaunchAgent `uz.myquran.fonts`), and clears Word's font lookup
+  cache; the uninstaller removes the agent and unregisters the fonts.
+- QPC V1 / V4: the space between words is in the ordinary Arabic font, not in the page font (the space
+  glyph of these page fonts is very wide on some pages and empty on others, e.g. the basmalah on page 1).
+
+## 2.0.1
+
+- Tafsir is inserted like a translation: «bold text (plain explanations)» *(Surah: 1).*, one paragraph
+  per entry, no title paragraph; several translations/tafsirs are separated only by paragraphs.
+- Isti'adhah and the `[الفاتحة ١]` reference use Scheherazade New, not the mushaf font; the basmalah is
+  taken from the selected mushaf and separated from the isti'adhah by ". ".
+- Installers (macOS, Windows): every run is a clean reinstall of all fonts; other copies of the same fonts
+  in the user's font folders are moved to `~/MyQuran-old-fonts` (Windows: `%LOCALAPPDATA%\MyQuran\OldFonts`);
+  Word is closed first; no "restart the Mac" note.
+- The tafsir.one text is not encoded for KFGQPC (in KFGQPC `ی` shows dots and `۝١` a double circle): choosing
+  the KFGQPC font now switches to the Quran Library — Hafs mushaf, made for that font. The font field
+  follows the mushaf (reset when the mushaf changes).
+
 ## 2.0 — MyQuran
 
 - Name **MyQuran**; interface in 22 languages (Uzbek by default); all settings are remembered.

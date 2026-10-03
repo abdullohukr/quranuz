@@ -2,7 +2,7 @@
 # No administrator rights needed. Run in PowerShell:
 #   irm https://abdullohukr.github.io/quranuz/win.txt | iex
 # Fonts go to their own folder %LOCALAPPDATA%\MyQuran\Fonts and are registered for the
-# current user. Uninstall:  irm https://abdullohukr.github.io/quranuz/win-uninstall.txt | iex
+# current user. Every run is a clean reinstall (close Word first). Uninstall:  irm https://abdullohukr.github.io/quranuz/win-uninstall.txt | iex
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $Site = 'https://abdullohukr.github.io/quranuz'
@@ -13,10 +13,15 @@ $FontReg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
 $Tmp = Join-Path $env:TEMP ('myquran-' + [guid]::NewGuid())
 New-Item -ItemType Directory -Force -Path $FontDir, $Tmp | Out-Null
 if (-not (Test-Path $FontReg)) { New-Item -Force -Path $FontReg | Out-Null }
+if (Get-Process WINWORD -ErrorAction SilentlyContinue) {
+  Write-Host "Close Word first / Avval Word'ni yoping / Сначала закройте Word" -ForegroundColor Yellow
+  Read-Host "Enter"
+}
 
 # make new fonts usable right away (otherwise only after the next sign-in)
 Add-Type -Namespace MyQuran -Name Gdi -MemberDefinition @'
 [DllImport("gdi32.dll", CharSet = CharSet.Unicode)] public static extern int AddFontResourceW(string file);
+[DllImport("gdi32.dll", CharSet = CharSet.Unicode)] public static extern int RemoveFontResourceW(string file);
 [DllImport("user32.dll")] public static extern int SendMessageTimeoutW(System.IntPtr h, uint m, System.IntPtr w, System.IntPtr l, uint f, uint t, out System.IntPtr r);
 '@
 
@@ -34,7 +39,27 @@ function Install-Zip($url) {
   }
 }
 
-Write-Host "`n1/3  MyQuran fonts -> $FontDir" -ForegroundColor Cyan
+# Clean reinstall: unregister and delete the previous MyQuran fonts; copies of the same font
+# files installed by hand for this user are moved to %LOCALAPPDATA%\MyQuran\OldFonts.
+$UserFonts = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts'
+$Old = Join-Path $Home2 'OldFonts'
+$reg = Get-ItemProperty -Path $FontReg
+$reg.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
+  $path = [string]$_.Value
+  $ours = $_.Name -like 'MyQuran *'
+  $mine = $path -like "$UserFonts\*" -and (Test-Path (Join-Path $FontDir (Split-Path $path -Leaf)))
+  if ($ours -or $mine) {
+    [void][MyQuran.Gdi]::RemoveFontResourceW($path)
+    Remove-ItemProperty -Path $FontReg -Name $_.Name -ErrorAction SilentlyContinue
+    if ($mine -and (Test-Path $path)) {
+      New-Item -ItemType Directory -Force -Path $Old | Out-Null
+      Move-Item -Force $path $Old -ErrorAction SilentlyContinue
+    }
+  }
+}
+Get-ChildItem $FontDir -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+
+Write-Host "`n1/3  MyQuran fonts -> $FontDir (clean reinstall)" -ForegroundColor Cyan
 Install-Zip "$Site/fonts/MyQuran-fonts.zip"
 
 Write-Host "`n2/3  QPC page fonts: Quran Library V1, V2, V4 (3 x 604)" -ForegroundColor Cyan

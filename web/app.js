@@ -35,8 +35,16 @@
       }
       if (saved) Object.keys(saved).forEach(function (k) { if (saved[k] !== undefined) st[k] = saved[k]; });
     } catch (e) {}
-    if (/KFGQPC/i.test(st.arFont)) st.arFont = '';
+    fixFont(st);
     return st;
+  }
+  /* The tafsir.one text is not encoded for KFGQPC fonts (ی, ۝ + digits): in KFGQPC it shows dots
+     and double circles. Asking for KFGQPC therefore selects the Quran Library Hafs mushaf, whose
+     text is made for that font (the Hafs mushafs already use it).                              */
+  function fixFont(st) {
+    if (!/KFGQPC|Uthmanic/i.test(st.arFont || '')) return;
+    if (!/^text_qpc_hafs/.test(st.script)) st.script = 'text_qpc_hafs';
+    st.arFont = '';
   }
   function saveSettings() { try { localStorage.setItem('myquran-settings', JSON.stringify(settings)); } catch (e) {} }
 
@@ -147,6 +155,7 @@
     }
     return "'" + sc.pageFont.families[page - 1] + "','" + fam + "'";
   }
+  var PLAIN_AR = 'Scheherazade New';     // A'udhu and the [sura n] reference: ordinary Arabic, not a Mushaf font
   function wordFont(page) { return scriptById(settings.script).pageFont.families[page - 1]; }
   function arabicFont() {
     var sc = scriptById(settings.script);
@@ -228,7 +237,7 @@
         return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'], suraName: suraName(sel.sura, x.lang) };
       }) : [],
       tafsirs: settings.withTafsir ? activeTafsirs().map(function (tf) {
-        return { name: tf.name, dir: tf.dir, get: tafsirGetter(tf) };
+        return { name: tf.name, dir: tf.dir, quotes: QUOTES[tf.lang] || ['«', '»'], suraName: suraName(sel.sura, tf.lang), get: tafsirGetter(tf) };
       }) : []
     });
   }
@@ -236,7 +245,7 @@
   function runsHtml(runs) {
     return runs.map(function (r) {
       var st = 'font-weight:' + (r.bold ? 'bold' : 'normal') + ';font-style:' + (r.italic ? 'italic' : 'normal') + (r.color ? ';color:#' + r.color : '') +
-        (r.page ? ';font-family:' + pageFamily(r.page) : '');
+        (r.page ? ';font-family:' + pageFamily(r.page) : r.plain ? ";font-family:'" + PLAIN_AR + "','QuranUz Arabic'" : '');
       return '<span style="' + st + '">' + esc(r.t) + '</span>';
     }).join('');
   }
@@ -336,7 +345,7 @@
   function paraXml(p, font, size) {
     var rtl = p.dir === 'rtl';
     return '<w:p><w:pPr><w:bidi' + (rtl ? '' : ' w:val="0"') + '/><w:jc w:val="both"/></w:pPr>' +
-      p.runs.map(function (r) { return runXml(r, r.page ? wordFont(r.page) : font, size, rtl); }).join('') + '</w:p>';
+      p.runs.map(function (r) { return runXml(r, r.page ? wordFont(r.page) : r.plain ? PLAIN_AR : font, size, rtl); }).join('') + '</w:p>';
   }
   function buildOoxml(out) {
     var body = paraXml(out.arabic, arabicFont(), settings.arSize);
@@ -455,6 +464,7 @@
       var el = $(B[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k];
     });
     $('s-ar-font').placeholder = arabicFont();
+    $('s-ar-font').dataset.was = settings.arFont;
     fillScriptSelect();
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
@@ -469,6 +479,10 @@
     settings.tafsirs = picked($('s-tf-list'), settings.tafsirs);
     var scriptChanged = settings.script !== $('s-script').value;
     settings.script = $('s-script').value;
+    if (scriptChanged && settings.arFont === $('s-ar-font').dataset.was) settings.arFont = '';   // font follows the mushaf
+    var before = settings.script;
+    fixFont(settings);
+    if (settings.script !== before) scriptChanged = true;
     saveSettings();
     (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); });
   });
