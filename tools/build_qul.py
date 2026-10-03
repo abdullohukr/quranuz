@@ -110,6 +110,28 @@ def url(rel):
     return BASE_URL + "library/" + urllib.parse.quote(rel)
 
 
+def clean_font(src):
+    """Font bytes with a valid OS/2 fsType. 599 of the QPC V1 page fonts set the
+    reserved bit 0 (fsType 13), which Office for Mac may refuse to load; keep the
+    most permissive permission that was set (editable > preview&print > restricted).
+    Glyphs and metrics are not touched. Returns (bytes, postscript name, family)."""
+    import io
+    t = TTFont(src)
+    n = t["name"]
+    ps, fam = n.getDebugName(6) or "", n.getDebugName(16) or n.getDebugName(1) or ""
+    if "OS/2" in t:
+        fs = t["OS/2"].fsType
+        perm = 8 if fs & 8 else 4 if fs & 4 else 2 if fs & 2 else 0
+        fixed = perm | (fs & 0x0300)                 # keep no-subsetting / bitmap-only
+        if fixed != fs:
+            t["OS/2"].fsType = fixed
+            buf = io.BytesIO()
+            t.save(buf)
+            return buf.getvalue(), ps, fam
+    with open(src, "rb") as f:
+        return f.read(), ps, fam
+
+
 def page_family(name, p):
     """Family names of the QPC page fonts (used if a font file could not be read)."""
     return {"v1": f"QCF_P{p:03d}", "v2": f"QCF2{p:03d}", "v4": f"QCF4{p:03d}_COLOR"}[name]
@@ -386,10 +408,15 @@ def main():
         index.append({"type": "mushaf", "field": f"qpc_{name}", "name": title, "file": rel, "glyph": True})
         zname = f"MyQuran-QPC-{name.upper()}-fonts.zip"
         with zipfile.ZipFile(os.path.join(RELEASE, zname), "w", zipfile.ZIP_DEFLATED) as z:
+            index_lines = []
             for p in range(1, 605):
                 ttf = os.path.join(RAW, "pagefonts", name, "ttf", f"p{p}.ttf")
                 if os.path.exists(ttf):
-                    z.write(ttf, f"fonts/QPC-{name.upper()}-p{p:03d}.ttf")
+                    data, ps, fam = clean_font(ttf)
+                    fn = f"QPC-{name.upper()}-p{p:03d}.ttf"
+                    z.writestr(f"fonts/{fn}", data)
+                    index_lines.append(f"{fn}\t{ps}\t{fam}")
+            z.writestr("fonts-index.txt", "\n".join(index_lines) + "\n")   # used by the installers
             for fn in glob.glob(os.path.join(ROOT, "tools", "fonts-install", "*")):
                 z.write(fn, os.path.basename(fn))
         out["scripts"].append({"id": f"qpc_{name}", "label": label, "file": url(rel), "glyph": True,
@@ -435,9 +462,13 @@ def main():
     # ---- one ZIP with every font + install scripts
     zpath = os.path.join(FONTS, "MyQuran-fonts.zip")
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+        index_lines = []
         for fn in sorted(glob.glob(os.path.join(FONTS, "*.ttf")) + glob.glob(os.path.join(FONTS, "qul", "*.ttf")) +
                          glob.glob(os.path.join(FONTS, "qul", "*.otf"))):
-            z.write(fn, "fonts/" + os.path.basename(fn))
+            data, ps, fam = clean_font(fn) if TTFont else (open(fn, "rb").read(), "", "")
+            z.writestr("fonts/" + os.path.basename(fn), data)
+            index_lines.append(f"{os.path.basename(fn)}\t{ps}\t{fam}")
+        z.writestr("fonts-index.txt", "\n".join(index_lines) + "\n")
         for fn in glob.glob(os.path.join(ROOT, "tools", "fonts-install", "*")):
             z.write(fn, os.path.basename(fn))
     print(f"translations {len(out['translations'])}, tafsirs {len(out['tafsirs'])}, scripts {len(out['scripts'])}, "
