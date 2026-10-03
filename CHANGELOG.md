@@ -1,5 +1,18 @@
 # Changelog / Ўзгаришлар
 
+## 2.1
+
+- **Help** (? button): a separate page in all 22 interface languages — about, installation, how to use,
+  questions and answers (common problems), uninstall, author. In Word it opens in the browser.
+- The main window shows the ayahs once (the second preview below the buttons is gone); the selection tip and
+  the font notes are removed, as are the text source, the font help and the "empty = automatic" note in Settings.
+- Settings: interface language; "Arabic reference" `[يونس ١]` and "Translation reference" *(Юнус: 1)* are
+  separate options; the first mushaf is called "Universal font".
+- Translation and tafsir lists: search works (results at once, with their language headings); languages are
+  named in the interface language with the native name, e.g. "Турк тили (Türkçe)" (`web/data/langnames.json`,
+  made by `tools/lang_names.js` from the macOS CLDR data).
+- "Ayah" label capitalised; author and contact at the bottom: Abdulloh Hamidulloh (abdulloh.ukr@gmail.com).
+
 ## 2.0.4
 
 - Settings: the "Add translation" / "Add tafsir" switch follows its list: picking a translation or tafsir
