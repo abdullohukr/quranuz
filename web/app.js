@@ -544,12 +544,27 @@
     fillScriptSelect();
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
+    syncLists();
     $('settings').showModal();
   });
   /* Settings are applied on every change and on Save: the dialog's "close" event is not fired in
      every WebView (it never came in the Word task pane, so nothing was saved). */
   var applyTimer;
   function applyLater() { clearTimeout(applyTimer); applyTimer = setTimeout(applySettings, 150); }
+  /* The "add translation / tafsir" switch follows its list: picking an item turns it on, unpicking
+     the last one turns it off (otherwise picked translations were silently not inserted). */
+  [['s-tr-list', 's-with-tr'], ['s-tf-list', 's-with-tf']].forEach(function (x) {
+    $(x[0]).addEventListener('change', function (e) {
+      if (e.target.type !== 'checkbox') return;
+      $(x[1]).checked = !!$(x[0]).querySelector('input:checked');
+      syncLists();
+    });
+    $(x[1]).addEventListener('change', syncLists);
+  });
+  function syncLists() {
+    $('s-tr-list').classList.toggle('off', !$('s-with-tr').checked);
+    $('s-tf-list').classList.toggle('off', !$('s-with-tf').checked);
+  }
   $('settings').addEventListener('change', function (e) { if (!e.target.classList.contains('filter')) applyLater(); });
   $('settings').addEventListener('submit', function () { clearTimeout(applyTimer); applySettings(); });
   $('settings').addEventListener('close', function () { clearTimeout(applyTimer); applySettings(); });

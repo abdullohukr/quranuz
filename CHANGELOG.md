@@ -1,5 +1,11 @@
 # Changelog / Ўзгаришлар
 
+## 2.0.4
+
+- Settings: the "Add translation" / "Add tafsir" switch follows its list: picking a translation or tafsir
+  turns it on, unpicking all turns it off (picked translations were not inserted while the switch was off);
+  the list is dimmed while the switch is off. Several translations and tafsirs are all inserted.
+
 ## 2.0.3
 
 - Settings were not always saved (the dialog's `close` event does not fire in some WebViews), so the

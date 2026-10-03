@@ -85,6 +85,7 @@ dialog .fontrow input[type=number] { width: 4.5em; }
 fieldset legend label { display: inline-flex; gap: 6px; font-weight: 600; }
 .filter { width: 100%; }
 .checklist { max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+.checklist.off { opacity: .5; }
 .checklist label { display: flex; gap: 6px; align-items: baseline; justify-content: flex-start; padding: 2px 0; }
 .checklist label .lang { margin-inline-start: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .checklist .grp { font-size: 12px; font-weight: 600; color: var(--muted); margin-top: 6px; border-top: 1px solid var(--line); padding-top: 4px; }
