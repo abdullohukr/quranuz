@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="21">
+<meta name="myquran-version" content="29">
 <link rel="icon" href="assets/icon-32.png">
 <link rel="apple-touch-icon" href="assets/icon-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="style.css?v=29">
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="i18n.js?v=21"></script>
-<script src="core.js?v=21"></script>
+<script src="i18n.js?v=29"></script>
+<script src="core.js?v=29"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -55,7 +55,7 @@
     </div>
   </section>
 </main>
-<footer class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" target="_blank">Privacy</a> · <a href="terms.html" target="_blank">Terms</a> · <a href="releases.html" target="_blank">What's new</a></footer>
+<footer class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" target="_blank" data-i18n="privacy">Privacy</a> · <a href="terms.html" target="_blank" data-i18n="terms">Terms</a> · <a href="releases.html" target="_blank" data-i18n="whatsNew">What's new</a> · <a href="help.html" target="_blank" data-i18n="help">Help</a></footer>
 
 <dialog id="settings" class="sheet">
   <form method="dialog">
@@ -91,12 +91,23 @@
       </section>
 
       <section class="tab" data-tab="insert">
-        <label class="switch"><input type="checkbox" id="s-brackets"><i></i> <span data-i18n="brackets"></span></label>
-        <label class="switch"><input type="checkbox" id="s-auza"><i></i> <span data-i18n="auza"></span></label>
-        <label class="switch"><input type="checkbox" id="s-basmala"><i></i> <span data-i18n="basmala"></span></label>
-        <label class="switch"><input type="checkbox" id="s-ref"><i></i> <span data-i18n="ref"></span> <bdi class="muted">[يونس ١]</bdi></label>
-        <label class="switch"><input type="checkbox" id="s-tr-ref"><i></i> <span data-i18n="refTr"></span> <span class="muted">(Юнус: 1)</span></label>
-        <label class="switch"><input type="checkbox" id="s-newpara"><i></i> <span data-i18n="newPara"></span></label>
+        <div class="opt-group">
+          <h3 data-i18n="insertOptions"></h3>
+          <label class="switch opt"><span data-i18n="brackets"></span><bdi class="sample ar" dir="rtl">﴿ ﴾</bdi><input type="checkbox" id="s-brackets"><i></i></label>
+          <label class="switch opt"><span data-i18n="auza"></span><bdi class="sample ar" dir="rtl">أَعُوذُ بِاللَّهِ</bdi><input type="checkbox" id="s-auza"><i></i></label>
+          <label class="switch opt"><span data-i18n="basmala"></span><bdi class="sample ar" dir="rtl">بِسْمِ اللَّهِ</bdi><input type="checkbox" id="s-basmala"><i></i></label>
+          <label class="switch opt"><span data-i18n="ref"></span><bdi class="sample ar" dir="rtl">[يونس ١]</bdi><input type="checkbox" id="s-ref"><i></i></label>
+          <label class="switch opt"><span data-i18n="refTr"></span><bdi class="sample" id="s-tr-ref-sample">(Yunus: 1)</bdi><input type="checkbox" id="s-tr-ref"><i></i></label>
+          <label class="switch opt"><span data-i18n="newPara"></span><span class="sample">¶</span><input type="checkbox" id="s-newpara"><i></i></label>
+        </div>
+        <div class="opt-group">
+          <h3 data-i18n="grpMarks"></h3>
+          <label class="switch opt"><span data-i18n="ayahNums"></span><bdi class="sample ar" dir="rtl">۝١</bdi><input type="checkbox" id="s-nums"><i></i></label>
+          <label class="switch opt glyph-off"><span data-i18n="hizb"></span><bdi class="sample ar" dir="rtl">۞</bdi><input type="checkbox" id="s-hizb"><i></i></label>
+          <label class="switch opt glyph-off"><span data-i18n="sajda"></span><bdi class="sample ar" dir="rtl">۩</bdi><input type="checkbox" id="s-sajda"><i></i></label>
+          <label class="switch opt glyph-off"><span data-i18n="waqf"></span><bdi class="sample ar" dir="rtl">ـۚ ـۖ ـۗ</bdi><input type="checkbox" id="s-waqf"><i></i></label>
+          <p id="marks-note" class="small muted" hidden data-i18n="marksNote"></p>
+        </div>
       </section>
 
       <section class="tab" data-tab="fonts">
@@ -133,7 +144,7 @@
 
     <div class="sheet-foot">
       <button value="ok" class="btn primary wide" data-i18n="save"></button>
-      <p class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a></p>
+      <p class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a></p>
     </div>
   </form>
 </dialog>
@@ -152,6 +163,6 @@
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>

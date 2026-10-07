@@ -8,15 +8,19 @@
     withTr: true, translations: ['alovuddin_mansur'],
     withTafsir: false, tafsirs: [],
     brackets: true, auza: false, basmala: false, ref: false, trRef: true, newPara: true,
+    ayahNums: true, hizb: true, sajda: true, waqf: true,
     arFont: '', arSize: 18, arBold: false, uzFont: '', uzSize: 14, arText: false,
     auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0    // 0 / '': automatic
   };
   var QUOTES = { en: ['“', '”'], tr: ['“', '”'], id: ['“', '”'], ms: ['“', '”'], az: ['“', '”'], zh: ['“', '”'],
                  ja: ['「', '」'], ko: ['“', '”'], de: ['„', '“'], nl: ['„', '”'], it: ['«', '»'] };
   var fontWas = '', firstRun = false, settings = loadSettings(), i18n = new I18n(settings.uiLang);
-  var quran, catalog = { translations: [], tafsirs: [], scripts: [] }, suraNames = {}, surahInfo = {}, langNames = {};
+  var quran, catalog = { translations: [], tafsirs: [], scripts: [] }, suraNames = {}, nativeNames = {}, surahInfo = {}, langNames = {};
   var cache = {}, sel = { sura: 1, from: 1, to: 1, wordFrom: 0, wordTo: null };
-  var clickStart = null, inWord = false, online = false, results = [];
+  /* ?host=gdocs | wp | ext: the panel inside Google Docs, WordPress or the browser extension (see sendToHost) */
+  var HOST = (location.search.match(/[?&]host=(gdocs|wp|ext)\b/) || [])[1] || '';
+  if (window.parent === window) HOST = '';
+  var clickStart = null, inWord = false, online = !!HOST, windows = /Win/.test(navigator.platform || ''), results = [];
   var t = function (k, v) { return i18n.t(k, v); };
 
   /* ---------- settings (kept in localStorage, so they survive restarts) ---------- */
@@ -70,7 +74,10 @@
     document.documentElement.dir = i18n.dir();
     [].forEach.call(document.querySelectorAll('[data-i18n]'), function (el) { el.textContent = t(el.dataset.i18n); });
     [].forEach.call(document.querySelectorAll('[data-i18n-placeholder]'), function (el) { el.placeholder = t(el.dataset.i18nPlaceholder); });
-    [].forEach.call(document.querySelectorAll('[data-i18n-title]'), function (el) { el.title = t(el.dataset.i18nTitle); });
+    [].forEach.call(document.querySelectorAll('[data-i18n-title]'), function (el) {   // screen readers read aria-label
+      el.title = t(el.dataset.i18nTitle);
+      if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', el.title);
+    });
   }
   $('s-ui-lang').innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
   $('s-ui-lang').value = settings.uiLang;
@@ -78,10 +85,12 @@
   function setUiLang(lang) {
     settings.uiLang = lang; i18n.set(lang); saveSettings();
     $('s-ui-lang').value = lang;
-    applyI18n(); fillSuraSelect(); fillScriptSelect(); fillThemes(); render();
+    applyI18n(); fillSuraSelect(); fillScriptSelect(); fillThemes(); render(); footerLinks();
     if (quran) $('status').textContent = '';          // applyI18n put the "Loading…" text back
     if (results.length) runSearch();
+    fmtEditor();                                     // Format tab: part names, font placeholder, preview
     if ($('settings').open) {                        // language names in the lists follow the interface
+      insertTab();
       checklist($('s-tr-list'), catalog.translations, settings.translations);
       checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
       syncLists();
@@ -156,7 +165,7 @@
         var f = F[p.kind];
         html = '<p dir="' + p.dir + '" style="text-align:' + (f.align === 'both' ? 'justify' : f.align) + (+f.line ? ';line-height:' + f.line : '') +
           (f.font ? ";font-family:'" + esc(f.font) + "'" : '') + '">' + runsHtml(p.runs, false, p.kind) + '</p>';
-      } else html = '<p class="muted small">' + esc(t(kind === 'tf' ? 'withTafsir' : 'withTranslation')) + ' — off</p>';
+      } else html = '<p class="muted small">' + esc(t(kind === 'tf' ? 'withTafsir' : 'withTranslation') + ' — ' + t('off')) + '</p>';
     }
     $('f-preview').innerHTML = html;
   }
@@ -275,9 +284,18 @@
         la = (s.match(/[A-Za-z\u00C0-\u024F]/g) || []).length, max = Math.max(ar, cy, la);
     return !max ? '' : max === ar ? 'arab' : max === cy ? 'cyrl' : 'latn';
   }
+  /* Names in the language's own script (Chinese, Japanese, Hindi, Bengali, Hebrew…): suranames.json */
+  function native(lang) { return nativeNames[lang === 'cn_simp' ? 'zh' : lang]; }
+  function ownScript(text) {                     // mostly letters of another script than Latin/Cyrillic/Arabic
+    var s = QuranCore.stripHtml(text || '').slice(0, 400);
+    var other = (s.match(/[\u0590-\u05FF\u0900-\u0DFF\u0E00-\u0FFF\u1100-\u11FF\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/g) || []).length;
+    return other > (s.match(/[A-Za-z\u00C0-\u024F\u0400-\u04FF\u0600-\u06FF]/g) || []).length;
+  }
   /* Name of sura i (1-based) for a reference: the language's own names if we have them, otherwise
      in the script of the text: Arabic script -> Arabic, Cyrillic -> Cyrillic, else Latin. */
   function suraName(i, lang, sample) {
+    var own = native(lang);
+    if (own && ownScript(sample)) return own[i - 1];
     var sc = scriptOf(sample) || ((catalog.languages && catalog.languages[lang] || {}).dir === 'rtl' ? 'arab' : '');
     if (lang === 'uz' && sc !== 'latn') return quran.suras[i - 1][1];
     if (lang === 'ru' || (sc === 'cyrl' && lang !== 'uz')) return RU_NAMES[i - 1];
@@ -290,6 +308,7 @@
     if (c === 'uz' && settings.uiLang !== 'uz_latn') return quran.suras[i - 1][1];
     if (c === 'ar' || c === 'fa' || c === 'ur') return quran.suras[i - 1][0];
     if (c === 'ru' || c === 'kk' || c === 'ky' || c === 'tg') return RU_NAMES[i - 1];
+    if (native(c)) return native(c)[i - 1];
     var n = suraNames[c] && suraNames[c].simple || suraNames.en && suraNames.en.simple;
     return n ? n[i - 1] : quran.suras[i - 1][1];
   }
@@ -389,11 +408,13 @@
   /* Word on the web and on iPad cannot use fonts installed on the computer. The QPC page mushafs
      (604 fonts each) are offered there too: their Arabic paragraph is inserted as a picture drawn
      with the web fonts (see ayahPicture), with the Unicode text as its alternative text. */
-  function usableScripts() { return catalog.scripts; }
+  function usableScripts() {                          // no page-font mushafs in the embedding hosts (no picture there)
+    return HOST ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
+  }
   /* Word on the web / iPad: no locally installed fonts and no add-in fonts. Ordinary mushafs go in as text in
      a Microsoft cloud font that renders the Quran text correctly (checked: ayah signs ۝١, all marks);
      only the QPC page mushafs (a glyph of one of 604 page fonts per word) need a picture. */
-  var CLOUD_AR = 'Sakkal Majalla';
+  var CLOUD_AR = HOST ? 'Scheherazade New' : 'Sakkal Majalla';    // Google Docs, web pages: a Google / web font
   function asPicture() { return online && !!scriptById(settings.script).glyph; }
   function fillScriptSelect() {
     $('s-script').innerHTML = usableScripts().map(function (sc) {
@@ -476,6 +497,7 @@
     var sc = scriptById(settings.script);
     return quran.format(sel, {
       brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref, trRef: settings.trRef,
+      ayahNums: settings.ayahNums, hizb: settings.hizb, sajda: settings.sajda, waqf: settings.waqf,
       bold: false,                                     // weight etc. come from settings.fmt
       // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
       basmalaText: settings.fmt.basmala.font && sc.glyph ? QuranCore.BASMALA : null,
@@ -607,15 +629,32 @@
 
   /* ---------- output: Word (OOXML), clipboard (HTML + text) ---------- */
   function xmlEsc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  /* every property is set explicitly, so nothing is inherited from the cursor position */
+  /* Indic scripts: Word does not substitute a font for them, so in Aptos, Calibri etc. Bengali came out as
+     boxes; Apple's own Indic fonts (Kohinoor Bangla…) did not help either, Word for Mac shapes these scripts
+     with Microsoft's engine and showed boxes in them too. So the text gets Microsoft's font for the script:
+     Nirmala UI, which every Windows has, and elsewhere the Office cloud font that Word for Mac, iPad and the
+     web download by themselves. [range, cloud font, language] */
+  var INDIC = [[/[\u0900-\u097F]/g, 'Mangal', 'hi-IN'], [/[\u0980-\u09FF]/g, 'Vrinda', 'bn-BD'],
+               [/[\u0A00-\u0A7F]/g, 'Raavi', 'pa-IN'], [/[\u0A80-\u0AFF]/g, 'Shruti', 'gu-IN'],
+               [/[\u0B80-\u0BFF]/g, 'Latha', 'ta-IN'], [/[\u0C00-\u0C7F]/g, 'Gautami', 'te-IN'],
+               [/[\u0C80-\u0CFF]/g, 'Tunga', 'kn-IN'], [/[\u0D00-\u0D7F]/g, 'Kartika', 'ml-IN'],
+               [/[\u0D80-\u0DFF]/g, 'Iskoola Pota', 'si-LK']];
+  function indicOf(t) {                          // -> {font, lang} when the text is mostly in an Indic script
+    var best = null, n = 0;
+    INDIC.forEach(function (x) { var k = (t.match(x[0]) || []).length; if (k > n) { n = k; best = x; } });
+    if (!best || n * 2 <= (t.match(/[A-Za-z\u00C0-\u024F\u0400-\u04FF\u0600-\u06FF]/g) || []).length) return null;
+    return { font: windows && best[1] !== 'Iskoola Pota' ? 'Nirmala UI' : best[1], lang: best[2] };
+  }
   /* every property is set explicitly, so nothing is inherited from the cursor position */
   function runXml(r, font, size, rtl, s) {
+    var ind = indicOf(r.t); if (ind) font = ind.font;
     var f = font ? '<w:rFonts w:ascii="' + xmlEsc(font) + '" w:hAnsi="' + xmlEsc(font) + '" w:cs="' + xmlEsc(font) + '"/>' : '';
     var v = function (on) { return on ? '' : ' w:val="0"'; };
     var c = s.color ? '<w:color w:val="' + s.color.replace('#', '').toUpperCase() + '"/>' : '';
     var sz = size ? '<w:sz w:val="' + Math.round(size * 2) + '"/><w:szCs w:val="' + Math.round(size * 2) + '"/>' : '';
     return '<w:r><w:rPr>' + f + '<w:b' + v(s.b) + '/><w:bCs' + v(s.b) + '/><w:i' + v(s.i) + '/><w:iCs' + v(s.i) + '/>' +
-      '<w:u w:val="' + (s.u ? 'single' : 'none') + '"/>' + c + sz + '<w:rtl' + v(rtl) + '/></w:rPr>' +
+      '<w:u w:val="' + (s.u ? 'single' : 'none') + '"/>' + c + sz + '<w:rtl' + v(rtl) + '/>' +
+      (ind ? '<w:lang w:bidi="' + ind.lang + '"/>' : '') + '</w:rPr>' +
       '<w:t xml:space="preserve">' + xmlEsc(r.t) + '</w:t></w:r>';
   }
   /* paragraph properties: alignment is stored physically; in a right-to-left paragraph Word reads
@@ -627,16 +666,22 @@
       (+f.line ? '<w:spacing w:line="' + Math.round(240 * f.line) + '" w:lineRule="auto"/>' : '') + '<w:jc w:val="' + jc + '"/></w:pPr>';
   }
   function cloudText(t) { return t.replace(/(^|[\s\u00a0])([\u0660-\u0669]+)(?=[\s\u00a0﴾]|$)/g, '$1\u06DD$2'); }
-  function paraXml(p, arabic) {
-    var rtl = p.dir === 'rtl', F = settings.fmt, kind = arabic ? null : (p.kind || 'tr'), pf = arabic ? F.ar : F[kind];
+  /* A paragraph with every run's font, size and style resolved from the settings:
+     {dir, kind, f (paragraph format), runs: [{t, font, size, s: {b, i, u, color}}]} */
+  function paraModel(p, arabic) {
+    var F = settings.fmt, kind = arabic ? null : (p.kind || 'tr'), pf = arabic ? F.ar : F[kind];
     if (arabic && online && !settings.fmt.ar.font) p = { dir: p.dir, runs: p.runs.map(function (r) {
       return r.role || r.page ? r : { t: cloudText(r.t), bold: r.bold, color: r.color, plain: r.plain };
     }) };
-    return '<w:p>' + pPrXml(pf, rtl) + p.runs.map(function (r) {
+    return { dir: p.dir, kind: kind || 'ar', f: pf, runs: p.runs.map(function (r) {
       var s = runStyle(r, kind);
-      return arabic ? runXml(r, runFont(r, arabicFont()), runSize(r), rtl, s)
-                    : runXml(r, s.font || pf.font, s.size || +pf.size || 14, rtl, s);
-    }).join('') + '</w:p>';
+      return arabic ? { t: r.t, font: runFont(r, arabicFont()), size: runSize(r), s: s }
+                    : { t: r.t, font: s.font || pf.font, size: s.size || +pf.size || 14, s: s };
+    }) };
+  }
+  function paraXml(p, arabic) {
+    var m = paraModel(p, arabic), rtl = m.dir === 'rtl';
+    return '<w:p>' + pPrXml(m.f, rtl) + m.runs.map(function (x) { return runXml(x, x.font, x.size, rtl, x.s); }).join('') + '</w:p>';
   }
   /* ---------- the Arabic paragraph as a picture (page-font mushafs where local fonts do not exist) ---------- */
   var PIC_WIDTH_PT = 450, PIC_SCALE = 4;               // 450 pt ≈ text width of A4 / Letter; 4 px per point
@@ -788,8 +833,34 @@
   $('insert').addEventListener('click', function () {
     ensureData().then(function () {
       var out = current();
+      if (HOST) return sendToHost(out);
       return (inWord ? insertWord(out) : copy(out)).then(function () { toast(inWord ? t('inserted') : t('copiedPaste')); });
     }).catch(function (e) { toast(t('error') + ': ' + e.message); });
+  });
+  /* Embedding hosts get the result as a message: html + text (web pages, editors) and doc, the paragraphs
+     with resolved fonts and styles (Google Docs builds them itself). It is also put on the clipboard first,
+     while the click still counts as the user's: where the host cannot insert, Ctrl+V does it. */
+  var hostWait = null, hostCopied = null;
+  function hostDoc(out) {
+    return [paraModel(out.arabic, true)].concat(out.paras.map(function (p) { return paraModel(p); })).map(function (m) {
+      return { dir: m.dir, kind: m.kind, align: m.f.align || 'both', line: +m.f.line || 0, runs: m.runs.map(function (x) {
+        return { t: x.t, font: x.font || '', size: x.size, b: !!x.s.b, i: !!x.s.i, u: !!x.s.u, color: x.s.color || '' };
+      }) };
+    });
+  }
+  function sendToHost(out) {
+    var copied = hostCopied = copy(out).then(function () { return true; }, function () { return false; });
+    window.parent.postMessage({ type: 'khatt-insert', v: 1, html: buildHtml(out), text: out.text, doc: hostDoc(out),
+                                newPara: !!settings.newPara }, '*');
+    clearTimeout(hostWait);
+    hostWait = setTimeout(function () { copied.then(function (ok) { toast(ok ? t('copiedPaste') : t('error')); }); }, 4000);
+  }
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!HOST || e.source !== window.parent || !d || d.type !== 'khatt-result') return;
+    clearTimeout(hostWait);
+    if (d.ok) toast(t('inserted'));
+    else (hostCopied || Promise.resolve(false)).then(function (ok) { toast(ok ? t('copiedPaste') : t('error') + (d.error ? ': ' + d.error : '')); });
   });
   $('copy').addEventListener('click', function () {
     ensureData().then(function () { return copy(current()); }).then(function () { toast(t('copied')); })
@@ -798,7 +869,8 @@
 
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
-            ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara' };
+            ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara',
+            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf' };
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
   function langLabel(x) {
     var ui = langNames.ui && langNames.ui[settings.uiLang] || {};
@@ -867,9 +939,20 @@
     [].forEach.call(document.querySelectorAll('.filter'), function (f) { f.value = ''; });
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
-    syncLists();
+    syncLists(); insertTab();
     $('settings').showModal();
   });
+  /* Insert tab: the translation reference sample in the interface language; in the page-font mushafs
+     (QPC V1/V2/V4) hizb, sajdah and pause signs are parts of word glyphs and cannot be left out */
+  function insertTab() {
+    if (quran) $('s-tr-ref-sample').textContent = '(' + uiSuraName(10) + ': 1)';
+    var sc = scriptById($('s-script').value) || {};
+    [].forEach.call(document.querySelectorAll('.glyph-off'), function (el) {
+      el.classList.toggle('disabled', !!sc.glyph); el.querySelector('input').disabled = !!sc.glyph;
+    });
+    $('marks-note').hidden = !sc.glyph;
+  }
+  $('s-script').addEventListener('change', insertTab);
   /* Settings are applied on every change and on Save: the dialog's "close" event is not fired in
      every WebView (it never came in the Word task pane, so nothing was saved). */
   var applyTimer;
@@ -920,7 +1003,10 @@
   /* ---------- surah info ---------- */
   $('info-btn').addEventListener('click', function () {
     var c = i18n.code(), s = sel.sura;
-    optional('surah_info/' + c + '.json', null).then(function (d) {
+    // Uzbek in Latin letters has its own file (transliterated from the Cyrillic one)
+    (settings.uiLang === 'uz_latn' ? optional('surah_info/uz_latn.json', null) : Promise.resolve(null)).then(function (d) {
+      return d || optional('surah_info/' + c + '.json', null);
+    }).then(function (d) {
       var fallback = !d || !d[s];
       return (fallback ? optional('surah_info/en.json', {}) : Promise.resolve(d)).then(function (x) {
         var info = x[s] || {};
@@ -941,9 +1027,10 @@
   /* ---------- init ---------- */
   function init() {
     applyI18n();
-    Promise.all([getJSON('quran.json'), optional('catalog.json', null), optional('suras.json', {}), optional('langnames.json', {})]).then(function (r) {
+    Promise.all([getJSON('quran.json'), optional('catalog.json', null), optional('suras.json', {}), optional('langnames.json', {}), optional('suranames.json', {})]).then(function (r) {
       var data = r[0], cat = r[1], names = r[2];
       langNames = r[3] || {};
+      nativeNames = r[4] || {};
       quran = new QuranCore.Quran(data);
       suraNames = names || {};
       Object.keys(suraNames).forEach(function (k) { quran.addSuraNames(suraNames[k].simple); });
@@ -966,7 +1053,7 @@
       return useScript(settings.script);
     }).then(function () {
       setSel(1, 1, 1);
-      if (firstRun) showWelcome();
+      if (firstRun) showWelcome(); else fromHash();
       setTimeout(function () { quran._buildIndex(); }, 50);
     }).catch(function (e) { $('status').textContent = t('error') + ': ' + e.message; });
   }
@@ -980,10 +1067,27 @@
     fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d || !d.v || d.v === mine) return;
       try { if (sessionStorage.getItem('myquran-reload') === d.v) return; sessionStorage.setItem('myquran-reload', d.v); } catch (e) {}
-      location.replace(location.pathname + '?v=' + encodeURIComponent(d.v) + location.hash);
+      location.replace(location.pathname + '?v=' + encodeURIComponent(d.v) + (HOST ? '&host=' + HOST : '') + location.hash);
     }).catch(function () {});
   }
   checkVersion();
+  /* The ribbon's "Settings" button opens the panel at index.html#settings */
+  function fromHash() {
+    if (location.hash !== '#settings' || !quran) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    $('settings-btn').click();
+  }
+  window.addEventListener('hashchange', fromHash);
+  /* Footer pages: the address carries the version, so after an update the browser does not show an
+     old copy of "What's new" from its cache; Help opens in the interface language */
+  function footerLinks() {
+    var meta = document.querySelector('meta[name="myquran-version"]'), v = meta ? meta.content : '';
+    [].forEach.call(document.querySelectorAll('footer.author a[href$=".html"], footer.author a[data-page]'), function (a) {
+      var page = a.dataset.page || (a.dataset.page = a.getAttribute('href'));
+      a.href = page + '?v=' + v + '&lang=' + settings.uiLang;
+    });
+  }
+  footerLinks();
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
     setOnline: function (v) { online = !!v; } };   // tests only
@@ -992,10 +1096,17 @@
     Office.onReady(function (info) {
       inWord = info && info.host === Office.HostType.Word;
       // fonts installed on the computer exist only in Word for Windows and Mac (not on the web, iPad, …)
-      online = inWord && info.platform !== Office.PlatformType.PC && info.platform !== Office.PlatformType.Mac;
+      online = !!HOST || inWord && info.platform !== Office.PlatformType.PC && info.platform !== Office.PlatformType.Mac;
+      if (inWord) windows = info.platform === Office.PlatformType.PC;
       if (inWord) { document.body.classList.add('office'); $('host-badge').hidden = false; }
       if (online && quran) render();
     });
+  }
+  if (HOST) {
+    $('host-badge').textContent = { gdocs: 'Google Docs', wp: 'WordPress', ext: t('browser') }[HOST];
+    if (HOST === 'ext') $('host-badge').dataset.i18n = 'browser';     // follows the interface language
+    $('host-badge').hidden = false;
+    document.body.classList.add('embedded');
   }
   init();
 })();

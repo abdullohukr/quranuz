@@ -247,6 +247,7 @@
   /* sel  = {sura, from, to, wordFrom?, wordTo?}  (0-based word indexes; wordFrom
             applies to the first ayah, wordTo to the last one)
      opts = {brackets, auza, basmala, ref, trRef, bold, basmalaText?,
+             ayahNums, hizb, sajda, waqf (false: leave out ayah numbers, ۞, ۩, the pause marks ۖ ۗ ۚ ۛ ۘ ۙ),
              translations: [{data, dir, quotes:[open, close], suraName}],
              tafsirs: [{name, dir, quotes, suraName, get(sura, aya) -> {from, to, text} | null}]}
      Returns {arabic: {dir, runs}, paras: [{dir, runs}], text}:
@@ -272,14 +273,21 @@
     }
     if (ar.length) push(' ', { plain: true, role: 'sep' });
     if (opts.brackets !== false) push(br.open);
+    // signs the user left out; not in the page-font mushafs (QPC V1/V2/V4), where they are parts of word glyphs
+    var cut = [];
+    if (opts.hizb === false) cut.push('\u06DE[ \u00a0]?');
+    if (opts.sajda === false) cut.push('[ \u00a0]?\u06E9');
+    if (opts.waqf === false) cut.push('[\u06D6-\u06DB]');
+    cut = cut.length ? new RegExp(cut.join('|'), 'g') : null;
     for (var a = sel.from; a <= sel.to; a++) {
       var sp = this.spans(sel.sura, a), w = sp.words, t = this.text(sel.sura, a);
       var b = a === sel.from && sel.wordFrom > 0 ? Math.min(sel.wordFrom, w.length - 1) : 0;
       var e = a === sel.to && sel.wordTo != null ? Math.min(sel.wordTo, w.length - 1) : w.length - 1;
       if (a > sel.from) push(' ');
-      var endChar = e === w.length - 1 ? t.length : w[e].end;
+      var endChar = e === w.length - 1 && opts.ayahNums !== false ? t.length : w[e].end;
       var pr = this._runs(sel.sura, a, w[b].start, endChar);
-      if (pr.length) pr[pr.length - 1].t = pr[pr.length - 1].t.replace(/ +$/, '');
+      if (cut) pr = pr.map(function (r) { if (!r.page) r.t = r.t.replace(cut, ''); return r; }).filter(function (r) { return r.t; });
+      if (pr.length) { pr[0].t = pr[0].t.replace(/^[ \u00a0]+/, ''); pr[pr.length - 1].t = pr[pr.length - 1].t.replace(/[ \u00a0]+$/, ''); }
       pr.forEach(function (r) {
         var x = {}; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
         push(r.t, x);

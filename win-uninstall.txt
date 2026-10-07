@@ -1,8 +1,34 @@
 # Khatt al-Quran: remove its fonts and the Word add-in (Windows).
 #   irm https://quran.abdulloh.org/win-uninstall.txt | iex
-$FontReg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
-(Get-Item $FontReg).Property | Where-Object { $_ -like 'MyQuran *' } | ForEach-Object { Remove-ItemProperty -Path $FontReg -Name $_ }
-$Dev = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
-if (Test-Path $Dev) { Remove-ItemProperty -Path $Dev -Name '5392de1f-c12d-4292-8fb5-64c79333149e' -ErrorAction SilentlyContinue }
+$Clock = [Diagnostics.Stopwatch]::StartNew()
+$Key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Microsoft\Windows NT\CurrentVersion\Fonts')
+Add-Type -Namespace MyQuran -Name GdiU -MemberDefinition @'
+[DllImport("gdi32.dll", CharSet = CharSet.Unicode)] public static extern int RemoveFontResourceW(string file);
+[DllImport("user32.dll")] public static extern int SendMessageTimeoutW(System.IntPtr h, uint m, System.IntPtr w, System.IntPtr l, uint f, uint t, out System.IntPtr r);
+'@
+# switch the fonts off first (8 at a time): loaded fonts are locked and their folder could not be deleted
+$files = @()
+foreach ($n in @($Key.GetValueNames() | Where-Object { $_ -like 'MyQuran *' })) { $files += [string]$Key.GetValue($n); $Key.DeleteValue($n, $false) }
+$Key.Close()
+if ($files.Count) {
+  $pool = [RunspaceFactory]::CreateRunspacePool(1, 8); $pool.Open(); $jobs = @()
+  for ($k = 0; $k -lt 8; $k++) {
+    $batch = @(for ($i = $k; $i -lt $files.Count; $i += 8) { $files[$i] })
+    if (-not $batch.Count) { continue }
+    $ps = [PowerShell]::Create().AddScript({ param($b) foreach ($f in $b) { [void][MyQuran.GdiU]::RemoveFontResourceW($f) } }).AddArgument($batch)
+    $ps.RunspacePool = $pool; $jobs += [pscustomobject]@{ P = $ps; H = $ps.BeginInvoke() }
+  }
+  while (@($jobs | Where-Object { -not $_.H.IsCompleted }).Count) {
+    Write-Progress -Activity 'Removing Khatt al-Quran fonts' -Status ('{0} fonts   {1:mm\:ss}' -f $files.Count, $Clock.Elapsed)
+    Start-Sleep -Milliseconds 300
+  }
+  foreach ($j in $jobs) { $j.P.Dispose() }; $pool.Close()
+  Write-Progress -Activity 'Removing Khatt al-Quran fonts' -Completed
+}
+$r = [IntPtr]::Zero
+[void][MyQuran.GdiU]::SendMessageTimeoutW([IntPtr]0xffff, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero, 2, 1000, [ref]$r)  # WM_FONTCHANGE
+$Dev = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Microsoft\Office\16.0\WEF\Developer', $true)
+if ($Dev) { $Dev.DeleteValue('5392de1f-c12d-4292-8fb5-64c79333149e', $false); $Dev.Close() }
 Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA 'MyQuran') -ErrorAction SilentlyContinue
-Write-Host "Khatt al-Quran removed. Restart Word (sign out and in if fonts are still listed)."
+Write-Host ('Khatt al-Quran removed ({0} fonts, {1:mm\:ss}). Restart Word.' -f $files.Count, $Clock.Elapsed) -ForegroundColor Green
+if (Test-Path (Join-Path $env:LOCALAPPDATA 'MyQuran')) { Write-Host 'Some font files were in use: sign out and in, then run this command again to delete them.' -ForegroundColor Yellow }

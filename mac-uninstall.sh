@@ -3,7 +3,7 @@
 APP="$HOME/Library/Application Support/MyQuran"
 launchctl bootout "gui/$(id -u)/uz.myquran.fonts" >/dev/null 2>&1 || true
 rm -f "$HOME/Library/LaunchAgents/uz.myquran.fonts.plist"
-# fonts in ~/Library/Fonts listed by the installer: unregister (login session), then delete
+# fonts in ~/Library/Fonts listed by the installer: unregister (login session, 3.0-3.4), then delete
 osascript -l JavaScript >/dev/null 2>&1 <<'JS' || true
 ObjC.import('CoreText'); ObjC.import('Foundation');
 var home = $.NSHomeDirectory().js, urls = $.NSMutableArray.array;
@@ -35,4 +35,7 @@ ObjC.castRefToObject($.CTFontManagerCopyAvailableFontURLs()).js.forEach(function
 });
 $.CTFontManagerUnregisterFontsForURLs(gone, 2, null); $.CTFontManagerUnregisterFontsForURLs(gone, 3, null);
 JS
+# Word's font list completed and protected by the installer: Word builds its own again on the next start
+WFJ="$HOME/Library/Containers/com.microsoft.Word/Data/Library/Application Support/Microsoft/FontCache/systemfontmetadata.json"
+[ -f "$WFJ" ] && { chflags nouchg "$WFJ" 2>/dev/null; rm -f "$WFJ"; }
 echo "Khatt al-Quran removed. Restart Word."

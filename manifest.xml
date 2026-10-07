@@ -7,16 +7,38 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>5392de1f-c12d-4292-8fb5-64c79333149e</Id>
-  <Version>1.2.0.0</Version>
+  <Version>1.3.1.0</Version>
   <ProviderName>Abdulloh Hamidulloh al-Madiyniy</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Khatt al-Quran">
     <Override Locale="ar-SA" Value="خط القرآن"/>
+    <Override Locale="fa-IR" Value="خط القرآن"/>
+    <Override Locale="ur-PK" Value="خط القرآن"/>
   </DisplayName>
   <Description DefaultValue="Find Quran ayahs and insert them into your document: the Arabic text of several mushafs, translations in 90+ languages, tafsirs, isti'adhah, basmalah and a source reference.">
     <Override Locale="uz-UZ" Value="Оятларни топиш ва ҳужжатга қўйиш: турли мусҳафлардаги араб матни, 90+ тилдаги таржималар, тафсирлар, аъузу, басмала ва манба ҳаволаси."/>
+    <Override Locale="uz-Cyrl-UZ" Value="Оятларни топиш ва ҳужжатга қўйиш: турли мусҳафлардаги араб матни, 90+ тилдаги таржималар, тафсирлар, аъузу, басмала ва манба ҳаволаси."/>
     <Override Locale="ru-RU" Value="Поиск аятов Корана и вставка в документ: арабский текст разных мусхафов, переводы на 90+ языках, тафсиры, истиаза, басмала и ссылка на источник."/>
     <Override Locale="ar-SA" Value="ابحث عن آيات القرآن وأدرجها في المستند: النص العربي بعدة مصاحف، وترجمات بأكثر من 90 لغة، وتفاسير، والاستعاذة والبسملة ومرجع الآية."/>
+    <Override Locale="uz-Latn-UZ" Value="Oyatlarni topish va hujjatga qoʻyish: turli mushaflardagi arab matni, 90+ tildagi tarjimalar, tafsirlar, aʼuzu, basmala va manba havolasi."/>
+    <Override Locale="tr-TR" Value="Kur'an ayetlerini bulup belgeye ekleyin: çeşitli mushaflarda Arapça metin, 90+ dilde mealler, tefsirler, euzü, besmele ve kaynak."/>
+    <Override Locale="fr-FR" Value="Trouvez des versets du Coran et insérez-les dans votre document : texte arabe de plusieurs mushafs, traductions en 90+ langues, tafsirs, isti‘adha, basmala et référence."/>
+    <Override Locale="de-DE" Value="Koranverse finden und ins Dokument einfügen: arabischer Text mehrerer Mushafe, Übersetzungen in 90+ Sprachen, Tafsire, Isti‘adha, Basmala und Quellenangabe."/>
+    <Override Locale="es-ES" Value="Busque aleyas del Corán e insértelas en su documento: texto árabe de varios mushafs, traducciones en 90+ idiomas, tafsires, isti‘adha, basmala y referencia."/>
+    <Override Locale="kk-KZ" Value="Құран аяттарын тауып, құжатқа қою: әртүрлі мұсхафтардағы араб мәтіні, 90+ тілдегі аудармалар, тәпсірлер, ағузу, бисмилла және дереккөз."/>
+    <Override Locale="ky-KG" Value="Куран аяттарын таап, документке коюу: ар кандай мусхафтардагы араб тексти, 90+ тилдеги котормолор, тафсирлер, аузу, басмала жана булак."/>
+    <Override Locale="tg-Cyrl-TJ" Value="Ёфтани оятҳои Қуръон ва гузоштан ба ҳуҷҷат: матни арабии мусҳафҳои гуногун, тарҷумаҳо бо 90+ забон, тафсирҳо, аъузу, басмала ва манбаъ."/>
+    <Override Locale="az-Latn-AZ" Value="Quran ayələrini tapıb sənədə əlavə edin: müxtəlif mushaflarda ərəb mətni, 90+ dildə tərcümələr, təfsirlər, istiazə, bəsmələ və mənbə."/>
+    <Override Locale="fa-IR" Value="آیات قرآن را بیابید و در سند درج کنید: متن عربی چند مصحف، ترجمه به بیش از ۹۰ زبان، تفسیرها، استعاذه، بسمله و ارجاع."/>
+    <Override Locale="ur-PK" Value="قرآن کی آیات تلاش کر کے دستاویز میں داخل کریں: مختلف مصاحف کا عربی متن، 90+ زبانوں میں تراجم، تفاسیر، تعوذ، بسملہ اور حوالہ۔"/>
+    <Override Locale="id-ID" Value="Temukan ayat Al-Qur'an dan sisipkan ke dokumen: teks Arab berbagai mushaf, terjemahan dalam 90+ bahasa, tafsir, ta'awudz, basmalah, dan rujukan."/>
+    <Override Locale="ms-MY" Value="Cari ayat al-Quran dan masukkan ke dalam dokumen: teks Arab pelbagai mushaf, terjemahan dalam 90+ bahasa, tafsir, ta‘awwuz, basmalah dan rujukan."/>
+    <Override Locale="bn-BD" Value="কুরআনের আয়াত খুঁজে ডকুমেন্টে যুক্ত করুন: বিভিন্ন মুসহাফের আরবি পাঠ, ৯০+ ভাষায় অনুবাদ, তাফসির, আউযুবিল্লাহ, বিসমিল্লাহ ও সূত্র।"/>
+    <Override Locale="bn-IN" Value="কুরআনের আয়াত খুঁজে ডকুমেন্টে যুক্ত করুন: বিভিন্ন মুসহাফের আরবি পাঠ, ৯০+ ভাষায় অনুবাদ, তাফসির, আউযুবিল্লাহ, বিসমিল্লাহ ও সূত্র।"/>
+    <Override Locale="hi-IN" Value="क़ुरआन की आयतें खोजें और दस्तावेज़ में डालें: कई मुसहफ़ों का अरबी पाठ, 90+ भाषाओं में अनुवाद, तफ़सीर, तअव्वुज़, बिस्मिल्लाह और स्रोत।"/>
+    <Override Locale="zh-CN" Value="查找古兰经经文并插入文档：多种经文版本的阿拉伯原文、90 多种语言的译文、经注、求护词、太斯米及出处。"/>
+    <Override Locale="ko-KR" Value="쿠란 구절을 찾아 문서에 삽입: 여러 무스하프의 아랍어 원문, 90개 이상 언어의 번역, 타프시르, 이스티아자, 바스말라와 출처."/>
+    <Override Locale="ja-JP" Value="クルアーンの節を探して文書に挿入：複数のムスハフのアラビア語本文、90 以上の言語の訳文、タフスィール、イスティアーザ、バスマラと出典。"/>
   </Description>
   <IconUrl DefaultValue="https://quran.abdulloh.org/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://quran.abdulloh.org/assets/icon-64.png"/>
@@ -45,66 +67,489 @@
             <Description resid="GetStarted.Description"/>
             <LearnMoreUrl resid="Repo.Url"/>
           </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <!-- a button on the Home tab, as before -->
             <OfficeTab id="TabHome">
               <Group id="QuranUz.Group">
                 <Label resid="Group.Label"/>
                 <Icon>
-                  <bt:Image size="16" resid="Icon.16"/>
-                  <bt:Image size="32" resid="Icon.32"/>
-                  <bt:Image size="80" resid="Icon.80"/>
+                  <bt:Image size="16" resid="Panel.16"/>
+                  <bt:Image size="20" resid="Panel.20"/>
+                  <bt:Image size="24" resid="Panel.24"/>
+                  <bt:Image size="32" resid="Panel.32"/>
+                  <bt:Image size="40" resid="Panel.40"/>
+                  <bt:Image size="48" resid="Panel.48"/>
+                  <bt:Image size="64" resid="Panel.64"/>
+                  <bt:Image size="80" resid="Panel.80"/>
                 </Icon>
-                <Control xsi:type="Button" id="QuranUz.Open">
-                  <Label resid="Button.Label"/>
-                  <Supertip>
-                    <Title resid="Button.Label"/>
-                    <Description resid="Button.Tooltip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>QuranUzPane</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
+                  <Control xsi:type="Button" id="QuranUz.Open">
+                    <Label resid="Button.Label"/>
+                    <Supertip>
+                      <Title resid="Button.Label"/>
+                      <Description resid="Button.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Panel.16"/>
+                      <bt:Image size="20" resid="Panel.20"/>
+                      <bt:Image size="24" resid="Panel.24"/>
+                      <bt:Image size="32" resid="Panel.32"/>
+                      <bt:Image size="40" resid="Panel.40"/>
+                      <bt:Image size="48" resid="Panel.48"/>
+                      <bt:Image size="64" resid="Panel.64"/>
+                      <bt:Image size="80" resid="Panel.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Taskpane.Url"/>
+                    </Action>
+                  </Control>
               </Group>
             </OfficeTab>
+            <!-- its own tab: panel, settings, help, what's new (Fluent UI System Icons, MIT) -->
+            <CustomTab id="QuranUz.Tab">
+              <Group id="QuranUz.TabMain">
+                <Label resid="Group.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Panel.16"/>
+                  <bt:Image size="20" resid="Panel.20"/>
+                  <bt:Image size="24" resid="Panel.24"/>
+                  <bt:Image size="32" resid="Panel.32"/>
+                  <bt:Image size="40" resid="Panel.40"/>
+                  <bt:Image size="48" resid="Panel.48"/>
+                  <bt:Image size="64" resid="Panel.64"/>
+                  <bt:Image size="80" resid="Panel.80"/>
+                </Icon>
+                  <Control xsi:type="Button" id="QuranUz.TabOpen">
+                    <Label resid="Tab.Panel"/>
+                    <Supertip>
+                      <Title resid="Tab.Panel"/>
+                      <Description resid="Button.Tooltip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Panel.16"/>
+                      <bt:Image size="20" resid="Panel.20"/>
+                      <bt:Image size="24" resid="Panel.24"/>
+                      <bt:Image size="32" resid="Panel.32"/>
+                      <bt:Image size="40" resid="Panel.40"/>
+                      <bt:Image size="48" resid="Panel.48"/>
+                      <bt:Image size="64" resid="Panel.64"/>
+                      <bt:Image size="80" resid="Panel.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Taskpane.Url"/>
+                    </Action>
+                  </Control>
+                  <Control xsi:type="Button" id="QuranUz.TabSettings">
+                    <Label resid="Tab.Settings"/>
+                    <Supertip>
+                      <Title resid="Tab.Settings"/>
+                      <Description resid="Tab.Settings.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Settings.16"/>
+                      <bt:Image size="20" resid="Settings.20"/>
+                      <bt:Image size="24" resid="Settings.24"/>
+                      <bt:Image size="32" resid="Settings.32"/>
+                      <bt:Image size="40" resid="Settings.40"/>
+                      <bt:Image size="48" resid="Settings.48"/>
+                      <bt:Image size="64" resid="Settings.64"/>
+                      <bt:Image size="80" resid="Settings.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Settings.Url"/>
+                    </Action>
+                  </Control>
+              </Group>
+              <Group id="QuranUz.TabInfo">
+                <Label resid="Group.Info"/>
+                <Icon>
+                  <bt:Image size="16" resid="Help.16"/>
+                  <bt:Image size="20" resid="Help.20"/>
+                  <bt:Image size="24" resid="Help.24"/>
+                  <bt:Image size="32" resid="Help.32"/>
+                  <bt:Image size="40" resid="Help.40"/>
+                  <bt:Image size="48" resid="Help.48"/>
+                  <bt:Image size="64" resid="Help.64"/>
+                  <bt:Image size="80" resid="Help.80"/>
+                </Icon>
+                  <Control xsi:type="Button" id="QuranUz.TabHelp">
+                    <Label resid="Tab.Help"/>
+                    <Supertip>
+                      <Title resid="Tab.Help"/>
+                      <Description resid="Tab.Help.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Help.16"/>
+                      <bt:Image size="20" resid="Help.20"/>
+                      <bt:Image size="24" resid="Help.24"/>
+                      <bt:Image size="32" resid="Help.32"/>
+                      <bt:Image size="40" resid="Help.40"/>
+                      <bt:Image size="48" resid="Help.48"/>
+                      <bt:Image size="64" resid="Help.64"/>
+                      <bt:Image size="80" resid="Help.80"/>
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>openHelp</FunctionName>
+                    </Action>
+                  </Control>
+                  <Control xsi:type="Button" id="QuranUz.TabNews">
+                    <Label resid="Tab.News"/>
+                    <Supertip>
+                      <Title resid="Tab.News"/>
+                      <Description resid="Tab.News.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="News.16"/>
+                      <bt:Image size="20" resid="News.20"/>
+                      <bt:Image size="24" resid="News.24"/>
+                      <bt:Image size="32" resid="News.32"/>
+                      <bt:Image size="40" resid="News.40"/>
+                      <bt:Image size="48" resid="News.48"/>
+                      <bt:Image size="64" resid="News.64"/>
+                      <bt:Image size="80" resid="News.80"/>
+                    </Icon>
+                    <Action xsi:type="ExecuteFunction">
+                      <FunctionName>openNews</FunctionName>
+                    </Action>
+                  </Control>
+              </Group>
+              <Label resid="Group.Label"/>
+            </CustomTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://quran.abdulloh.org/assets/icon-16.png"/>
-        <bt:Image id="Icon.32" DefaultValue="https://quran.abdulloh.org/assets/icon-32.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://quran.abdulloh.org/assets/icon-80.png"/>
+        <bt:Image id="Panel.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-16.png"/>
+        <bt:Image id="Panel.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-20.png"/>
+        <bt:Image id="Panel.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-24.png"/>
+        <bt:Image id="Panel.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-32.png"/>
+        <bt:Image id="Panel.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-40.png"/>
+        <bt:Image id="Panel.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-48.png"/>
+        <bt:Image id="Panel.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-64.png"/>
+        <bt:Image id="Panel.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-80.png"/>
+        <bt:Image id="Settings.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-16.png"/>
+        <bt:Image id="Settings.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-20.png"/>
+        <bt:Image id="Settings.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-24.png"/>
+        <bt:Image id="Settings.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-32.png"/>
+        <bt:Image id="Settings.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-40.png"/>
+        <bt:Image id="Settings.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-48.png"/>
+        <bt:Image id="Settings.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-64.png"/>
+        <bt:Image id="Settings.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-80.png"/>
+        <bt:Image id="Help.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-16.png"/>
+        <bt:Image id="Help.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-20.png"/>
+        <bt:Image id="Help.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-24.png"/>
+        <bt:Image id="Help.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-32.png"/>
+        <bt:Image id="Help.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-40.png"/>
+        <bt:Image id="Help.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-48.png"/>
+        <bt:Image id="Help.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-64.png"/>
+        <bt:Image id="Help.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/help-80.png"/>
+        <bt:Image id="News.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-16.png"/>
+        <bt:Image id="News.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-20.png"/>
+        <bt:Image id="News.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-24.png"/>
+        <bt:Image id="News.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-32.png"/>
+        <bt:Image id="News.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-40.png"/>
+        <bt:Image id="News.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-48.png"/>
+        <bt:Image id="News.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-64.png"/>
+        <bt:Image id="News.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-80.png"/>
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://quran.abdulloh.org/index.html"/>
+        <bt:Url id="Settings.Url" DefaultValue="https://quran.abdulloh.org/index.html#settings"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://quran.abdulloh.org/commands.html"/>
         <bt:Url id="Repo.Url" DefaultValue="https://quran.abdulloh.org/help.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Khatt al-Quran: Quran ayahs in Word">
           <bt:Override Locale="uz-UZ" Value="Khatt al-Quran: Word'да Қуръон оятлари"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Khatt al-Quran: Word'да Қуръон оятлари"/>
           <bt:Override Locale="ru-RU" Value="Khatt al-Quran: аяты Корана в Word"/>
           <bt:Override Locale="ar-SA" Value="خط القرآن: آيات القرآن في Word"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Khatt al-Quran: Word'da Qurʼon oyatlari"/>
+          <bt:Override Locale="tr-TR" Value="Khatt al-Quran: Word'de Kur'an ayetleri"/>
+          <bt:Override Locale="fr-FR" Value="Khatt al-Quran : versets du Coran dans Word"/>
+          <bt:Override Locale="de-DE" Value="Khatt al-Quran: Koranverse in Word"/>
+          <bt:Override Locale="es-ES" Value="Khatt al-Quran: aleyas del Corán en Word"/>
+          <bt:Override Locale="kk-KZ" Value="Khatt al-Quran: Word-та Құран аяттары"/>
+          <bt:Override Locale="ky-KG" Value="Khatt al-Quran: Word'до Куран аяттары"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Khatt al-Quran: оятҳои Қуръон дар Word"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Khatt al-Quran: Word-də Quran ayələri"/>
+          <bt:Override Locale="fa-IR" Value="خط القرآن: آیات قرآن در Word"/>
+          <bt:Override Locale="ur-PK" Value="خط القرآن: Word میں قرآن کی آیات"/>
+          <bt:Override Locale="id-ID" Value="Khatt al-Quran: ayat Al-Qur'an di Word"/>
+          <bt:Override Locale="ms-MY" Value="Khatt al-Quran: ayat al-Quran dalam Word"/>
+          <bt:Override Locale="bn-BD" Value="Khatt al-Quran: Word-এ কুরআনের আয়াত"/>
+          <bt:Override Locale="bn-IN" Value="Khatt al-Quran: Word-এ কুরআনের আয়াত"/>
+          <bt:Override Locale="hi-IN" Value="Khatt al-Quran: Word में क़ुरआन की आयतें"/>
+          <bt:Override Locale="zh-CN" Value="Khatt al-Quran：在 Word 中插入古兰经经文"/>
+          <bt:Override Locale="ko-KR" Value="Khatt al-Quran: Word에서 쿠란 구절"/>
+          <bt:Override Locale="ja-JP" Value="Khatt al-Quran：Word でクルアーンの節を"/>
         </bt:String>
-        <bt:String id="Group.Label" DefaultValue="Khatt al-Quran"/>
-        <bt:String id="Button.Label" DefaultValue="Khatt al-Quran"/>
+        <bt:String id="Group.Label" DefaultValue="Khatt al-Quran">
+          <bt:Override Locale="ar-SA" Value="خط القرآن"/>
+          <bt:Override Locale="fa-IR" Value="خط القرآن"/>
+          <bt:Override Locale="ur-PK" Value="خط القرآن"/>
+        </bt:String>
+        <bt:String id="Button.Label" DefaultValue="Khatt al-Quran">
+          <bt:Override Locale="ar-SA" Value="خط القرآن"/>
+          <bt:Override Locale="fa-IR" Value="خط القرآن"/>
+          <bt:Override Locale="ur-PK" Value="خط القرآن"/>
+        </bt:String>
+        <bt:String id="Tab.Panel" DefaultValue="Ayahs">
+          <bt:Override Locale="uz-UZ" Value="Оятлар"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Оятлар"/>
+          <bt:Override Locale="ru-RU" Value="Аяты"/>
+          <bt:Override Locale="ar-SA" Value="الآيات"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Oyatlar"/>
+          <bt:Override Locale="tr-TR" Value="Ayetler"/>
+          <bt:Override Locale="fr-FR" Value="Versets"/>
+          <bt:Override Locale="de-DE" Value="Verse"/>
+          <bt:Override Locale="es-ES" Value="Aleyas"/>
+          <bt:Override Locale="kk-KZ" Value="Аяттар"/>
+          <bt:Override Locale="ky-KG" Value="Аяттар"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Оятҳо"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Ayələr"/>
+          <bt:Override Locale="fa-IR" Value="آیات"/>
+          <bt:Override Locale="ur-PK" Value="آیات"/>
+          <bt:Override Locale="id-ID" Value="Ayat"/>
+          <bt:Override Locale="ms-MY" Value="Ayat"/>
+          <bt:Override Locale="bn-BD" Value="আয়াত"/>
+          <bt:Override Locale="bn-IN" Value="আয়াত"/>
+          <bt:Override Locale="hi-IN" Value="आयतें"/>
+          <bt:Override Locale="zh-CN" Value="经文"/>
+          <bt:Override Locale="ko-KR" Value="구절"/>
+          <bt:Override Locale="ja-JP" Value="節"/>
+        </bt:String>
+        <bt:String id="Tab.Settings" DefaultValue="Settings">
+          <bt:Override Locale="uz-UZ" Value="Созламалар"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Созламалар"/>
+          <bt:Override Locale="ru-RU" Value="Настройки"/>
+          <bt:Override Locale="ar-SA" Value="الإعدادات"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Sozlamalar"/>
+          <bt:Override Locale="tr-TR" Value="Ayarlar"/>
+          <bt:Override Locale="fr-FR" Value="Paramètres"/>
+          <bt:Override Locale="de-DE" Value="Einstellungen"/>
+          <bt:Override Locale="es-ES" Value="Ajustes"/>
+          <bt:Override Locale="kk-KZ" Value="Баптаулар"/>
+          <bt:Override Locale="ky-KG" Value="Жөндөөлөр"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Танзимот"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Ayarlar"/>
+          <bt:Override Locale="fa-IR" Value="تنظیمات"/>
+          <bt:Override Locale="ur-PK" Value="ترتیبات"/>
+          <bt:Override Locale="id-ID" Value="Pengaturan"/>
+          <bt:Override Locale="ms-MY" Value="Tetapan"/>
+          <bt:Override Locale="bn-BD" Value="সেটিংস"/>
+          <bt:Override Locale="bn-IN" Value="সেটিংস"/>
+          <bt:Override Locale="hi-IN" Value="सेटिंग्स"/>
+          <bt:Override Locale="zh-CN" Value="设置"/>
+          <bt:Override Locale="ko-KR" Value="설정"/>
+          <bt:Override Locale="ja-JP" Value="設定"/>
+        </bt:String>
+        <bt:String id="Tab.Help" DefaultValue="Help">
+          <bt:Override Locale="uz-UZ" Value="Ёрдам"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Ёрдам"/>
+          <bt:Override Locale="ru-RU" Value="Справка"/>
+          <bt:Override Locale="ar-SA" Value="المساعدة"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Yordam"/>
+          <bt:Override Locale="tr-TR" Value="Yardım"/>
+          <bt:Override Locale="fr-FR" Value="Aide"/>
+          <bt:Override Locale="de-DE" Value="Hilfe"/>
+          <bt:Override Locale="es-ES" Value="Ayuda"/>
+          <bt:Override Locale="kk-KZ" Value="Анықтама"/>
+          <bt:Override Locale="ky-KG" Value="Жардам"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Ёрӣ"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Kömək"/>
+          <bt:Override Locale="fa-IR" Value="راهنما"/>
+          <bt:Override Locale="ur-PK" Value="مدد"/>
+          <bt:Override Locale="id-ID" Value="Bantuan"/>
+          <bt:Override Locale="ms-MY" Value="Bantuan"/>
+          <bt:Override Locale="bn-BD" Value="সহায়তা"/>
+          <bt:Override Locale="bn-IN" Value="সহায়তা"/>
+          <bt:Override Locale="hi-IN" Value="सहायता"/>
+          <bt:Override Locale="zh-CN" Value="帮助"/>
+          <bt:Override Locale="ko-KR" Value="도움말"/>
+          <bt:Override Locale="ja-JP" Value="ヘルプ"/>
+        </bt:String>
+        <bt:String id="Tab.News" DefaultValue="What's new">
+          <bt:Override Locale="uz-UZ" Value="Янгиликлар"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Янгиликлар"/>
+          <bt:Override Locale="ru-RU" Value="Что нового"/>
+          <bt:Override Locale="ar-SA" Value="ما الجديد"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Yangiliklar"/>
+          <bt:Override Locale="tr-TR" Value="Yenilikler"/>
+          <bt:Override Locale="fr-FR" Value="Nouveautés"/>
+          <bt:Override Locale="de-DE" Value="Neuigkeiten"/>
+          <bt:Override Locale="es-ES" Value="Novedades"/>
+          <bt:Override Locale="kk-KZ" Value="Жаңалықтар"/>
+          <bt:Override Locale="ky-KG" Value="Жаңылыктар"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Навигариҳо"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Yeniliklər"/>
+          <bt:Override Locale="fa-IR" Value="تازه‌ها"/>
+          <bt:Override Locale="ur-PK" Value="نیا کیا ہے"/>
+          <bt:Override Locale="id-ID" Value="Yang baru"/>
+          <bt:Override Locale="ms-MY" Value="Apa yang baharu"/>
+          <bt:Override Locale="bn-BD" Value="নতুন কী"/>
+          <bt:Override Locale="bn-IN" Value="নতুন কী"/>
+          <bt:Override Locale="hi-IN" Value="नया क्या है"/>
+          <bt:Override Locale="zh-CN" Value="新功能"/>
+          <bt:Override Locale="ko-KR" Value="새로운 기능"/>
+          <bt:Override Locale="ja-JP" Value="新機能"/>
+        </bt:String>
+        <bt:String id="Group.Info" DefaultValue="About">
+          <bt:Override Locale="uz-UZ" Value="Маълумот"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Маълумот"/>
+          <bt:Override Locale="ru-RU" Value="О программе"/>
+          <bt:Override Locale="ar-SA" Value="حول"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Maʼlumot"/>
+          <bt:Override Locale="tr-TR" Value="Hakkında"/>
+          <bt:Override Locale="fr-FR" Value="À propos"/>
+          <bt:Override Locale="de-DE" Value="Info"/>
+          <bt:Override Locale="es-ES" Value="Acerca de"/>
+          <bt:Override Locale="kk-KZ" Value="Бағдарлама туралы"/>
+          <bt:Override Locale="ky-KG" Value="Программа жөнүндө"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Дар бораи барнома"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Haqqında"/>
+          <bt:Override Locale="fa-IR" Value="درباره"/>
+          <bt:Override Locale="ur-PK" Value="تعارف"/>
+          <bt:Override Locale="id-ID" Value="Tentang"/>
+          <bt:Override Locale="ms-MY" Value="Perihal"/>
+          <bt:Override Locale="bn-BD" Value="সম্পর্কে"/>
+          <bt:Override Locale="bn-IN" Value="সম্পর্কে"/>
+          <bt:Override Locale="hi-IN" Value="जानकारी"/>
+          <bt:Override Locale="zh-CN" Value="关于"/>
+          <bt:Override Locale="ko-KR" Value="정보"/>
+          <bt:Override Locale="ja-JP" Value="情報"/>
+        </bt:String>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Press Khatt al-Quran on the Home tab to search for ayahs and insert them with translations.">
           <bt:Override Locale="uz-UZ" Value="Оятларни қидириш ва таржимаси билан қўйиш учун «Главная / Home» бўлимидаги Khatt al-Quran тугмасини босинг."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Оятларни қидириш ва таржимаси билан қўйиш учун «Главная / Home» бўлимидаги Khatt al-Quran тугмасини босинг."/>
           <bt:Override Locale="ru-RU" Value="Нажмите Khatt al-Quran на вкладке «Главная», чтобы найти аяты и вставить их с переводом."/>
           <bt:Override Locale="ar-SA" Value="اضغط «خط القرآن» في تبويب «الصفحة الرئيسية» للبحث عن الآيات وإدراجها مع ترجمتها."/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Oyatlarni qidirish va tarjimasi bilan qoʻyish uchun «Bosh sahifa / Home» boʻlimidagi Khatt al-Quran tugmasini bosing."/>
+          <bt:Override Locale="tr-TR" Value="Ayetleri aramak ve mealleriyle eklemek için Giriş sekmesinde Khatt al-Quran'a basın."/>
+          <bt:Override Locale="fr-FR" Value="Cliquez sur Khatt al-Quran dans l’onglet Accueil pour chercher des versets et les insérer avec leur traduction."/>
+          <bt:Override Locale="de-DE" Value="Klicken Sie auf der Registerkarte Start auf Khatt al-Quran, um Verse zu suchen und mit Übersetzung einzufügen."/>
+          <bt:Override Locale="es-ES" Value="Pulse Khatt al-Quran en la pestaña Inicio para buscar aleyas e insertarlas con su traducción."/>
+          <bt:Override Locale="kk-KZ" Value="Аяттарды іздеп, аудармасымен қою үшін «Басты бет» қойындысындағы Khatt al-Quran түймесін басыңыз."/>
+          <bt:Override Locale="ky-KG" Value="Аяттарды издеп, котормосу менен коюу үчүн «Башкы бет» өтмөгүндөгү Khatt al-Quran баскычын басыңыз."/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Барои ҷустани оятҳо ва гузоштани онҳо бо тарҷума дар варақаи «Асосӣ» Khatt al-Quran-ро пахш кунед."/>
+          <bt:Override Locale="az-Latn-AZ" Value="Ayələri axtarmaq və tərcüməsi ilə əlavə etmək üçün «Əsas» tabında Khatt al-Quran düyməsini basın."/>
+          <bt:Override Locale="fa-IR" Value="برای جست‌وجوی آیات و درج آن‌ها با ترجمه، در زبانهٔ «خانه» روی خط القرآن بزنید."/>
+          <bt:Override Locale="ur-PK" Value="آیات تلاش کرنے اور ترجمے کے ساتھ داخل کرنے کے لیے «ہوم» ٹیب میں خط القرآن دبائیں۔"/>
+          <bt:Override Locale="id-ID" Value="Tekan Khatt al-Quran di tab Beranda untuk mencari ayat dan menyisipkannya beserta terjemahan."/>
+          <bt:Override Locale="ms-MY" Value="Tekan Khatt al-Quran pada tab Laman Utama untuk mencari ayat dan memasukkannya bersama terjemahan."/>
+          <bt:Override Locale="bn-BD" Value="আয়াত খুঁজে অনুবাদসহ যুক্ত করতে «হোম» ট্যাবে Khatt al-Quran চাপুন।"/>
+          <bt:Override Locale="bn-IN" Value="আয়াত খুঁজে অনুবাদসহ যুক্ত করতে «হোম» ট্যাবে Khatt al-Quran চাপুন।"/>
+          <bt:Override Locale="hi-IN" Value="आयतें खोजने और अनुवाद सहित डालने के लिए «होम» टैब में Khatt al-Quran दबाएँ।"/>
+          <bt:Override Locale="zh-CN" Value="在“开始”选项卡中点击 Khatt al-Quran，搜索经文并连同译文一起插入。"/>
+          <bt:Override Locale="ko-KR" Value="홈 탭에서 Khatt al-Quran을 눌러 구절을 찾고 번역과 함께 삽입하세요."/>
+          <bt:Override Locale="ja-JP" Value="ホーム タブの Khatt al-Quran を押すと、節を検索して訳文と一緒に挿入できます。"/>
         </bt:String>
         <bt:String id="Button.Tooltip" DefaultValue="Search for Quran ayahs and insert them with translations">
           <bt:Override Locale="uz-UZ" Value="Оят қидириш ва таржимаси билан ҳужжатга қўйиш"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Оят қидириш ва таржимаси билан ҳужжатга қўйиш"/>
           <bt:Override Locale="ru-RU" Value="Найти аяты Корана и вставить с переводом"/>
           <bt:Override Locale="ar-SA" Value="ابحث عن آيات القرآن وأدرجها مع ترجمتها"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Oyat qidirish va tarjimasi bilan hujjatga qoʻyish"/>
+          <bt:Override Locale="tr-TR" Value="Kur'an ayetlerini arayın ve mealleriyle ekleyin"/>
+          <bt:Override Locale="fr-FR" Value="Chercher des versets du Coran et les insérer avec traduction"/>
+          <bt:Override Locale="de-DE" Value="Koranverse suchen und mit Übersetzung einfügen"/>
+          <bt:Override Locale="es-ES" Value="Buscar aleyas del Corán e insertarlas con traducción"/>
+          <bt:Override Locale="kk-KZ" Value="Құран аяттарын іздеу және аудармасымен қою"/>
+          <bt:Override Locale="ky-KG" Value="Куран аяттарын издөө жана котормосу менен коюу"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Ҷустани оятҳои Қуръон ва гузоштан бо тарҷума"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Quran ayələrini axtarmaq və tərcüməsi ilə əlavə etmək"/>
+          <bt:Override Locale="fa-IR" Value="جست‌وجوی آیات قرآن و درج با ترجمه"/>
+          <bt:Override Locale="ur-PK" Value="قرآن کی آیات تلاش کریں اور ترجمے کے ساتھ داخل کریں"/>
+          <bt:Override Locale="id-ID" Value="Cari ayat Al-Qur'an dan sisipkan beserta terjemahan"/>
+          <bt:Override Locale="ms-MY" Value="Cari ayat al-Quran dan masukkan bersama terjemahan"/>
+          <bt:Override Locale="bn-BD" Value="কুরআনের আয়াত খুঁজুন ও অনুবাদসহ যুক্ত করুন"/>
+          <bt:Override Locale="bn-IN" Value="কুরআনের আয়াত খুঁজুন ও অনুবাদসহ যুক্ত করুন"/>
+          <bt:Override Locale="hi-IN" Value="क़ुरआन की आयतें खोजें और अनुवाद सहित डालें"/>
+          <bt:Override Locale="zh-CN" Value="搜索古兰经经文并连同译文插入"/>
+          <bt:Override Locale="ko-KR" Value="쿠란 구절을 찾아 번역과 함께 삽입"/>
+          <bt:Override Locale="ja-JP" Value="クルアーンの節を検索し、訳文と一緒に挿入"/>
+        </bt:String>
+        <bt:String id="Tab.Settings.Tip" DefaultValue="Mushaf, translations, tafsirs, what is inserted and its format">
+          <bt:Override Locale="uz-UZ" Value="Мусҳаф, таржималар, тафсирлар, нима қўйилиши ва формати"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Мусҳаф, таржималар, тафсирлар, нима қўйилиши ва формати"/>
+          <bt:Override Locale="ru-RU" Value="Мусхаф, переводы, тафсиры, что вставлять и формат"/>
+          <bt:Override Locale="ar-SA" Value="المصحف والترجمات والتفاسير وما يُدرج وتنسيقه"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Mushaf, tarjimalar, tafsirlar, nima qoʻyilishi va formati"/>
+          <bt:Override Locale="tr-TR" Value="Mushaf, mealler, tefsirler, eklenenler ve biçimi"/>
+          <bt:Override Locale="fr-FR" Value="Mushaf, traductions, tafsirs, contenu inséré et sa mise en forme"/>
+          <bt:Override Locale="de-DE" Value="Mushaf, Übersetzungen, Tafsire, was eingefügt wird und das Format"/>
+          <bt:Override Locale="es-ES" Value="Mushaf, traducciones, tafsires, qué se inserta y su formato"/>
+          <bt:Override Locale="kk-KZ" Value="Мұсхаф, аудармалар, тәпсірлер, не қойылатыны және пішімі"/>
+          <bt:Override Locale="ky-KG" Value="Мусхаф, котормолор, тафсирлер, эмне коюлары жана форматы"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Мусҳаф, тарҷумаҳо, тафсирҳо, чӣ гузошта мешавад ва формати он"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Mushaf, tərcümələr, təfsirlər, nə əlavə olunur və formatı"/>
+          <bt:Override Locale="fa-IR" Value="مصحف، ترجمه‌ها، تفسیرها، آنچه درج می‌شود و قالب آن"/>
+          <bt:Override Locale="ur-PK" Value="مصحف، تراجم، تفاسیر، کیا داخل ہو اور اس کا فارمیٹ"/>
+          <bt:Override Locale="id-ID" Value="Mushaf, terjemahan, tafsir, apa yang disisipkan dan formatnya"/>
+          <bt:Override Locale="ms-MY" Value="Mushaf, terjemahan, tafsir, apa yang dimasukkan dan formatnya"/>
+          <bt:Override Locale="bn-BD" Value="মুসহাফ, অনুবাদ, তাফসির, কী যুক্ত হবে ও তার ফরম্যাট"/>
+          <bt:Override Locale="bn-IN" Value="মুসহাফ, অনুবাদ, তাফসির, কী যুক্ত হবে ও তার ফরম্যাট"/>
+          <bt:Override Locale="hi-IN" Value="मुसहफ़, अनुवाद, तफ़सीर, क्या डाला जाए और उसका फ़ॉर्मेट"/>
+          <bt:Override Locale="zh-CN" Value="经文版本、译文、经注、插入内容及格式"/>
+          <bt:Override Locale="ko-KR" Value="무스하프, 번역, 타프시르, 삽입할 내용과 서식"/>
+          <bt:Override Locale="ja-JP" Value="ムスハフ、翻訳、タフスィール、挿入内容と書式"/>
+        </bt:String>
+        <bt:String id="Tab.Help.Tip" DefaultValue="How to use Khatt al-Quran, questions and answers">
+          <bt:Override Locale="uz-UZ" Value="Khatt al-Quran'дан фойдаланиш, савол-жавоблар"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Khatt al-Quran'дан фойдаланиш, савол-жавоблар"/>
+          <bt:Override Locale="ru-RU" Value="Как пользоваться Khatt al-Quran, вопросы и ответы"/>
+          <bt:Override Locale="ar-SA" Value="طريقة استخدام خط القرآن، أسئلة وأجوبة"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Khatt al-Quran'dan foydalanish, savol-javoblar"/>
+          <bt:Override Locale="tr-TR" Value="Khatt al-Quran nasıl kullanılır, sorular ve cevaplar"/>
+          <bt:Override Locale="fr-FR" Value="Utiliser Khatt al-Quran, questions et réponses"/>
+          <bt:Override Locale="de-DE" Value="So nutzen Sie Khatt al-Quran, Fragen und Antworten"/>
+          <bt:Override Locale="es-ES" Value="Cómo usar Khatt al-Quran, preguntas y respuestas"/>
+          <bt:Override Locale="kk-KZ" Value="Khatt al-Quran-ды қолдану, сұрақ-жауаптар"/>
+          <bt:Override Locale="ky-KG" Value="Khatt al-Quran'ды колдонуу, суроо-жооптор"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Истифодаи Khatt al-Quran, саволу ҷавобҳо"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Khatt al-Quran-dan istifadə, suallar və cavablar"/>
+          <bt:Override Locale="fa-IR" Value="روش استفاده از خط القرآن، پرسش و پاسخ"/>
+          <bt:Override Locale="ur-PK" Value="خط القرآن کا استعمال، سوالات و جوابات"/>
+          <bt:Override Locale="id-ID" Value="Cara memakai Khatt al-Quran, tanya jawab"/>
+          <bt:Override Locale="ms-MY" Value="Cara menggunakan Khatt al-Quran, soal jawab"/>
+          <bt:Override Locale="bn-BD" Value="Khatt al-Quran ব্যবহারের নিয়ম, প্রশ্ন ও উত্তর"/>
+          <bt:Override Locale="bn-IN" Value="Khatt al-Quran ব্যবহারের নিয়ম, প্রশ্ন ও উত্তর"/>
+          <bt:Override Locale="hi-IN" Value="Khatt al-Quran का उपयोग, प्रश्न और उत्तर"/>
+          <bt:Override Locale="zh-CN" Value="Khatt al-Quran 使用方法与常见问题"/>
+          <bt:Override Locale="ko-KR" Value="Khatt al-Quran 사용법, 묻고 답하기"/>
+          <bt:Override Locale="ja-JP" Value="Khatt al-Quran の使い方とよくある質問"/>
+        </bt:String>
+        <bt:String id="Tab.News.Tip" DefaultValue="What changed in each version">
+          <bt:Override Locale="uz-UZ" Value="Ҳар бир нашрда нима ўзгарди"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Ҳар бир нашрда нима ўзгарди"/>
+          <bt:Override Locale="ru-RU" Value="Что изменилось в каждой версии"/>
+          <bt:Override Locale="ar-SA" Value="ما الذي تغيّر في كل إصدار"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Har bir nashrda nima oʻzgardi"/>
+          <bt:Override Locale="tr-TR" Value="Her sürümde neler değişti"/>
+          <bt:Override Locale="fr-FR" Value="Ce qui a changé dans chaque version"/>
+          <bt:Override Locale="de-DE" Value="Was sich in jeder Version geändert hat"/>
+          <bt:Override Locale="es-ES" Value="Qué cambió en cada versión"/>
+          <bt:Override Locale="kk-KZ" Value="Әр нұсқада не өзгерді"/>
+          <bt:Override Locale="ky-KG" Value="Ар бир версияда эмне өзгөрдү"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Дар ҳар нусха чӣ тағйир ёфт"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Hər versiyada nə dəyişdi"/>
+          <bt:Override Locale="fa-IR" Value="در هر نسخه چه چیزی تغییر کرد"/>
+          <bt:Override Locale="ur-PK" Value="ہر ورژن میں کیا بدلا"/>
+          <bt:Override Locale="id-ID" Value="Apa yang berubah di setiap versi"/>
+          <bt:Override Locale="ms-MY" Value="Apa yang berubah dalam setiap versi"/>
+          <bt:Override Locale="bn-BD" Value="প্রতিটি সংস্করণে কী বদলেছে"/>
+          <bt:Override Locale="bn-IN" Value="প্রতিটি সংস্করণে কী বদলেছে"/>
+          <bt:Override Locale="hi-IN" Value="हर संस्करण में क्या बदला"/>
+          <bt:Override Locale="zh-CN" Value="各版本的更新内容"/>
+          <bt:Override Locale="ko-KR" Value="버전별 변경 사항"/>
+          <bt:Override Locale="ja-JP" Value="各バージョンの変更点"/>
         </bt:String>
       </bt:LongStrings>
     </Resources>

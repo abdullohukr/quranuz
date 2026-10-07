@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran — Install</title>
 <link rel="icon" href="assets/icon-32.png">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=29">
 <style>
   .page { max-width: 760px; margin: 0 auto; padding: 16px; }
   .tabs { display: flex; gap: 6px; margin: 8px 0 16px; }
@@ -63,6 +63,45 @@
       <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V2-fonts.zip">QPC V2</a> ·
       <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V4-fonts.zip">QPC V4</a> ·
       <a href="manifest.xml" download>manifest.xml</a></p>
+  </section>
+
+  <section class="os" id="browser">
+    <h2 data-l="uz">Браузер (Chrome, Edge, Firefox)</h2><h2 data-l="ru">Браузер (Chrome, Edge, Firefox)</h2><h2 data-l="en">Browser (Chrome, Edge, Firefox)</h2>
+    <p data-l="uz">Оятни исталган сайтдаги матн майдонига қўйиш: Gmail, форумлар, ижтимоий тармоқлар, CMS. Khatt al-Quran ён панелда очилади; майдонда ўнг тугма → «Қуръон оятини шу ерга қўйиш». Google Docs'да «Қўйиш»дан кейин Ctrl+V босинг.</p>
+    <p data-l="ru">Вставка аята в любое поле ввода на сайтах: Gmail, форумы, соцсети, CMS. Khatt al-Quran открывается в боковой панели; в поле — правая кнопка → «Вставить аят Корана сюда». В Google Docs после «Вставить» нажмите Ctrl+V.</p>
+    <p data-l="en">Insert an ayah into any text field on the web: Gmail, forums, social networks, CMSs. Khatt al-Quran opens in the side panel; in a field, right-click → “Insert a Quran ayah here”. In Google Docs press Ctrl+V after “Insert”.</p>
+    <ol data-l="uz"><li>Chrome / Edge: <a href="install/khatt-al-quran-chrome.zip" download>khatt-al-quran-chrome.zip</a> ни юклаб, очинг (unzip). <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>) → «Developer mode» → «Load unpacked» → очилган папка.</li>
+      <li>Firefox: <a href="install/khatt-al-quran-firefox.zip" download>khatt-al-quran-firefox.zip</a> → <code>about:debugging</code> → «This Firefox» → «Load Temporary Add-on» → zip файл.</li></ol>
+    <ol data-l="ru"><li>Chrome / Edge: скачайте и распакуйте <a href="install/khatt-al-quran-chrome.zip" download>khatt-al-quran-chrome.zip</a>. <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>) → «Режим разработчика» → «Загрузить распакованное» → распакованная папка.</li>
+      <li>Firefox: <a href="install/khatt-al-quran-firefox.zip" download>khatt-al-quran-firefox.zip</a> → <code>about:debugging</code> → «Этот Firefox» → «Загрузить временное дополнение» → zip-файл.</li></ol>
+    <ol data-l="en"><li>Chrome / Edge: download and unzip <a href="install/khatt-al-quran-chrome.zip" download>khatt-al-quran-chrome.zip</a>. <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>) → “Developer mode” → “Load unpacked” → the unzipped folder.</li>
+      <li>Firefox: <a href="install/khatt-al-quran-firefox.zip" download>khatt-al-quran-firefox.zip</a> → <code>about:debugging</code> → “This Firefox” → “Load Temporary Add-on” → the zip file.</li></ol>
+  </section>
+
+  <section class="os" id="gdocs">
+    <h2>Google Docs</h2>
+    <p data-l="uz">Оят, таржима ва тафсир ҳужжатга форматлари билан қўйилади (араб матни — Scheherazade New шрифтида).</p>
+    <p data-l="ru">Аят, перевод и тафсир вставляются в документ с форматированием (арабский текст — шрифтом Scheherazade New).</p>
+    <p data-l="en">The ayah, translation and tafsir go into the document with their formatting (the Arabic text in Scheherazade New).</p>
+    <ol data-l="uz"><li><a href="install/khatt-al-quran-google-docs.zip" download>khatt-al-quran-google-docs.zip</a> ни юклаб, очинг.</li>
+      <li>Ҳужжатда: «Кенгайтмалар → Apps Script». <code>Code.gs</code> ўрнига шу файлни қўйинг; «+ → HTML» — номи <code>Sidebar</code>, <code>Sidebar.html</code>ни қўйинг; «Лойиҳа созламалари → appsscript.json'ни кўрсатиш» — <code>appsscript.json</code>ни қўйинг. Сақланг.</li>
+      <li>Ҳужжатни янгиланг: «Кенгайтмалар → Khatt al-Quran».</li></ol>
+    <ol data-l="ru"><li>Скачайте и распакуйте <a href="install/khatt-al-quran-google-docs.zip" download>khatt-al-quran-google-docs.zip</a>.</li>
+      <li>В документе: «Расширения → Apps Script». Замените <code>Code.gs</code> этим файлом; «+ → HTML» с именем <code>Sidebar</code> — вставьте <code>Sidebar.html</code>; «Настройки проекта → Показывать appsscript.json» — вставьте <code>appsscript.json</code>. Сохраните.</li>
+      <li>Обновите документ: «Расширения → Khatt al-Quran».</li></ol>
+    <ol data-l="en"><li>Download and unzip <a href="install/khatt-al-quran-google-docs.zip" download>khatt-al-quran-google-docs.zip</a>.</li>
+      <li>In the document: “Extensions → Apps Script”. Replace <code>Code.gs</code> with this file; “+ → HTML” named <code>Sidebar</code> — paste <code>Sidebar.html</code>; “Project Settings → Show appsscript.json” — paste <code>appsscript.json</code>. Save.</li>
+      <li>Reload the document: “Extensions → Khatt al-Quran”.</li></ol>
+  </section>
+
+  <section class="os" id="wordpress">
+    <h2>WordPress</h2>
+    <p data-l="uz">«Қуръон ояти» блоки ва классик муҳаррирдаги «Ayah» тугмаси. Натижа мақолада оддий HTML бўлиб сақланади, араб шрифти плагин ичида.</p>
+    <p data-l="ru">Блок «Аят Корана» и кнопка «Ayah» в классическом редакторе. Результат сохраняется в записи обычным HTML, арабский шрифт — внутри плагина.</p>
+    <p data-l="en">A “Quran ayah” block and an “Ayah” button in the classic editor. The result is saved in the post as plain HTML; the Arabic font comes with the plugin.</p>
+    <ol data-l="uz"><li><a href="install/khatt-al-quran-wordpress.zip" download>khatt-al-quran-wordpress.zip</a> → «Плагинлар → Янгисини қўшиш → Плагинни юклаш» → «Ўрнатиш» → «Фаоллаштириш».</li></ol>
+    <ol data-l="ru"><li><a href="install/khatt-al-quran-wordpress.zip" download>khatt-al-quran-wordpress.zip</a> → «Плагины → Добавить новый → Загрузить плагин» → «Установить» → «Активировать».</li></ol>
+    <ol data-l="en"><li><a href="install/khatt-al-quran-wordpress.zip" download>khatt-al-quran-wordpress.zip</a> → “Plugins → Add New → Upload Plugin” → “Install” → “Activate”.</li></ol>
   </section>
 
   <section class="os">

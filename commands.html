@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Khatt al-Quran commands</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>
+  /* Ribbon buttons "Help" and "What's new": the page opens in the browser, like the ? button in the panel
+     (a dialog window inside Word where the browser cannot be opened) */
+  function lang() {
+    try { return (JSON.parse(localStorage.getItem('myquran-settings') || '{}').uiLang) || 'uz'; } catch (e) { return 'uz'; }
+  }
+  function openPage(page, event) {
+    var url = new URL(page + '?lang=' + lang() + '&v=' + Date.now(), location.href).href;
+    try {
+      if (Office.context.ui.openBrowserWindow) { Office.context.ui.openBrowserWindow(url); event.completed(); return; }
+    } catch (e) {}
+    Office.context.ui.displayDialogAsync(url, { height: 80, width: 60 }, function () { event.completed(); });
+  }
+  function openHelp(event) { openPage('help.html', event); }
+  function openNews(event) { openPage('releases.html', event); }
+  if (window.Office) Office.onReady(function () {
+    if (Office.actions && Office.actions.associate) { Office.actions.associate('openHelp', openHelp); Office.actions.associate('openNews', openNews); }
+  });
+</script>
+</head>
+<body></body>
+</html>

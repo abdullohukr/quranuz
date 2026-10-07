@@ -9,7 +9,7 @@
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
         if (t !== 'auto') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
-<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="style.css?v=29">
 <style>
   .page { max-width: 760px; margin: 0 auto; padding: 16px; }
   .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -32,8 +32,9 @@
   </div>
   <p class="intro" id="t-intro"></p>
   <div id="list"></div>
-  <p class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="help.html">Help</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
+  <p class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="help.html" data-i18n="help">Help</a> · <a href="privacy.html" data-i18n="privacy">Privacy</a> · <a href="terms.html" data-i18n="terms">Terms</a></p>
 </div>
+<script src="i18n.js?v=29"></script>
 <script>
 (function () {
   'use strict';
@@ -45,6 +46,142 @@
     ar: { title: 'ما الجديد', intro: 'جميع إصدارات البرنامج منذ اليوم الأول حتى اليوم، وما الذي تغيّر في كل منها.', latest: 'الأحدث' }
   };
   var R = [
+    ['3.6.2', '2026-10-06', { uz: 'Қайта ўрнатиш бир неча сонияда', ru: 'Переустановка за секунды', en: 'Reinstalling in seconds', ar: 'إعادة التثبيت في ثوانٍ' }, {
+      uz: ['Ўрнатувчини қайта ишга туширганда ўзгармаган саҳифа шрифтлари (QPC) қайта юклаб олинмайди: янгиланиш бир неча сонияда тугайди.',
+           'Windows\'да саҳифа шрифтлари юклаб олинмаса, олдин ўрнатилганлари энди ўчирилмайди.'],
+      ru: ['При повторном запуске установщика неизменившиеся постраничные шрифты (QPC) не скачиваются заново: обновление занимает секунды.',
+           'В Windows, если постраничные шрифты не скачались, установленные ранее больше не удаляются.'],
+      en: ['When you run the installer again, page fonts (QPC) that have not changed are not downloaded again: updating takes seconds.',
+           'On Windows, if the page fonts could not be downloaded, the ones installed before are no longer removed.'],
+      ar: ['عند تشغيل المثبّت مرة أخرى لا تُنزَّل خطوط الصفحات (QPC) التي لم تتغيّر من جديد: يستغرق التحديث ثوانيَ معدودة.',
+           'في Windows، إذا تعذّر تنزيل خطوط الصفحات فلم تعد الخطوط المثبّتة سابقًا تُحذف.'] }],
+    ['3.6.1', '2026-10-06', { uz: 'Ўрнатувчи тўхтаб қолмайди', ru: 'Установщик больше не «зависает»', en: 'The installer no longer stalls', ar: 'المثبّت لم يعد يتوقف' }, {
+      uz: ['Windows\'да ойна ичига сичқонча билан босилганда ўрнатиш тўхтаб қолар эди (Enter босилгунча). Энди бундай бўлмайди.',
+           'Юклаб олиш ва шрифтларни улашда қанча вақт ўтгани ва тахминан қанча қолгани кўринади (Mac ва Windows).',
+           'Windows ўрнатувчисида ўзбекча матн лотин ёзувида: кирилл ҳарфлари (қ, ҳ, ғ) баъзи компьютерларда кўринмас эди.',
+           'Windows\'да ўчириш тезлашди ва шрифтлар папкаси тўлиқ ўчирилади.'],
+      ru: ['В Windows установка останавливалась, если щёлкнуть мышью внутри окна (до нажатия Enter). Теперь этого не происходит.',
+           'При скачивании и подключении шрифтов видно, сколько прошло и примерно сколько осталось (Mac и Windows).',
+           'В установщике для Windows узбекский текст — латиницей: буквы қ, ҳ, ғ на некоторых компьютерах не отображались.',
+           'Удаление в Windows стало быстрее, папка шрифтов удаляется полностью.'],
+      en: ['On Windows the installation stopped when you clicked inside the window (until you pressed Enter). This no longer happens.',
+           'While the fonts are downloaded and switched on, you see how long it has taken and about how long is left (Mac and Windows).',
+           'The Windows installer shows Uzbek in Latin letters: the Cyrillic letters қ, ҳ, ғ did not display on some computers.',
+           'Uninstalling on Windows is faster and removes the font folder completely.'],
+      ar: ['في Windows كان التثبيت يتوقف عند النقر داخل النافذة (حتى الضغط على Enter). لم يعد ذلك يحدث.',
+           'أثناء تنزيل الخطوط وتفعيلها يظهر الوقت المنقضي والوقت المتبقي تقريبًا (Mac وWindows).',
+           'يعرض مثبّت Windows الأوزبكية بالحروف اللاتينية: الحروف السيريلية қ وҳ وғ لم تكن تظهر على بعض الأجهزة.',
+           'أصبحت الإزالة في Windows أسرع وتحذف مجلد الخطوط بالكامل.'] }],
+    ['3.6', '2026-10-06', { uz: 'Тезроқ ўрнатиш ва тўлиқ таржима', ru: 'Быстрая установка и полный перевод', en: 'Faster setup, complete translation', ar: 'تثبيت أسرع وترجمة كاملة' }, {
+      uz: ['Windows\'да ўрнатиш бир неча баробар тезлашди: шрифтлар бир вақтда юклаб олинади ва бир йўла уланади.',
+           'Ўрнатувчи (Mac ва Windows) ҳар бир қадамни алоҳида, рангли ва вақти билан кўрсатади; ҳар бир тил ўз қаторида, Mac\'да арабчаси ҳам бор.',
+           'Интерфейс тилини алмаштирганда «Формат» бўлимидаги номлар ҳам дарров янги тилда кўринади; бир нечта тилда етишмаган ёзувлар қўшилди.',
+           'Word тасмасидаги тугма ва изоҳлар Office тилида: турк, француз, немис, испан, қозоқ, қирғиз, тожик, озарбайжон, форс, урду, индонез, малай, бенгал, ҳинд, хитой, корейс, япон ва ўзбек (лотин).'],
+      ru: ['Установка в Windows стала в несколько раз быстрее: шрифты скачиваются одновременно и подключаются все сразу.',
+           'Установщик (Mac и Windows) показывает каждый шаг отдельно, в цвете и со временем; каждый язык на своей строке, на Mac есть и арабский.',
+           'При смене языка интерфейса названия во вкладке «Формат» сразу меняются на новый язык; добавлены недостающие надписи в нескольких языках.',
+           'Кнопки и подсказки на ленте Word — на языке Office: турецком, французском, немецком, испанском, казахском, киргизском, таджикском, азербайджанском, персидском, урду, индонезийском, малайском, бенгальском, хинди, китайском, корейском, японском и узбекском (латиница).'],
+      en: ['Installing on Windows is several times faster: the fonts are downloaded at the same time and switched on all at once.',
+           'The installer (Mac and Windows) shows every step on its own, in colour and with the time; each language on its own line, with Arabic on Mac.',
+           'When you change the interface language, the names in the Format tab change right away too; a few missing labels were added in several languages.',
+           'The buttons and tips on the Word ribbon follow the Office language: Turkish, French, German, Spanish, Kazakh, Kyrgyz, Tajik, Azerbaijani, Persian, Urdu, Indonesian, Malay, Bengali, Hindi, Chinese, Korean, Japanese and Uzbek (Latin).'],
+      ar: ['أصبح التثبيت على Windows أسرع بعدة مرات: تُنزَّل الخطوط معًا وتُفعَّل دفعة واحدة.',
+           'يعرض المثبّت (Mac وWindows) كل خطوة على حدة، بالألوان ومع الوقت؛ وكل لغة في سطرها، وفي Mac العربية أيضًا.',
+           'عند تغيير لغة الواجهة تتغيّر الأسماء في تبويب «التنسيق» فورًا؛ وأُضيفت نصوص كانت ناقصة في عدة لغات.',
+           'أزرار شريط Word وتلميحاته بلغة Office: التركية والفرنسية والألمانية والإسبانية والكازاخية والقرغيزية والطاجيكية والأذربيجانية والفارسية والأردية والإندونيسية والملايوية والبنغالية والهندية والصينية والكورية واليابانية والأوزبكية (اللاتينية).'] }],
+    ['3.5', '2026-10-06', { uz: 'Дўконларга тайёргарлик', ru: 'Подготовка к магазинам', en: 'Getting ready for the stores', ar: 'الاستعداد للمتاجر' }, {
+      uz: ['Mac\'даги Word яна Scheherazade New ва барча шрифтларни кўради. Кўп шрифт ўрнатилганда Word рўйхатини ярмида тўхтатиб қўяр эди, шунинг учун араб матни оддий шрифтда кўринарди. Энди ўрнатувчи Word рўйхатини тўлдиради ва уни ҳар доим тўлиқ сақлайди.',
+           'Ўрнатиш тезлашди: шрифтлар бир вақтда бир неча оқимда юклаб олинади, очиш ҳам тезроқ. Windows\'да фойдаланувчи номи кирилл ҳарфларида бўлса ҳам ўрнатиш тўхтамайди.',
+           'Браузер кенгайтмаси, Google Docs қўшимчаси ва WordPress плагини Chrome, Edge, Firefox, Google ва WordPress дўконларига юборишга тайёрланди.',
+           'Махфийлик сиёсатида кенгайтма, Google Docs ва WordPress нималарга кира олиши аниқ ёзилди: фақат сиз «Қўйиш»ни босганда ва фақат керакли жойга.',
+           'Ўрнатувчи (Mac ва Windows) тузатилди: аввал шрифтлар юклаб олинади ва текширилади, эскилари фақат шундан кейин алмаштирилади. Юклаб олишда хато бўлса, Scheherazade New шрифти энди йўқолиб қолмайди. Mac\'да охирида шрифт ишлаётгани текширилади.'],
+      ru: ['Word на Mac снова видит Scheherazade New и все остальные шрифты. Когда шрифтов на компьютере много, Word обрывал свой список на середине, и арабский текст показывался обычным шрифтом. Теперь установщик дополняет список Word и следит, чтобы он оставался полным.',
+           'Установка стала быстрее: шрифты скачиваются сразу в несколько потоков и быстрее распаковываются. В Windows установка больше не останавливается, если имя пользователя написано кириллицей.',
+           'Расширение для браузера, дополнение для Google Docs и плагин для WordPress подготовлены к публикации в магазинах Chrome, Edge, Firefox, Google и WordPress.',
+           'В политике конфиденциальности точно описано, к чему имеют доступ расширение, Google Docs и WordPress: только когда вы нажимаете «Вставить» и только туда, куда нужно.',
+           'Исправлен установщик (Mac и Windows): сначала шрифты скачиваются и проверяются, и только потом заменяются старые. При сбое загрузки шрифт Scheherazade New больше не пропадает. На Mac в конце проверяется, что шрифт работает.'],
+      en: ['Word for Mac sees Scheherazade New and all other fonts again. With many fonts on the computer, Word stopped its font list halfway, and the Arabic text was shown in a plain font. The installer now completes Word\'s list and keeps it complete.',
+           'Faster installation: the fonts are downloaded over several connections at once and unpacked faster. On Windows the installer no longer stops when the user name is in Cyrillic.',
+           'The browser extension, the Google Docs add-on and the WordPress plugin are ready to be published in the Chrome, Edge, Firefox, Google and WordPress stores.',
+           'The privacy policy now says exactly what the extension, the Google Docs add-on and the WordPress plugin can access: only when you press “Insert”, and only where the text goes.',
+           'Fixed the installer (Mac and Windows): the fonts are downloaded and checked first, and only then replace the old ones. A failed download no longer leaves you without Scheherazade New. On Mac it checks at the end that the font works.'],
+      ar: ['أصبح Word على Mac يرى خط Scheherazade New وجميع الخطوط الأخرى من جديد. فعند كثرة الخطوط على الجهاز كان Word يقطع قائمة خطوطه في منتصفها فيظهر النص العربي بخط عادي. والآن يُكمل المثبّت قائمة Word ويحافظ على اكتمالها.',
+           'أصبح التثبيت أسرع: تُنزَّل الخطوط عبر عدة اتصالات في وقت واحد وتُفكّ بسرعة أكبر. وفي Windows لم يعد التثبيت يتوقف إذا كان اسم المستخدم مكتوبًا بالحروف السيريلية.',
+           'أصبحت إضافة المتصفح وإضافة Google Docs وإضافة ووردبريس جاهزة للنشر في متاجر Chrome وEdge وFirefox وGoogle وووردبريس.',
+           'توضّح سياسة الخصوصية الآن بدقة ما تصل إليه إضافة المتصفح وGoogle Docs وووردبريس: فقط عند الضغط على «إدراج»، وفقط حيث يوضع النص.',
+           'أُصلح المثبّت (Mac وWindows): تُنزَّل الخطوط وتُفحص أولًا، ثم تحلّ محل القديمة. ولم يعد فشل التنزيل يُفقدك خط Scheherazade New. وفي Mac يُتحقَّق في النهاية من عمل الخط.'] }],
+    ['3.4', '2026-10-05', { uz: 'Сура ҳақида — ўзбек тилида', ru: 'О суре — на узбекском', en: 'About the surah — in Uzbek', ar: 'عن السورة — بالأوزبكية' }, {
+      uz: ['<b>Сура ҳақида</b> ойнаси (ⓘ тугмаси) энди <b>ўзбек тилида</b>: 114 суранинг номи, нозил бўлиш даври, мавзуси ва мазмуни. Таржима: Абдуллоҳ Ҳамидуллоҳ. Лотин ёзувидаги интерфейсда — лотин ёзувида.',
+           'Сура ҳақидаги инглизча матндаги баъзи хатолар тузатилди (Марям сураси ва бир қанча исмлар).',
+           'Пастдаги ҳаволалар (Махфийлик, Шартлар, Янгиликлар, Ёрдам) энди барча саҳифаларда танланган тилда.',
+           'Муаллиф ҳақидаги маълумот «Ёрдам» саҳифасида интерфейснинг барча тилларида.'],
+      ru: ['Окно <b>«О суре»</b> (кнопка ⓘ) теперь <b>на узбекском</b>: название, время ниспослания, тема и содержание всех 114 сур. Перевод: Абдуллах Хамидуллах. В интерфейсе на узбекской латинице — латиницей.',
+           'Исправлены ошибки в английском тексте о сурах (сура Марьям и ряд имён).',
+           'Ссылки внизу (Конфиденциальность, Условия, Что нового, Справка) теперь на всех страницах на выбранном языке.',
+           'Сведения об авторе на странице «Справка» — на всех языках интерфейса.'],
+      en: ['The <b>About the surah</b> window (the ⓘ button) is now <b>in Uzbek</b>: name, period of revelation, theme and subject matter of all 114 surahs, translated by Abdulloh Hamidulloh. With the Uzbek Latin interface it is in Latin letters.',
+           'Fixed some mistakes in the English surah info (Surah Maryam and several names).',
+           'The links at the bottom (Privacy, Terms, What\'s new, Help) are now in the chosen language on every page.',
+           'The author\'s bio on the Help page is in every interface language.'],
+      ar: ['نافذة <b>«عن السورة»</b> (زر ⓘ) صارت <b>بالأوزبكية</b>: اسم السورة وزمن نزولها وموضوعها ومحتواها للسور الـ114، بترجمة عبد الله حميد الله. وفي الواجهة الأوزبكية اللاتينية بالحروف اللاتينية.',
+           'صُحّحت أخطاء في النص الإنجليزي عن السور (سورة مريم وبعض الأسماء).',
+           'روابط أسفل الصفحة (الخصوصية والشروط وما الجديد والمساعدة) صارت بلغة الواجهة في كل الصفحات.',
+           'نبذة المؤلف في صفحة المساعدة بجميع لغات الواجهة.'] }],
+    ['3.3', '2026-10-05', { uz: 'Браузер, Google Docs ва WordPress', ru: 'Браузер, Google Docs и WordPress', en: 'Browser, Google Docs and WordPress', ar: 'المتصفح وGoogle Docs ووردبريس' }, {
+      uz: ['<b>Браузер учун кенгайтма</b> (Chrome, Edge, Firefox): Khatt al-Quran ён панелда очилади ва оятни исталган сайтдаги матн майдонига қўяди — Gmail, форумлар, ижтимоий тармоқлар. Майдонда ўнг тугма → «Қуръон оятини шу ерга қўйиш».',
+           '<b>Google Docs</b> учун қўшимча: оят, таржима ва тафсир ҳужжатга форматлари билан қўйилади.',
+           '<b>WordPress</b> учун плагин: «Қуръон ояти» блоки ва классик муҳаррирдаги тугма; араб шрифти плагин ичида.',
+           'Ҳаммаси «Ўрнатиш» саҳифасида: юклаб олиш ва қадамма-қадам йўриқнома.'],
+      ru: ['<b>Расширение для браузера</b> (Chrome, Edge, Firefox): Khatt al-Quran открывается в боковой панели и вставляет аят в любое поле ввода на сайтах — Gmail, форумы, соцсети. В поле — правая кнопка → «Вставить аят Корана сюда».',
+           'Дополнение для <b>Google Docs</b>: аят, перевод и тафсир вставляются в документ с форматированием.',
+           'Плагин для <b>WordPress</b>: блок «Аят Корана» и кнопка в классическом редакторе; арабский шрифт — внутри плагина.',
+           'Всё на странице «Установка»: скачивание и пошаговая инструкция.'],
+      en: ['A <b>browser extension</b> (Chrome, Edge, Firefox): Khatt al-Quran opens in the side panel and inserts the ayah into any text field on the web — Gmail, forums, social networks. In a field, right-click → “Insert a Quran ayah here”.',
+           'An add-on for <b>Google Docs</b>: the ayah, translation and tafsir go into the document with their formatting.',
+           'A plugin for <b>WordPress</b>: a “Quran ayah” block and a button in the classic editor; the Arabic font comes with it.',
+           'All on the Install page: downloads and step-by-step instructions.'],
+      ar: ['<b>إضافة للمتصفح</b> (Chrome وEdge وFirefox): يفتح خط القرآن في اللوحة الجانبية ويُدرج الآية في أي حقل نصي على الويب — Gmail والمنتديات والشبكات الاجتماعية. في الحقل: زر الفأرة الأيمن ← «أدرج آية من القرآن هنا».',
+           'إضافة لـ<b>Google Docs</b>: تُدرج الآية والترجمة والتفسير في المستند بتنسيقها.',
+           'إضافة لـ<b>ووردبريس</b>: كتلة «آية من القرآن» وزر في المحرر الكلاسيكي، والخط العربي مضمَّن فيها.',
+           'كل ذلك في صفحة «التثبيت»: التنزيل وتعليمات خطوة بخطوة.'] }],
+    ['3.2', '2026-10-05', { uz: 'Белгилар, лента ва бенгал матни', ru: 'Знаки, лента и бенгальский текст', en: 'Signs, the ribbon and Bengali text', ar: 'العلامات والشريط والنص البنغالي' }, {
+      uz: ['Созламаларнинг «Қўйиш» бўлимида энди <b>оят рақамлари, ҳизб ۞, сажда ۩ ва вақф белгилари</b>ни ўчириб-ёқиш мумкин. Бўлим янгича кўринишда: ҳар бир банд ёнида нима қўйилиши кўрсатилади.',
+           'Word\'нинг юқори лентасида <b>Khatt al-Quran</b> бўлими пайдо бўлди: Оятлар, Созламалар, Ёрдам ва Янгиликлар тугмалари замонавий белгилар билан. Уни кўриш учун ўрнатувчини бир марта қайта ишга туширинг.',
+           'Бенгал таржимаси Word\'да энди квадратчалар эмас, ҳарфлар билан чиқиши керак.',
+           'Корейс таржималарида сура номи энди корейс ёзувида.',
+           'Таржима ҳаволаси намунаси интерфейс тилида; қавслар намунаси тўғри кўринади; пастда «Ёрдам» ҳаволаси қайтди.',
+           '«Ёрдам» саҳифасидаги «Муаллиф» бўлимида муаллиф ҳақида маълумот.'],
+      ru: ['В настройках, на вкладке «Вставка», теперь можно включать и выключать <b>номера аятов, знаки хизба ۞, саджды ۩ и вакфа</b>. Вкладка в новом виде: рядом с каждым пунктом показано, что вставится.',
+           'На ленте Word появилась вкладка <b>Khatt al-Quran</b>: кнопки «Аяты», «Настройки», «Справка» и «Что нового» с современными значками. Чтобы она появилась, один раз запустите установщик заново.',
+           'Бенгальский перевод в Word должен теперь выходить буквами, а не квадратиками.',
+           'В корейских переводах название суры теперь корейским письмом.',
+           'Пример ссылки перевода — на языке интерфейса; скобки в примере показаны правильно; внизу вернулась ссылка «Справка».',
+           'В разделе «Автор» на странице «Справка» — сведения об авторе.'],
+      en: ['In the settings, the Insert tab can now turn <b>ayah numbers, the hizb sign ۞, the sajdah sign ۩ and the pause (waqf) marks</b> on and off. The tab has a new look: each item shows what will be inserted.',
+           'Word\'s ribbon has a new <b>Khatt al-Quran</b> tab: Ayahs, Settings, Help and What\'s new, with modern icons. Run the installer once more to see it.',
+           'A Bengali translation should now come out in Word as letters, not boxes.',
+           'Korean translations now get the surah name in Korean script.',
+           'The translation reference example is in the interface language; the bracket example shows the right way round; the Help link is back at the bottom.',
+           'The Author section of the Help page now tells about the author.'],
+      ar: ['في الإعدادات، يمكن الآن في تبويب «الإدراج» إظهار أو إخفاء <b>أرقام الآيات وعلامة الحزب ۞ وعلامة السجدة ۩ وعلامات الوقف</b>. وللتبويب شكل جديد يُظهر بجانب كل خيار ما سيُدرج.',
+           'في شريط Word تبويب جديد <b>خط القرآن</b>: الآيات والإعدادات والمساعدة وما الجديد، بأيقونات حديثة. شغّل المثبّت مرة أخرى لتراه.',
+           'يُفترض أن تظهر الترجمة البنغالية في Word حروفًا لا مربعات.',
+           'صار اسم السورة في الترجمات الكورية بالخط الكوري.',
+           'مثال مرجع الترجمة بلغة الواجهة؛ ويظهر مثال الأقواس بالاتجاه الصحيح؛ وعاد رابط «المساعدة» في الأسفل.',
+           'في قسم «المؤلف» بصفحة المساعدة نبذة عن المؤلف.'] }],
+    ['3.1', '2026-10-05', { uz: 'Сура номлари ўз ёзувида', ru: 'Названия сур на родном письме', en: 'Surah names in their own script', ar: 'أسماء السور بخط لغتها' }, {
+      uz: ['Хитой, япон, ҳинд, бенгал, иврит, тамил ва малаялам таржималарида ҳавола энди ўша тилнинг ўз ёзувида: <i>(优努斯章: 1)</i>, <i>(ইউনুস: 1)</i>, <i>(ユーヌス: 1)</i> — лотинча номлар ўрнига.',
+           'Шу тилларда интерфейсда ҳам сура номлари ўз ёзувида кўрсатилади.',
+           'Бенгал матни Word\'да энди квадратчалар бўлиб қолмайди: бенгал, ҳинд, тамил, малаялам ва бошқа ҳинд ёзувларига шу ёзувли тизим шрифти қўйилади.'],
+      ru: ['В переводах на китайский, японский, хинди, бенгальский, иврит, тамильский и малаялам ссылка теперь на письме самого языка: <i>(优努斯章: 1)</i>, <i>(ইউনুস: 1)</i>, <i>(ユーヌス: 1)</i> — вместо латинских названий.',
+           'В интерфейсе на этих языках названия сур тоже показываются на их письме.',
+           'Бенгальский текст в Word больше не превращается в квадратики: бенгальскому, хинди, тамильскому, малаялам и другим индийским письменностям ставится системный шрифт с этим письмом.'],
+      en: ['Translations in Chinese, Japanese, Hindi, Bengali, Hebrew, Tamil and Malayalam now get their reference in the language\'s own script: <i>(优努斯章: 1)</i>, <i>(ইউনুস: 1)</i>, <i>(ユーヌス: 1)</i> — instead of Latin names.',
+           'The interface in these languages shows surah names in their script too.',
+           'Bengali text no longer turns into boxes in Word: Bengali, Hindi, Tamil, Malayalam and other Indic scripts get a system font that has the script.'],
+      ar: ['في ترجمات الصينية واليابانية والهندية والبنغالية والعبرية والتاميلية والمالايالامية صار مرجع الترجمة بخط اللغة نفسها: <i>(优努斯章: 1)</i>، <i>(ইউনুস: 1)</i>، <i>(ユーヌス: 1)</i> بدل الأسماء اللاتينية.',
+           'وتظهر أسماء السور في واجهة هذه اللغات بخطها أيضًا.',
+           'لم يعد النص البنغالي يظهر مربعات في Word: تُعطى البنغالية والهندية والتاميلية والمالايالامية وسائر الخطوط الهندية خطَّ نظامٍ يحتوي حروفها.'] }],
     ['3.0', '2026-10-05', { uz: 'Khatt al-Quran — янги ном', ru: 'Khatt al-Quran — новое имя', en: 'Khatt al-Quran — a new name', ar: 'خط القرآن — اسم جديد' }, {
       uz: ['Лойиҳа энди <b>Khatt al-Quran (خط القرآن)</b> деб аталади.',
            'Браузердаги Word ва iPad\'да оятлар энди расм эмас, <b>матн</b> сифатида қўйилади — уларни белгилаш, қидириш ва нусха олиш мумкин. Расм фақат саҳифа шрифтли мусҳафлар (V1/V2/V4) учун қолди.',
@@ -131,6 +268,7 @@
     sel.value = l; document.documentElement.lang = l; document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
     document.title = 'Khatt al-Quran — ' + T[l].title;
     document.getElementById('t-title').textContent = T[l].title;
+    if (window.I18n) I18n.localize(document.querySelector('p.author'), l);
     document.getElementById('t-intro').textContent = T[l].intro;
     document.getElementById('list').innerHTML = R.map(function (r, i) {
       return '<section class="rel' + (i ? '' : ' latest') + '"><h2><span class="ver">' + r[0] + '</span>' + r[2][l] +
@@ -138,7 +276,7 @@
         '<ul>' + r[3][l].map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></section>';
     }).join('');
   }
-  var lang = (location.search.match(/[?&]lang=(\w+)/) || [])[1];
+  var lang = ((location.search.match(/[?&]lang=(\w+)/) || [])[1] || '').split('_')[0];
   if (!lang) try { lang = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').uiLang || '').split('_')[0]; } catch (e) {}
   if (!lang) lang = (navigator.language || 'en').slice(0, 2);
   sel.addEventListener('change', function () { show(sel.value); history.replaceState(null, '', '?lang=' + sel.value); });

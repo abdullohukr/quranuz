@@ -182,6 +182,15 @@ dialog.sheet form { display: flex; flex-direction: column; max-height: calc(100v
 [dir=rtl] .switch input:checked + i::after { transform: translateX(-16px); }
 .switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 .switch bdi, .switch .muted { font-size: 13px; }
+/* Insert tab: grouped rows — label, a sample of what is inserted, the switch at the end */
+.opt-group { background: var(--surface-2); border-radius: var(--radius); padding: 4px 14px; margin: 0 0 12px; }
+.opt-group h3 { margin: 10px 0 2px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.switch.opt { padding: 10px 0; border-top: 1px solid var(--line); }
+.switch.opt:first-of-type { border-top: 0; }
+.switch.opt > span:first-child { flex: 1; }
+.switch.opt .sample { padding: 1px 8px; border-radius: 6px; background: var(--surface); color: var(--muted); font-size: 13px; white-space: nowrap; }
+.switch.opt .sample.ar { font-family: 'QuranUz Arabic', 'Scheherazade New', serif; font-size: 17px; line-height: 1.3; color: var(--accent); }
+.switch.opt.disabled { opacity: .45; pointer-events: none; }
 
 /* translation / tafsir lists */
 .checklist { border: 1px solid var(--line); border-radius: var(--radius-s); max-height: 46vh; overflow: auto; padding: 4px; }
