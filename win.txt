@@ -1,0 +1,116 @@
+# Khatt al-Quran installer for Windows: all fonts (incl. QPC V1/V2/V4 page fonts) and the Word add-in.
+# No administrator rights needed. Run in PowerShell:
+#   irm https://quran.abdulloh.org/win.txt | iex
+# Fonts go to their own folder %LOCALAPPDATA%\MyQuran\Fonts and are registered for the
+# current user. Every run is a clean reinstall (close Word first). Uninstall:  irm https://quran.abdulloh.org/win-uninstall.txt | iex
+$ErrorActionPreference = 'Stop'
+$ProgressPreference = 'Continue'      # progress bars on (downloads below do not use the slow Invoke-WebRequest bar)
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+$Site = 'https://quran.abdulloh.org'
+$Rel  = 'https://github.com/abdullohukr/quranuz/releases/download/fonts'
+$Home2 = Join-Path $env:LOCALAPPDATA 'MyQuran'
+$FontDir = Join-Path $Home2 'Fonts'
+$FontReg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+$Tmp = Join-Path $env:TEMP ('myquran-' + [guid]::NewGuid())
+New-Item -ItemType Directory -Force -Path $FontDir, $Tmp | Out-Null
+if (-not (Test-Path $FontReg)) { New-Item -Force -Path $FontReg | Out-Null }
+if (Get-Process WINWORD -ErrorAction SilentlyContinue) {
+  Write-Host "Close Word first / Avval Word'ni yoping / Сначала закройте Word" -ForegroundColor Yellow
+  Read-Host "Enter"
+}
+
+# make new fonts usable right away (otherwise only after the next sign-in)
+Add-Type -Namespace MyQuran -Name Gdi -MemberDefinition @'
+[DllImport("gdi32.dll", CharSet = CharSet.Unicode)] public static extern int AddFontResourceW(string file);
+[DllImport("gdi32.dll", CharSet = CharSet.Unicode)] public static extern int RemoveFontResourceW(string file);
+[DllImport("user32.dll")] public static extern int SendMessageTimeoutW(System.IntPtr h, uint m, System.IntPtr w, System.IntPtr l, uint f, uint t, out System.IntPtr r);
+'@
+
+# download with a progress bar (MB done / total)
+function Get-File($url, $out, $label) {
+  $res = [System.Net.HttpWebRequest]::Create($url).GetResponse()
+  $total = $res.ContentLength; $in = $res.GetResponseStream(); $fs = [IO.File]::Create($out)
+  $buf = New-Object byte[] 262144; $done = 0; $shown = 0
+  try {
+    while (($n = $in.Read($buf, 0, $buf.Length)) -gt 0) {
+      $fs.Write($buf, 0, $n); $done += $n
+      if ($total -gt 0 -and ($done - $shown) -ge 512KB) {
+        $shown = $done
+        Write-Progress -Activity $label -Status ('{0:N1} / {1:N1} MB' -f ($done / 1MB), ($total / 1MB)) -PercentComplete ([int](100 * $done / $total))
+      }
+    }
+  } finally { $fs.Close(); $in.Close(); $res.Close(); Write-Progress -Activity $label -Completed }
+  Write-Host ('  downloaded {0:N1} MB' -f ($done / 1MB))
+}
+
+function Install-Zip($url) {
+  $zip = Join-Path $Tmp 'f.zip'; $dir = Join-Path $Tmp 'x'; $name = Split-Path $url -Leaf
+  try { Get-File $url $zip "Downloading $name" } catch { Write-Host "  ! not available: $url" -ForegroundColor Yellow; return }
+  if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+  Write-Host '  unpacking...'
+  Expand-Archive -Force $zip $dir
+  $files = @(Get-ChildItem $dir -Recurse -Include *.ttf, *.otf); $i = 0; $copied = 0; $kept = 0
+  foreach ($f in $files) {
+    $i++
+    if ($i % 10 -eq 0 -or $i -eq $files.Count) {
+      Write-Progress -Activity "Installing fonts: $name" -Status "$i / $($files.Count)" -PercentComplete ([int](100 * $i / $files.Count))
+    }
+    # already installed for all users (C:\Windows\Fonts): a second copy makes Word complain
+    if (Test-Path (Join-Path $SysFonts $f.Name)) { $kept++; continue }
+    $dst = Join-Path $FontDir $f.Name
+    Copy-Item $f.FullName $dst -Force
+    $kind = if ($f.Extension -eq '.otf') { ' (OpenType)' } else { ' (TrueType)' }
+    New-ItemProperty -Path $FontReg -Name ('MyQuran ' + $f.BaseName + $kind) -Value $dst -PropertyType String -Force | Out-Null
+    [void][MyQuran.Gdi]::AddFontResourceW($dst)
+    $copied++
+  }
+  Write-Progress -Activity "Installing fonts: $name" -Completed
+  Write-Host ("  installed: $copied" + $(if ($kept) { ", already installed for all users (kept): $kept" } else { '' })) -ForegroundColor Green
+}
+
+Write-Host "`n0/3  Removing the previous installation / Олдинги ўрнатишни тозалаш / Удаление прежней установки" -ForegroundColor Cyan
+# Clean reinstall: unregister and delete the previous MyQuran fonts; copies of the same font
+# files installed by hand for this user are moved to %LOCALAPPDATA%\MyQuran\OldFonts.
+$UserFonts = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts'
+$SysFonts = Join-Path $env:WINDIR 'Fonts'
+$Old = Join-Path $Home2 'OldFonts'
+$reg = Get-ItemProperty -Path $FontReg
+$reg.PSObject.Properties | Where-Object { $_.Name -notlike 'PS*' } | ForEach-Object {
+  $path = [string]$_.Value
+  $ours = $_.Name -like 'MyQuran *'
+  $mine = $path -like "$UserFonts\*" -and (Test-Path (Join-Path $FontDir (Split-Path $path -Leaf)))
+  # an entry whose file is gone (deleted by hand, older installs) makes Word say
+  # "We weren't able to load all of your fonts": remove the entry
+  $gone = $path -and [IO.Path]::IsPathRooted($path) -and -not (Test-Path $path)
+  if ($ours -or $mine -or $gone) {
+    [void][MyQuran.Gdi]::RemoveFontResourceW($path)
+    Remove-ItemProperty -Path $FontReg -Name $_.Name -ErrorAction SilentlyContinue
+    if ($mine -and (Test-Path $path)) {
+      New-Item -ItemType Directory -Force -Path $Old | Out-Null
+      Move-Item -Force $path $Old -ErrorAction SilentlyContinue
+    }
+  }
+}
+Get-ChildItem $FontDir -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+
+Write-Host "`n1/3  Khatt al-Quran fonts -> $FontDir (clean reinstall)" -ForegroundColor Cyan
+Install-Zip "$Site/fonts/MyQuran-fonts.zip"
+
+Write-Host "`n2/3  QPC page fonts: Quran Library V1, V2, V4 (3 x 604)" -ForegroundColor Cyan
+foreach ($v in 'V1', 'V2', 'V4') { Write-Host "QPC $v"; Install-Zip "$Rel/MyQuran-QPC-$v-fonts.zip" }
+
+Write-Host "`n3/3  Word add-in Khatt al-Quran" -ForegroundColor Cyan
+$Manifest = Join-Path $Home2 'manifest.xml'
+Invoke-WebRequest -UseBasicParsing "$Site/manifest.xml" -OutFile $Manifest
+$Id = ([xml](Get-Content $Manifest -Raw)).OfficeApp.Id
+$Dev = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+New-Item -Force -Path $Dev | Out-Null
+New-ItemProperty -Path $Dev -Name $Id -Value $Manifest -PropertyType String -Force | Out-Null
+
+$r = [IntPtr]::Zero
+[void][MyQuran.Gdi]::SendMessageTimeoutW([IntPtr]0xffff, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero, 2, 1000, [ref]$r)  # WM_FONTCHANGE
+Remove-Item -Recurse -Force $Tmp
+Write-Host ("`n" + (Get-ChildItem $FontDir).Count + " fonts in $FontDir")
+Write-Host "Done. Restart Word, then Home -> Khatt al-Quran." -ForegroundColor Green
+Write-Host "Тайёр. Word'ни қайта ишга туширинг, сўнг Главная -> Khatt al-Quran."
+Write-Host "Готово. Перезапустите Word, затем Главная -> Khatt al-Quran."

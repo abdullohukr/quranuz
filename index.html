@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khatt al-Quran</title>
+<meta name="myquran-version" content="21">
+<link rel="icon" href="assets/icon-32.png">
+<link rel="apple-touch-icon" href="assets/icon-300.png">
+<link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css?v=21">
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="i18n.js?v=21"></script>
+<script src="core.js?v=21"></script>
+<script>
+  /* theme before the first paint */
+  try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
+        if (t !== 'auto') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img class="logo" src="assets/icon-64.png" width="30" height="30" alt=""><h1>Khatt al-Quran</h1><span id="host-badge" class="badge" hidden>Word</span></div>
+  <button id="help-btn" class="icon-btn" data-i18n-title="help" aria-label="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9"/><circle cx="12" cy="17.2" r=".6" class="fill"/></svg></button>
+  <button id="settings-btn" class="icon-btn" data-i18n-title="settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+</header>
+
+<main>
+  <section class="search card">
+    <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="search" autocomplete="off" dir="auto" data-i18n-placeholder="search"></div>
+    <div class="pick">
+      <select id="sura" aria-label="Surah"></select>
+      <button id="info-btn" class="icon-btn" data-i18n-title="surahInfo" aria-label="info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" class="fill"/></svg></button>
+    </div>
+    <div class="range">
+      <span class="range-label" data-i18n="ayah"></span>
+      <input id="from" type="number" min="1" value="1" aria-label="from">
+      <span class="dash">—</span>
+      <input id="to" type="number" min="1" value="1" aria-label="to">
+    </div>
+    <div id="status" class="muted small" data-i18n="loading"></div>
+    <ol id="results"></ol>
+  </section>
+
+  <section class="selection card">
+    <div class="sel-head">
+      <strong id="sel-title"></strong>
+      <button id="reset-words" class="link" hidden data-i18n="fullAyah"></button>
+    </div>
+    <p id="script-note" class="note small" hidden data-i18n="ayahByAyah"></p>
+    <div id="preview-ar" class="arabic" dir="rtl"></div>
+    <div class="actions">
+      <button id="insert" class="btn primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg><span data-i18n="insert"></span></button>
+      <button id="copy" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span data-i18n="copy"></span></button>
+    </div>
+  </section>
+</main>
+<footer class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" target="_blank">Privacy</a> · <a href="terms.html" target="_blank">Terms</a> · <a href="releases.html" target="_blank">What's new</a></footer>
+
+<dialog id="settings" class="sheet">
+  <form method="dialog">
+    <div class="sheet-head">
+      <h2 data-i18n="settings"></h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="general" data-i18n="tabGeneral"></button>
+      <button type="button" role="tab" data-tab="tr" data-i18n="translation"></button>
+      <button type="button" role="tab" data-tab="tf" data-i18n="tafsir"></button>
+      <button type="button" role="tab" data-tab="insert" data-i18n="tabInsert"></button>
+      <button type="button" role="tab" data-tab="fonts" data-i18n="tabFonts"></button>
+    </nav>
+
+    <div class="sheet-body">
+      <section class="tab" data-tab="general">
+        <label class="field"><span data-i18n="uiLang"></span> <select id="s-ui-lang"></select></label>
+        <label class="field"><span data-i18n="mushaf"></span> <select id="s-script"></select></label>
+        <div class="field"><span data-i18n="theme"></span><div id="s-theme" class="themes" role="radiogroup"></div></div>
+      </section>
+
+      <section class="tab" data-tab="tr">
+        <label class="switch"><input type="checkbox" id="s-with-tr"><i></i> <span data-i18n="withTranslation"></span></label>
+        <div class="search-box small-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" class="filter" data-list="s-tr-list" data-i18n-placeholder="filter"></div>
+        <div id="s-tr-list" class="checklist"></div>
+      </section>
+
+      <section class="tab" data-tab="tf">
+        <label class="switch"><input type="checkbox" id="s-with-tf"><i></i> <span data-i18n="withTafsir"></span></label>
+        <div class="search-box small-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input type="search" class="filter" data-list="s-tf-list" data-i18n-placeholder="filter"></div>
+        <div id="s-tf-list" class="checklist"></div>
+      </section>
+
+      <section class="tab" data-tab="insert">
+        <label class="switch"><input type="checkbox" id="s-brackets"><i></i> <span data-i18n="brackets"></span></label>
+        <label class="switch"><input type="checkbox" id="s-auza"><i></i> <span data-i18n="auza"></span></label>
+        <label class="switch"><input type="checkbox" id="s-basmala"><i></i> <span data-i18n="basmala"></span></label>
+        <label class="switch"><input type="checkbox" id="s-ref"><i></i> <span data-i18n="ref"></span> <bdi class="muted">[يونس ١]</bdi></label>
+        <label class="switch"><input type="checkbox" id="s-tr-ref"><i></i> <span data-i18n="refTr"></span> <span class="muted">(Юнус: 1)</span></label>
+        <label class="switch"><input type="checkbox" id="s-newpara"><i></i> <span data-i18n="newPara"></span></label>
+      </section>
+
+      <section class="tab" data-tab="fonts">
+        <div id="f-keys" class="chips" role="tablist"></div>
+        <div class="fmt-card">
+          <div class="fmt-row">
+            <input id="f-font" type="text" list="ar-fonts" aria-label="font">
+            <input id="f-size" type="number" min="6" max="96" aria-label="size">
+          </div>
+          <div class="fmt-row">
+            <div id="f-style" class="seg" role="group">
+              <button type="button" data-p="b" data-i18n-title="bold"><b>B</b></button>
+              <button type="button" data-p="i" data-i18n-title="italic"><i>I</i></button>
+              <button type="button" data-p="u" data-i18n-title="underline"><u>U</u></button>
+            </div>
+            <label class="swatch" data-i18n-title="color"><input id="f-color" type="color" aria-label="color"><span id="f-color-show"></span></label>
+            <button type="button" id="f-color-reset" class="link" data-i18n="auto"></button>
+          </div>
+          <div class="fmt-row para-only">
+            <div id="f-align" class="seg" role="group" data-i18n-title="alignment">
+              <button type="button" data-a="left"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h10M4 14h16M4 18h10"/></svg></button>
+              <button type="button" data-a="center"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 10h10M4 14h16M7 18h10"/></svg></button>
+              <button type="button" data-a="right"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M10 10h10M4 14h16M10 18h10"/></svg></button>
+              <button type="button" data-a="both"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+            </div>
+            <label class="line-sel"><span data-i18n="lineSpacing"></span>
+              <select id="f-line"><option value="0" data-i18n="auto"></option><option>1</option><option>1.15</option><option>1.5</option><option>2</option><option>2.5</option></select></label>
+          </div>
+          <div id="f-preview" class="fmt-preview"></div>
+        </div>
+        <datalist id="ar-fonts"></datalist>
+      </section>
+    </div>
+
+    <div class="sheet-foot">
+      <button value="ok" class="btn primary wide" data-i18n="save"></button>
+      <p class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a></p>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="info" class="sheet">
+  <form method="dialog">
+    <div class="sheet-head">
+      <h2 id="info-title"></h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <p id="info-note" class="small muted" hidden data-i18n="noInfo"></p>
+      <div id="info-body" class="info-body"></div>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" role="status"></div>
+<script src="app.js?v=21"></script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khatt al-Quran — Help</title>
+<link rel="icon" href="assets/icon-32.png">
+<script>
+  try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
+        if (t !== 'auto') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="stylesheet" href="style.css?v=21">
+<style>
+  .page { max-width: 780px; margin: 0 auto; padding: 16px; }
+  .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .top h1 { margin: 0; flex: 1; }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+  section h2 { margin: 0 0 8px; font-size: 18px; }
+  pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px; white-space: pre-wrap; word-break: break-all; direction: ltr; text-align: left; }
+  ol, ul { padding-inline-start: 22px; } li { margin: 6px 0; }
+  details { border-bottom: 1px solid var(--line); padding: 8px 0; }
+  details:last-child { border-bottom: 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { margin: 6px 0 0; }
+  details p:empty { display: none; }
+  nav a { margin-inline-end: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <h1>Khatt al-Quran — <span id="t-title"></span></h1>
+    <select id="lang" aria-label="Language"></select>
+  </div>
+  <nav id="nav"></nav>
+  <div id="content"></div>
+  <p class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="releases.html">What's new</a></p>
+</div>
+<script src="i18n.js?v=21"></script>
+<script>
+(function () {
+  'use strict';
+  var SITE = 'https://quran.abdulloh.org/';
+  var CMD = {
+    mac: 'curl -fsSL ' + SITE + 'mac.sh | bash',
+    win: 'irm ' + SITE + 'win.txt | iex',
+    macDel: 'curl -fsSL ' + SITE + 'mac-uninstall.sh | bash',
+    winDel: 'irm ' + SITE + 'win-uninstall.txt | iex',
+    macCache: 'rm -rf ~/Library/Containers/com.microsoft.Word/Data/Library/Caches/WebKit/NetworkCache ~/Library/Containers/com.microsoft.Word/Data/Library/Application\\ Support/Microsoft/Office/16.0/Wef',
+    winCache: '%LOCALAPPDATA%\\Microsoft\\Office\\16.0\\Wef'
+  };
+  /* h: section titles [about, install, use, faq, remove, contact]
+     faq: [question, answer]; {macCache} / {winCache} are replaced by the commands */
+  var H = {};
+
+  H.uz = { title: 'Ёрдам', h: ['Дастур ҳақида', 'Ўрнатиш', 'Фойдаланиш', 'Савол ва жавоблар', 'Ўчириш', 'Муаллиф'],
+    about: 'Khatt al-Quran Қуръон оятларини Microsoft Word ва бошқа ҳужжатларга қўяди: танланган мусҳафдаги араб матни ўз шрифти билан, кўп тиллардаги таржима ва тафсирлар, сура номи ва оят рақами билан. Манбалар: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Ўрнатувчини бир марта ишга туширинг: у барча шрифтларни ва Word учун Khatt al-Quran қўшимчасини ўрнатади. Администратор ҳуқуқи керак эмас.',
+    mac: 'macOS: Terminal\'ни очинг (Launchpad → Terminal), буйруқни қўйиб, Enter босинг:',
+    win: 'Windows 10/11: PowerShell\'ни очинг, буйруқни қўйиб, Enter босинг:',
+    then: 'Кейин Word\'ни тўлиқ ёпиб (Mac: Cmd+Q) қайта очинг: «Главная / Home» бўлимида Khatt al-Quran тугмаси пайдо бўлади.',
+    more: 'Ўрнатиш файллари ва фақат шрифтлар',
+    use: ['Word\'да: Главная (Home) → Khatt al-Quran.',
+      'Қидирув: рақам (2:255, 2:1-5), сура номи ва оят (Бақара 30-37), арабча сўзлар (ҳаракатли ёки ҳаракатсиз) ёки таржимадаги сўзлар.',
+      'Сура ва оятлар оралиғини танланг. Оятнинг бир қисмини қўйиш учун сўзларни сичқонча билан белгиланг ёки биринчи, сўнг охирги сўзни босинг.',
+      'Созламаларда (⚙) мусҳаф, таржима ва тафсирлар (бир нечтасини танлаш мумкин), аъузу, басмала, ҳаволалар, шрифт ва ўлчамни танланг.',
+      '«Қўйиш» тугмасини босинг — матн Word\'да курсор турган жойга қўйилади.'],
+    faq: [
+      ['Word\'да араб матни оддий шрифтда ёки нотўғри кўринади', 'Ўрнатгандан кейин Word\'ни тўлиқ ёпиб (Mac: Cmd+Q) қайта очинг; ўзгармаса, яна бир марта ёпиб очинг (macOS янги шрифтларни фонда фаоллаштиради). Ёрдам бермаса, ўрнатувчини қайта ишга туширинг.'],
+      ['Word «We weren\'t able to load all of your fonts» дейди', 'Ўрнатувчини қайта ишга туширинг: у шрифтларнинг такрор нусхаларини олиб ташлайди. Кейин Word\'ни қайта очинг.'],
+      ['QPC V1 / V2 / V4 мусҳафида ғалати белгилар чиқади', 'Бу мусҳафлар 604 саҳифанинг ҳар бири учун алоҳида шрифтдан фойдаланади. Уларни ўрнатувчи ўрнатади; ўрнатгандан кейин Word\'ни қайта очинг.'],
+      ['Таржима ёки тафсир қўйилмаяпти', 'Созламаларда керакли таржима ва тафсирларни белгиланг (бир нечтаси бўлиши мумкин) — «Таржимани қўшиш» / «Тафсирни қўшиш» ўзи ёқилади. «Таржима ҳаволаси» (Сура: 1-2) ни қўшади ёки олиб ташлайди.'],
+      ['Word\'даги панель янги версияга янгиланмади', 'Word\'ни ёпиб, қўшимча кешини тозаланг. Mac (Terminal): {macCache} · Windows: {winCache} папкасини ўчиринг. Кейин Word\'ни очинг.'],
+      ['Word\'да Khatt al-Quran тугмаси йўқ', 'Ўрнатувчини ишга тушириб, Word\'ни қайта очинг. Mac\'да: Вставка (Insert) → Надстройки (Add-ins) → Мои надстройки → Khatt al-Quran.'],
+      ['Word\'сиз ишлатса бўладими?', 'Ҳа, сайтда: оятларни танлаб «Нусха олиш»ни босинг ва исталган жойга қўйинг (Ctrl+V / Cmd+V).']],
+    remove: 'Шрифтлар ва қўшимчани ўчириш учун:' };
+
+  H.uz_latn = { title: 'Yordam', h: ['Dastur haqida', 'Oʻrnatish', 'Foydalanish', 'Savol va javoblar', 'Oʻchirish', 'Muallif'],
+    about: 'Khatt al-Quran Qurʼon oyatlarini Microsoft Word va boshqa hujjatlarga qoʻyadi: tanlangan mushafdagi arab matni oʻz shrifti bilan, koʻp tillardagi tarjima va tafsirlar, sura nomi va oyat raqami bilan. Manbalar: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Oʻrnatuvchini bir marta ishga tushiring: u barcha shriftlarni va Word uchun Khatt al-Quran qoʻshimchasini oʻrnatadi. Administrator huquqi kerak emas.',
+    mac: 'macOS: Terminal’ni oching (Launchpad → Terminal), buyruqni qoʻyib, Enter bosing:',
+    win: 'Windows 10/11: PowerShell’ni oching, buyruqni qoʻyib, Enter bosing:',
+    then: 'Keyin Word’ni toʻliq yopib (Mac: Cmd+Q) qayta oching: «Home» boʻlimida Khatt al-Quran tugmasi paydo boʻladi.',
+    more: 'Oʻrnatish fayllari va faqat shriftlar',
+    use: ['Word’da: Home → Khatt al-Quran.',
+      'Qidiruv: raqam (2:255, 2:1-5), sura nomi va oyat (Baqara 30-37), arabcha soʻzlar (harakatli yoki harakatsiz) yoki tarjimadagi soʻzlar.',
+      'Sura va oyatlar oraligʻini tanlang. Oyatning bir qismini qoʻyish uchun soʻzlarni sichqoncha bilan belgilang yoki birinchi, soʻng oxirgi soʻzni bosing.',
+      'Sozlamalarda (⚙) mushaf, tarjima va tafsirlar (bir nechtasini tanlash mumkin), aʼuzu, basmala, havolalar, shrift va oʻlchamni tanlang.',
+      '«Qoʻyish» tugmasini bosing — matn Word’da kursor turgan joyga qoʻyiladi.'],
+    faq: [
+      ['Word’da arab matni oddiy shriftda yoki notoʻgʻri koʻrinadi', 'Oʻrnatgandan keyin Word’ni toʻliq yopib (Mac: Cmd+Q) qayta oching; oʻzgarmasa, yana bir marta yopib oching (macOS yangi shriftlarni fonda faollashtiradi). Yordam bermasa, oʻrnatuvchini qayta ishga tushiring.'],
+      ['Word «We weren\'t able to load all of your fonts» deydi', 'Oʻrnatuvchini qayta ishga tushiring: u shriftlarning takror nusxalarini olib tashlaydi. Keyin Word’ni qayta oching.'],
+      ['QPC V1 / V2 / V4 mushafida gʻalati belgilar chiqadi', 'Bu mushaflar 604 sahifaning har biri uchun alohida shriftdan foydalanadi. Ularni oʻrnatuvchi oʻrnatadi; oʻrnatgandan keyin Word’ni qayta oching.'],
+      ['Tarjima yoki tafsir qoʻyilmayapti', 'Sozlamalarda kerakli tarjima va tafsirlarni belgilang (bir nechtasi boʻlishi mumkin) — «Tarjimani qoʻshish» / «Tafsirni qoʻshish» oʻzi yoqiladi. «Tarjima havolasi» (Sura: 1-2) ni qoʻshadi yoki olib tashlaydi.'],
+      ['Word’dagi panel yangi versiyaga yangilanmadi', 'Word’ni yopib, qoʻshimcha keshini tozalang. Mac (Terminal): {macCache} · Windows: {winCache} papkasini oʻchiring. Keyin Word’ni oching.'],
+      ['Word’da Khatt al-Quran tugmasi yoʻq', 'Oʻrnatuvchini ishga tushirib, Word’ni qayta oching. Mac’da: Insert → Add-ins → My Add-ins → Khatt al-Quran.'],
+      ['Word’siz ishlatsa boʻladimi?', 'Ha, saytda: oyatlarni tanlab «Nusxa olish»ni bosing va istalgan joyga qoʻying (Ctrl+V / Cmd+V).']],
+    remove: 'Shriftlar va qoʻshimchani oʻchirish uchun:' };
+
+  H.en = { title: 'Help', h: ['About', 'Installation', 'How to use', 'Questions and answers', 'Uninstall', 'Author'],
+    about: 'Khatt al-Quran inserts Quran ayahs into Microsoft Word and other documents: the Arabic text of the chosen mushaf in its own font, translations and tafsirs in many languages, with the surah name and ayah number. Sources: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Run the installer once: it installs all fonts and the Khatt al-Quran add-in for Word. No administrator rights are needed.',
+    mac: 'macOS: open Terminal (Launchpad → Terminal), paste the command and press Enter:',
+    win: 'Windows 10/11: open PowerShell, paste the command and press Enter:',
+    then: 'Then quit Word completely (Mac: Cmd+Q) and open it again: the Khatt al-Quran button appears on the Home tab.',
+    more: 'Installer files and fonts only',
+    use: ['In Word: Home → Khatt al-Quran.',
+      'Search: a number (2:255, 2:1-5), a surah name with ayahs (Baqarah 30-37), Arabic words (with or without diacritics) or words of a translation.',
+      'Choose the surah and the range of ayahs. To insert part of an ayah, drag over the words with the mouse, or click the first and then the last word.',
+      'In Settings (⚙) choose the mushaf, translations and tafsirs (several at once), isti‘adhah, basmalah, references, fonts and sizes.',
+      'Press Insert — the text goes to the cursor position in Word.'],
+    faq: [
+      ['The Arabic text in Word is in a plain font or looks wrong', 'After installing, quit Word completely (Mac: Cmd+Q) and open it again; if nothing changes, do it once more (macOS activates the new fonts in the background). If that does not help, run the installer again.'],
+      ['Word says “We weren\'t able to load all of your fonts”', 'Run the installer again: it removes duplicate copies of the fonts. Then reopen Word.'],
+      ['QPC V1 / V2 / V4 shows strange symbols', 'These mushafs use a separate font for each of the 604 pages. The installer installs them; reopen Word afterwards.'],
+      ['The translation or tafsir is not inserted', 'Tick the translations and tafsirs you need in Settings (several are possible) — “Add translation” / “Add tafsir” switches on by itself. “Translation reference” adds or removes (Surah: 1-2).'],
+      ['The panel in Word did not update to the new version', 'Quit Word and clear the add-in cache. Mac (Terminal): {macCache} · Windows: delete the folder {winCache}. Then open Word.'],
+      ['There is no Khatt al-Quran button in Word', 'Run the installer and reopen Word. On a Mac also: Insert → Add-ins → My Add-ins → Khatt al-Quran.'],
+      ['Can I use it without Word?', 'Yes, on the website: choose the ayahs, press Copy and paste anywhere (Ctrl+V / Cmd+V).']],
+    remove: 'To remove the fonts and the add-in:' };
+
+  H.ru = { title: 'Справка', h: ['О программе', 'Установка', 'Как пользоваться', 'Вопросы и ответы', 'Удаление', 'Автор'],
+    about: 'Khatt al-Quran вставляет аяты Корана в Microsoft Word и другие документы: арабский текст выбранного мусхафа его шрифтом, переводы и тафсиры на многих языках, с названием суры и номером аята. Источники: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Запустите установщик один раз: он ставит все шрифты и надстройку Khatt al-Quran для Word. Права администратора не нужны.',
+    mac: 'macOS: откройте Терминал (Launchpad → Терминал), вставьте команду и нажмите Enter:',
+    win: 'Windows 10/11: откройте PowerShell, вставьте команду и нажмите Enter:',
+    then: 'Затем полностью закройте Word (Mac: Cmd+Q) и откройте снова: на вкладке «Главная» появится кнопка Khatt al-Quran.',
+    more: 'Файлы установщика и только шрифты',
+    use: ['В Word: Главная → Khatt al-Quran.',
+      'Поиск: номер (2:255, 2:1-5), название суры с аятами (Бакара 30-37), арабские слова (с огласовками или без) или слова перевода.',
+      'Выберите суру и диапазон аятов. Чтобы вставить часть аята, выделите слова мышью или щёлкните первое, затем последнее слово.',
+      'В настройках (⚙) выберите мусхаф, переводы и тафсиры (можно несколько), аузу, басмалу, ссылки, шрифты и размеры.',
+      'Нажмите «Вставить» — текст появится в Word на месте курсора.'],
+    faq: [
+      ['Арабский текст в Word обычным шрифтом или выглядит неправильно', 'После установки полностью закройте Word (Mac: Cmd+Q) и откройте снова; если не изменилось — ещё раз (macOS включает новые шрифты в фоне). Если не помогло, запустите установщик ещё раз.'],
+      ['Word пишет «We weren\'t able to load all of your fonts»', 'Запустите установщик ещё раз: он убирает повторные копии шрифтов. Затем откройте Word заново.'],
+      ['В мусхафе QPC V1 / V2 / V4 странные значки', 'Эти мусхафы используют отдельный шрифт для каждой из 604 страниц. Их ставит установщик; после установки откройте Word заново.'],
+      ['Перевод или тафсир не вставляется', 'Отметьте в настройках нужные переводы и тафсиры (можно несколько) — «Добавлять перевод» / «Добавлять тафсир» включится сам. «Ссылка перевода» добавляет или убирает (Сура: 1-2).'],
+      ['Панель в Word не обновилась до новой версии', 'Закройте Word и очистите кэш надстройки. Mac (Терминал): {macCache} · Windows: удалите папку {winCache}. Затем откройте Word.'],
+      ['В Word нет кнопки Khatt al-Quran', 'Запустите установщик и откройте Word заново. На Mac также: Вставка → Надстройки → Мои надстройки → Khatt al-Quran.'],
+      ['Можно ли без Word?', 'Да, на сайте: выберите аяты, нажмите «Копировать» и вставьте куда угодно (Ctrl+V / Cmd+V).']],
+    remove: 'Чтобы удалить шрифты и надстройку:' };
+
+  H.ar = { title: 'مساعدة', h: ['عن البرنامج', 'التثبيت', 'طريقة الاستخدام', 'أسئلة وأجوبة', 'الإزالة', 'المؤلف'],
+    about: 'يُدرج خط القرآن آيات القرآن في Microsoft Word وغيره من المستندات: النص العربي من المصحف المختار بخطّه، والترجمات والتفاسير بلغات كثيرة، مع اسم السورة ورقم الآية. المصادر: QUL (qul.tarteel.ai)، read.tafsir.one.',
+    install: 'شغّل برنامج التثبيت مرة واحدة: يثبّت جميع الخطوط وإضافة خط القرآن لبرنامج Word. لا يلزم صلاحيات المسؤول.',
+    mac: 'macOS: افتح Terminal (Launchpad ← Terminal)، والصق الأمر ثم اضغط Enter:',
+    win: 'Windows 10/11: افتح PowerShell، والصق الأمر ثم اضغط Enter:',
+    then: 'ثم أغلق Word تمامًا (Mac: Cmd+Q) وافتحه من جديد: يظهر زر خط القرآن في تبويب «الصفحة الرئيسية».',
+    more: 'ملفات التثبيت والخطوط فقط',
+    use: ['في Word: الصفحة الرئيسية ← خط القرآن.',
+      'البحث: رقم (2:255، 2:1-5)، أو اسم السورة مع الآيات (البقرة 30-37)، أو كلمات عربية (بالتشكيل أو بدونه)، أو كلمات من الترجمة.',
+      'اختر السورة ومدى الآيات. لإدراج جزء من آية حدّد الكلمات بالفأرة، أو انقر الكلمة الأولى ثم الأخيرة.',
+      'في الإعدادات (⚙) اختر المصحف والترجمات والتفاسير (يمكن أكثر من واحد)، والاستعاذة والبسملة والمراجع والخطوط والأحجام.',
+      'اضغط «إدراج» فيُدرج النص في موضع المؤشر في Word.'],
+    faq: [
+      ['النص العربي في Word بخط عادي أو يظهر بشكل خاطئ', 'شغّل برنامج التثبيت مرة أخرى، ثم أغلق Word تمامًا (Mac: Cmd+Q) وافتحه من جديد.'],
+      ['يظهر في Word «We weren\'t able to load all of your fonts»', 'شغّل برنامج التثبيت مرة أخرى: فهو يزيل النسخ المكررة من الخطوط. ثم أعد فتح Word.'],
+      ['تظهر رموز غريبة في مصاحف QPC V1 / V2 / V4', 'تستخدم هذه المصاحف خطًا مستقلًا لكل صفحة من الصفحات الـ604، ويثبّتها برنامج التثبيت؛ أعد فتح Word بعد التثبيت.'],
+      ['لا تُدرج الترجمة أو التفسير', 'حدّد في الإعدادات الترجمات والتفاسير المطلوبة (يمكن أكثر من واحد)، فيُفعَّل «إضافة الترجمة» / «إضافة التفسير» تلقائيًا. «مرجع الترجمة» يضيف (السورة: 1-2) أو يحذفه.'],
+      ['لم تُحدَّث اللوحة في Word إلى الإصدار الجديد', 'أغلق Word وامسح ذاكرة الإضافة المؤقتة. Mac (Terminal): {macCache} · Windows: احذف المجلد {winCache}. ثم افتح Word.'],
+      ['لا يوجد زر خط القرآن في Word', 'شغّل برنامج التثبيت وأعد فتح Word. وعلى Mac أيضًا: إدراج ← الوظائف الإضافية ← وظائفي الإضافية ← خط القرآن.'],
+      ['هل يمكن الاستخدام بدون Word؟', 'نعم، على الموقع: اختر الآيات واضغط «نسخ» ثم الصقها في أي مكان (Ctrl+V / Cmd+V).']],
+    remove: 'لإزالة الخطوط والإضافة:' };
+
+  H.tr = { title: 'Yardım', h: ['Hakkında', 'Kurulum', 'Kullanım', 'Sorular ve cevaplar', 'Kaldırma', 'Yazar'],
+    about: 'Khatt al-Quran, Kur’an ayetlerini Microsoft Word’e ve diğer belgelere ekler: seçilen mushafın Arapça metni kendi yazı tipiyle, birçok dilde meal ve tefsirler, sure adı ve ayet numarasıyla. Kaynaklar: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Kurulum programını bir kez çalıştırın: tüm yazı tiplerini ve Word için Khatt al-Quran eklentisini kurar. Yönetici yetkisi gerekmez.',
+    mac: 'macOS: Terminal’i açın (Launchpad → Terminal), komutu yapıştırıp Enter’a basın:',
+    win: 'Windows 10/11: PowerShell’i açın, komutu yapıştırıp Enter’a basın:',
+    then: 'Ardından Word’ü tamamen kapatıp (Mac: Cmd+Q) yeniden açın: Giriş sekmesinde Khatt al-Quran düğmesi görünür.',
+    more: 'Kurulum dosyaları ve yalnızca yazı tipleri',
+    use: ['Word’de: Giriş → Khatt al-Quran.',
+      'Arama: numara (2:255, 2:1-5), sure adı ve ayetler (Bakara 30-37), Arapça kelimeler (harekeli veya harekesiz) ya da mealdeki kelimeler.',
+      'Sureyi ve ayet aralığını seçin. Ayetin bir kısmını eklemek için kelimeleri fareyle seçin ya da önce ilk, sonra son kelimeye tıklayın.',
+      'Ayarlar’da (⚙) mushafı, mealleri ve tefsirleri (birden fazla olabilir), euzü, besmele, kaynakları, yazı tiplerini ve boyutları seçin.',
+      'Ekle’ye basın — metin Word’de imlecin olduğu yere eklenir.'],
+    faq: [
+      ['Word’de Arapça metin düz yazı tipinde veya yanlış görünüyor', 'Kurulum programını yeniden çalıştırın, sonra Word’ü tamamen kapatıp (Mac: Cmd+Q) yeniden açın.'],
+      ['Word “We weren\'t able to load all of your fonts” diyor', 'Kurulum programını yeniden çalıştırın: yazı tiplerinin yinelenen kopyalarını kaldırır. Sonra Word’ü yeniden açın.'],
+      ['QPC V1 / V2 / V4 mushafında garip işaretler çıkıyor', 'Bu mushaflar 604 sayfanın her biri için ayrı bir yazı tipi kullanır. Bunları kurulum programı kurar; kurulumdan sonra Word’ü yeniden açın.'],
+      ['Meal veya tefsir eklenmiyor', 'Ayarlar’da gereken meal ve tefsirleri işaretleyin (birden fazla olabilir) — “Meal ekle” / “Tefsir ekle” kendiliğinden açılır. “Meal kaynağı” (Sure: 1-2) ekler veya kaldırır.'],
+      ['Word’deki panel yeni sürüme güncellenmedi', 'Word’ü kapatın ve eklenti önbelleğini temizleyin. Mac (Terminal): {macCache} · Windows: {winCache} klasörünü silin. Sonra Word’ü açın.'],
+      ['Word’de Khatt al-Quran düğmesi yok', 'Kurulum programını çalıştırıp Word’ü yeniden açın. Mac’te ayrıca: Ekle → Eklentiler → Eklentilerim → Khatt al-Quran.'],
+      ['Word olmadan kullanılabilir mi?', 'Evet, sitede: ayetleri seçin, Kopyala’ya basın ve istediğiniz yere yapıştırın (Ctrl+V / Cmd+V).']],
+    remove: 'Yazı tiplerini ve eklentiyi kaldırmak için:' };
+
+  H.fr = { title: 'Aide', h: ['À propos', 'Installation', 'Utilisation', 'Questions et réponses', 'Désinstallation', 'Auteur'],
+    about: 'Khatt al-Quran insère des versets du Coran dans Microsoft Word et d’autres documents : le texte arabe du mushaf choisi dans sa propre police, des traductions et des tafsirs en de nombreuses langues, avec le nom de la sourate et le numéro du verset. Sources : QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Lancez l’installateur une fois : il installe toutes les polices et le complément Khatt al-Quran pour Word. Aucun droit d’administrateur n’est nécessaire.',
+    mac: 'macOS : ouvrez Terminal (Launchpad → Terminal), collez la commande et appuyez sur Entrée :',
+    win: 'Windows 10/11 : ouvrez PowerShell, collez la commande et appuyez sur Entrée :',
+    then: 'Fermez ensuite complètement Word (Mac : Cmd+Q) et rouvrez-le : le bouton Khatt al-Quran apparaît dans l’onglet Accueil.',
+    more: 'Fichiers d’installation et polices seules',
+    use: ['Dans Word : Accueil → Khatt al-Quran.',
+      'Recherche : un numéro (2:255, 2:1-5), un nom de sourate avec des versets (Baqara 30-37), des mots arabes (avec ou sans voyelles) ou des mots d’une traduction.',
+      'Choisissez la sourate et la plage de versets. Pour insérer une partie d’un verset, sélectionnez les mots à la souris, ou cliquez sur le premier puis sur le dernier mot.',
+      'Dans les Paramètres (⚙), choisissez le mushaf, les traductions et tafsirs (plusieurs possibles), l’isti‘adha, la basmala, les références, les polices et les tailles.',
+      'Appuyez sur Insérer — le texte est inséré à la position du curseur dans Word.'],
+    faq: [
+      ['Le texte arabe dans Word est dans une police ordinaire ou s’affiche mal', 'Relancez l’installateur, puis fermez complètement Word (Mac : Cmd+Q) et rouvrez-le.'],
+      ['Word affiche « We weren\'t able to load all of your fonts »', 'Relancez l’installateur : il supprime les copies en double des polices. Puis rouvrez Word.'],
+      ['Le mushaf QPC V1 / V2 / V4 affiche des symboles étranges', 'Ces mushafs utilisent une police distincte pour chacune des 604 pages. L’installateur les installe ; rouvrez Word ensuite.'],
+      ['La traduction ou le tafsir n’est pas inséré', 'Cochez les traductions et tafsirs voulus dans les Paramètres (plusieurs possibles) — « Ajouter la traduction » / « Ajouter le tafsir » s’active tout seul. « Référence de la traduction » ajoute ou retire (Sourate : 1-2).'],
+      ['Le panneau dans Word ne s’est pas mis à jour', 'Fermez Word et videz le cache du complément. Mac (Terminal) : {macCache} · Windows : supprimez le dossier {winCache}. Puis ouvrez Word.'],
+      ['Il n’y a pas de bouton Khatt al-Quran dans Word', 'Lancez l’installateur et rouvrez Word. Sur Mac aussi : Insertion → Compléments → Mes compléments → Khatt al-Quran.'],
+      ['Peut-on l’utiliser sans Word ?', 'Oui, sur le site : choisissez les versets, appuyez sur Copier et collez où vous voulez (Ctrl+V / Cmd+V).']],
+    remove: 'Pour supprimer les polices et le complément :' };
+
+  H.de = { title: 'Hilfe', h: ['Über Khatt al-Quran', 'Installation', 'Bedienung', 'Fragen und Antworten', 'Deinstallation', 'Autor'],
+    about: 'Khatt al-Quran fügt Koranverse in Microsoft Word und andere Dokumente ein: den arabischen Text des gewählten Mushafs in seiner eigenen Schrift, Übersetzungen und Tafsire in vielen Sprachen, mit Surenname und Versnummer. Quellen: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Führen Sie das Installationsprogramm einmal aus: Es installiert alle Schriften und das Khatt al-Quran-Add-in für Word. Administratorrechte sind nicht nötig.',
+    mac: 'macOS: Terminal öffnen (Launchpad → Terminal), den Befehl einfügen und Enter drücken:',
+    win: 'Windows 10/11: PowerShell öffnen, den Befehl einfügen und Enter drücken:',
+    then: 'Danach Word vollständig beenden (Mac: Cmd+Q) und neu öffnen: Auf der Registerkarte Start erscheint die Schaltfläche Khatt al-Quran.',
+    more: 'Installationsdateien und nur Schriften',
+    use: ['In Word: Start → Khatt al-Quran.',
+      'Suche: eine Nummer (2:255, 2:1-5), ein Surenname mit Versen (Baqara 30-37), arabische Wörter (mit oder ohne Vokalzeichen) oder Wörter einer Übersetzung.',
+      'Wählen Sie die Sure und den Versbereich. Um einen Teil eines Verses einzufügen, markieren Sie die Wörter mit der Maus oder klicken Sie auf das erste und dann auf das letzte Wort.',
+      'In den Einstellungen (⚙) Mushaf, Übersetzungen und Tafsire (auch mehrere), Isti‘adha, Basmala, Quellenangaben, Schriften und Größen wählen.',
+      'Auf Einfügen drücken — der Text wird in Word an der Cursorposition eingefügt.'],
+    faq: [
+      ['Der arabische Text in Word erscheint in einer einfachen Schrift oder falsch', 'Das Installationsprogramm erneut ausführen, dann Word vollständig beenden (Mac: Cmd+Q) und neu öffnen.'],
+      ['Word meldet „We weren\'t able to load all of your fonts“', 'Das Installationsprogramm erneut ausführen: Es entfernt doppelte Kopien der Schriften. Dann Word neu öffnen.'],
+      ['Im Mushaf QPC V1 / V2 / V4 erscheinen seltsame Zeichen', 'Diese Mushafs verwenden für jede der 604 Seiten eine eigene Schrift. Das Installationsprogramm installiert sie; danach Word neu öffnen.'],
+      ['Übersetzung oder Tafsir wird nicht eingefügt', 'In den Einstellungen die gewünschten Übersetzungen und Tafsire ankreuzen (auch mehrere) — „Übersetzung hinzufügen“ / „Tafsir hinzufügen“ schaltet sich selbst ein. „Angabe der Übersetzung“ fügt (Sure: 1-2) hinzu oder entfernt es.'],
+      ['Der Bereich in Word wurde nicht aktualisiert', 'Word beenden und den Add-in-Cache leeren. Mac (Terminal): {macCache} · Windows: den Ordner {winCache} löschen. Dann Word öffnen.'],
+      ['In Word gibt es keine Schaltfläche Khatt al-Quran', 'Das Installationsprogramm ausführen und Word neu öffnen. Auf dem Mac auch: Einfügen → Add-ins → Meine Add-ins → Khatt al-Quran.'],
+      ['Geht es auch ohne Word?', 'Ja, auf der Website: Verse wählen, Kopieren drücken und an beliebiger Stelle einfügen (Strg+V / Cmd+V).']],
+    remove: 'Schriften und Add-in entfernen:' };
+
+  H.es = { title: 'Ayuda', h: ['Acerca de', 'Instalación', 'Uso', 'Preguntas y respuestas', 'Desinstalación', 'Autor'],
+    about: 'Khatt al-Quran inserta aleyas del Corán en Microsoft Word y otros documentos: el texto árabe del mushaf elegido con su propia fuente, traducciones y tafsires en muchos idiomas, con el nombre de la sura y el número de la aleya. Fuentes: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Ejecute el instalador una vez: instala todas las fuentes y el complemento Khatt al-Quran para Word. No se necesitan permisos de administrador.',
+    mac: 'macOS: abra Terminal (Launchpad → Terminal), pegue el comando y pulse Intro:',
+    win: 'Windows 10/11: abra PowerShell, pegue el comando y pulse Intro:',
+    then: 'Después cierre Word por completo (Mac: Cmd+Q) y ábralo de nuevo: el botón Khatt al-Quran aparece en la pestaña Inicio.',
+    more: 'Archivos del instalador y solo fuentes',
+    use: ['En Word: Inicio → Khatt al-Quran.',
+      'Búsqueda: un número (2:255, 2:1-5), el nombre de una sura con aleyas (Baqara 30-37), palabras árabes (con o sin vocales) o palabras de una traducción.',
+      'Elija la sura y el rango de aleyas. Para insertar parte de una aleya, seleccione las palabras con el ratón o haga clic en la primera y luego en la última palabra.',
+      'En Ajustes (⚙) elija el mushaf, las traducciones y tafsires (varios a la vez), isti‘adha, basmala, referencias, fuentes y tamaños.',
+      'Pulse Insertar: el texto se inserta en Word en la posición del cursor.'],
+    faq: [
+      ['El texto árabe en Word aparece en una fuente común o mal', 'Vuelva a ejecutar el instalador, cierre Word por completo (Mac: Cmd+Q) y ábralo de nuevo.'],
+      ['Word dice «We weren\'t able to load all of your fonts»', 'Vuelva a ejecutar el instalador: elimina copias duplicadas de las fuentes. Luego vuelva a abrir Word.'],
+      ['El mushaf QPC V1 / V2 / V4 muestra símbolos extraños', 'Estos mushafs usan una fuente distinta para cada una de las 604 páginas. El instalador las instala; después vuelva a abrir Word.'],
+      ['No se inserta la traducción o el tafsir', 'Marque en Ajustes las traducciones y tafsires que necesita (pueden ser varios): «Añadir traducción» / «Añadir tafsir» se activa solo. «Referencia de la traducción» añade o quita (Sura: 1-2).'],
+      ['El panel de Word no se actualizó a la nueva versión', 'Cierre Word y borre la caché del complemento. Mac (Terminal): {macCache} · Windows: elimine la carpeta {winCache}. Luego abra Word.'],
+      ['No hay botón Khatt al-Quran en Word', 'Ejecute el instalador y vuelva a abrir Word. En Mac también: Insertar → Complementos → Mis complementos → Khatt al-Quran.'],
+      ['¿Se puede usar sin Word?', 'Sí, en el sitio web: elija las aleyas, pulse Copiar y pegue donde quiera (Ctrl+V / Cmd+V).']],
+    remove: 'Para eliminar las fuentes y el complemento:' };
+
+  H.kk = { title: 'Анықтама', h: ['Бағдарлама туралы', 'Орнату', 'Пайдалану', 'Сұрақ-жауап', 'Жою', 'Автор'],
+    about: 'Khatt al-Quran Құран аяттарын Microsoft Word пен басқа құжаттарға қояды: таңдалған мұсхафтың араб мәтіні өз қарпімен, көп тілдегі аудармалар мен тәпсірлер, сүре атауы мен аят нөмірімен. Дереккөздер: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Орнатқышты бір рет іске қосыңыз: ол барлық қаріптерді және Word үшін Khatt al-Quran қосымшасын орнатады. Әкімші құқығы қажет емес.',
+    mac: 'macOS: Terminal бағдарламасын ашыңыз (Launchpad → Terminal), команданы қойып, Enter басыңыз:',
+    win: 'Windows 10/11: PowerShell ашыңыз, команданы қойып, Enter басыңыз:',
+    then: 'Содан кейін Word-ты толық жауып (Mac: Cmd+Q), қайта ашыңыз: «Главная / Home» қойындысында Khatt al-Quran батырмасы пайда болады.',
+    more: 'Орнату файлдары және тек қаріптер',
+    use: ['Word-та: Главная (Home) → Khatt al-Quran.',
+      'Іздеу: нөмір (2:255, 2:1-5), сүре атауы мен аяттар (Бақара 30-37), арабша сөздер (харакатпен немесе харакатсыз) немесе аударма сөздері.',
+      'Сүре мен аяттар аралығын таңдаңыз. Аяттың бір бөлігін қою үшін сөздерді тінтуірмен белгілеңіз немесе алдымен бірінші, сосын соңғы сөзді басыңыз.',
+      'Баптауларда (⚙) мұсхафты, аудармалар мен тәпсірлерді (бірнешеуін), истиазаны, бисмилланы, сілтемелерді, қаріптер мен өлшемдерді таңдаңыз.',
+      '«Қою» батырмасын басыңыз — мәтін Word-та курсор тұрған жерге қойылады.'],
+    faq: [
+      ['Word-тағы араб мәтіні қарапайым қаріппен немесе қате көрінеді', 'Орнатқышты қайта іске қосыңыз, содан кейін Word-ты толық жауып (Mac: Cmd+Q), қайта ашыңыз.'],
+      ['Word «We weren\'t able to load all of your fonts» дейді', 'Орнатқышты қайта іске қосыңыз: ол қаріптердің қайталанған көшірмелерін алып тастайды. Содан кейін Word-ты қайта ашыңыз.'],
+      ['QPC V1 / V2 / V4 мұсхафында түсініксіз белгілер шығады', 'Бұл мұсхафтар 604 беттің әрқайсысы үшін бөлек қаріп қолданады. Оларды орнатқыш орнатады; орнатқан соң Word-ты қайта ашыңыз.'],
+      ['Аударма немесе тәпсір қойылмайды', 'Баптауларда қажетті аудармалар мен тәпсірлерді белгілеңіз (бірнешеуі болады) — «Аударманы қосу» / «Тәпсірді қосу» өзі қосылады. «Аударма сілтемесі» (Сүре: 1-2) қосады не алып тастайды.'],
+      ['Word-тағы панель жаңа нұсқаға жаңармады', 'Word-ты жауып, қосымша кэшін тазалаңыз. Mac (Terminal): {macCache} · Windows: {winCache} қалтасын өшіріңіз. Сосын Word-ты ашыңыз.'],
+      ['Word-та Khatt al-Quran батырмасы жоқ', 'Орнатқышты іске қосып, Word-ты қайта ашыңыз. Mac-та тағы: Вставка (Insert) → Надстройки (Add-ins) → Мои надстройки → Khatt al-Quran.'],
+      ['Word-сыз қолдануға бола ма?', 'Иә, сайтта: аяттарды таңдап, «Көшіру» басыңыз да, кез келген жерге қойыңыз (Ctrl+V / Cmd+V).']],
+    remove: 'Қаріптер мен қосымшаны жою үшін:' };
+
+  H.ky = { title: 'Жардам', h: ['Программа жөнүндө', 'Орнотуу', 'Колдонуу', 'Суроо-жооп', 'Өчүрүү', 'Автор'],
+    about: 'Khatt al-Quran Куран аяттарын Microsoft Word жана башка документтерге коёт: тандалган мусхафтын араб тексти өз арибинде, көп тилдердеги котормолор жана тафсирлер, сүрөнүн аты жана аяттын номери менен. Булактар: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Орноткучту бир жолу иштетиңиз: ал бардык арип жана Word үчүн Khatt al-Quran кошумчасын орнотот. Администратор укугу керек эмес.',
+    mac: 'macOS: Terminal ачыңыз (Launchpad → Terminal), буйрукту коюп, Enter басыңыз:',
+    win: 'Windows 10/11: PowerShell ачыңыз, буйрукту коюп, Enter басыңыз:',
+    then: 'Андан кийин Word’ду толук жаап (Mac: Cmd+Q), кайра ачыңыз: «Главная / Home» өтмөгүндө Khatt al-Quran баскычы пайда болот.',
+    more: 'Орнотуу файлдары жана арип гана',
+    use: ['Word’до: Главная (Home) → Khatt al-Quran.',
+      'Издөө: номер (2:255, 2:1-5), сүрөнүн аты жана аяттар (Бакара 30-37), арабча сөздөр (харакат менен же харакатсыз) же котормодогу сөздөр.',
+      'Сүрөнү жана аяттар аралыгын тандаңыз. Аяттын бир бөлүгүн коюу үчүн сөздөрдү чычкан менен белгилеңиз же адегенде биринчи, анан акыркы сөздү басыңыз.',
+      'Жөндөөлөрдө (⚙) мусхафты, котормолорду жана тафсирлерди (бир нечесин), аузуну, басмаланы, шилтемелерди, арип жана өлчөмдү тандаңыз.',
+      '«Коюу» баскычын басыңыз — текст Word’до курсор турган жерге коюлат.'],
+    faq: [
+      ['Word’догу араб тексти жөнөкөй арипте же туура эмес көрүнөт', 'Орноткучту кайра иштетип, Word’ду толук жаап (Mac: Cmd+Q), кайра ачыңыз.'],
+      ['Word «We weren\'t able to load all of your fonts» дейт', 'Орноткучту кайра иштетиңиз: ал арип нускаларынын кайталанганын алып салат. Анан Word’ду кайра ачыңыз.'],
+      ['QPC V1 / V2 / V4 мусхафында түшүнүксүз белгилер чыгат', 'Бул мусхафтар 604 беттин ар бири үчүн өзүнчө арип колдонот. Аларды орноткуч орнотот; орноткондон кийин Word’ду кайра ачыңыз.'],
+      ['Котормо же тафсир коюлбайт', 'Жөндөөлөрдө керектүү котормо жана тафсирлерди белгилеңиз (бир нечеси болот) — «Котормону кошуу» / «Тафсирди кошуу» өзү күйөт. «Котормо шилтемеси» (Сүрө: 1-2) кошот же алып салат.'],
+      ['Word’догу панель жаңы версияга жаңырган жок', 'Word’ду жаап, кошумчанын кэшин тазалаңыз. Mac (Terminal): {macCache} · Windows: {winCache} папкасын өчүрүңүз. Анан Word’ду ачыңыз.'],
+      ['Word’до Khatt al-Quran баскычы жок', 'Орноткучту иштетип, Word’ду кайра ачыңыз. Mac’та дагы: Вставка (Insert) → Надстройки (Add-ins) → Мои надстройки → Khatt al-Quran.'],
+      ['Word’сиз колдонсо болобу?', 'Ооба, сайтта: аяттарды тандап, «Көчүрүү» басыңыз да, каалаган жерге коюңуз (Ctrl+V / Cmd+V).']],
+    remove: 'Арип жана кошумчаны өчүрүү үчүн:' };
+
+  H.tg = { title: 'Ёрӣ', h: ['Дар бораи барнома', 'Насб', 'Истифода', 'Савол ва ҷавоб', 'Нест кардан', 'Муаллиф'],
+    about: 'Khatt al-Quran оятҳои Қуръонро ба Microsoft Word ва дигар ҳуҷҷатҳо мегузорад: матни арабии мусҳафи интихобшуда бо ҳуруфи худ, тарҷумаҳо ва тафсирҳо ба забонҳои зиёд, бо номи сура ва рақами оят. Манбаъҳо: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Насбкунандаро як бор иҷро кунед: он ҳамаи ҳуруфот ва иловаи Khatt al-Quran-ро барои Word насб мекунад. Ҳуқуқи маъмур лозим нест.',
+    mac: 'macOS: Terminal-ро кушоед (Launchpad → Terminal), фармонро гузошта, Enter-ро пахш кунед:',
+    win: 'Windows 10/11: PowerShell-ро кушоед, фармонро гузошта, Enter-ро пахш кунед:',
+    then: 'Баъд Word-ро пурра пӯшида (Mac: Cmd+Q), боз кушоед: дар варақаи «Главная / Home» тугмаи Khatt al-Quran пайдо мешавад.',
+    more: 'Файлҳои насб ва танҳо ҳуруфот',
+    use: ['Дар Word: Главная (Home) → Khatt al-Quran.',
+      'Ҷустуҷӯ: рақам (2:255, 2:1-5), номи сура бо оятҳо (Бақара 30-37), калимаҳои арабӣ (бо ҳаракат ё бе он) ё калимаҳои тарҷума.',
+      'Сура ва фосилаи оятҳоро интихоб кунед. Барои гузоштани қисми оят калимаҳоро бо муш ишора кунед ё аввал калимаи якум, баъд охиринро пахш кунед.',
+      'Дар танзимот (⚙) мусҳаф, тарҷумаҳо ва тафсирҳо (якчанд), истиоза, басмала, истинодҳо, ҳуруф ва андозаҳоро интихоб кунед.',
+      'Тугмаи «Гузоштан»-ро пахш кунед — матн дар Word ба ҷои курсор гузошта мешавад.'],
+    faq: [
+      ['Матни арабӣ дар Word бо ҳуруфи оддӣ ё нодуруст намоён аст', 'Насбкунандаро аз нав иҷро кунед, баъд Word-ро пурра пӯшида (Mac: Cmd+Q), боз кушоед.'],
+      ['Word «We weren\'t able to load all of your fonts» мегӯяд', 'Насбкунандаро аз нав иҷро кунед: он нусхаҳои такрории ҳуруфотро тоза мекунад. Баъд Word-ро боз кушоед.'],
+      ['Дар мусҳафи QPC V1 / V2 / V4 аломатҳои аҷиб пайдо мешаванд', 'Ин мусҳафҳо барои ҳар яке аз 604 саҳифа ҳуруфи алоҳида доранд. Онҳоро насбкунанда насб мекунад; пас аз насб Word-ро боз кушоед.'],
+      ['Тарҷума ё тафсир гузошта намешавад', 'Дар танзимот тарҷума ва тафсирҳои лозимиро қайд кунед (якчанд мумкин аст) — «Илова кардани тарҷума» / «Илова кардани тафсир» худ фаъол мешавад. «Истиноди тарҷума» (Сура: 1-2)-ро илова ё хориҷ мекунад.'],
+      ['Панел дар Word ба версияи нав навсозӣ нашуд', 'Word-ро пӯшида, кэши иловаро тоза кунед. Mac (Terminal): {macCache} · Windows: ҷузвдони {winCache}-ро нест кунед. Баъд Word-ро кушоед.'],
+      ['Дар Word тугмаи Khatt al-Quran нест', 'Насбкунандаро иҷро карда, Word-ро боз кушоед. Дар Mac инчунин: Вставка (Insert) → Надстройки (Add-ins) → Мои надстройки → Khatt al-Quran.'],
+      ['Оё бе Word истифода бурдан мумкин аст?', 'Ҳа, дар сайт: оятҳоро интихоб карда, «Нусха»-ро пахш кунед ва дар ҳар ҷо гузоред (Ctrl+V / Cmd+V).']],
+    remove: 'Барои нест кардани ҳуруфот ва илова:' };
+
+  H.az = { title: 'Kömək', h: ['Proqram haqqında', 'Quraşdırma', 'İstifadə', 'Suallar və cavablar', 'Silmə', 'Müəllif'],
+    about: 'Khatt al-Quran Quran ayələrini Microsoft Word və digər sənədlərə əlavə edir: seçilmiş mushafın ərəb mətni öz şrifti ilə, çox dildə tərcümə və təfsirlər, surə adı və ayə nömrəsi ilə. Mənbələr: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Quraşdırıcını bir dəfə işə salın: o, bütün şriftləri və Word üçün Khatt al-Quran əlavəsini quraşdırır. Administrator hüququ lazım deyil.',
+    mac: 'macOS: Terminal-ı açın (Launchpad → Terminal), əmri yapışdırıb Enter basın:',
+    win: 'Windows 10/11: PowerShell-i açın, əmri yapışdırıb Enter basın:',
+    then: 'Sonra Word-u tam bağlayıb (Mac: Cmd+Q) yenidən açın: «Home» bölməsində Khatt al-Quran düyməsi görünəcək.',
+    more: 'Quraşdırma faylları və yalnız şriftlər',
+    use: ['Word-da: Home → Khatt al-Quran.',
+      'Axtarış: nömrə (2:255, 2:1-5), surə adı və ayələr (Bəqərə 30-37), ərəbcə sözlər (hərəkəli və ya hərəkəsiz) və ya tərcümədəki sözlər.',
+      'Surəni və ayələr aralığını seçin. Ayənin bir hissəsini əlavə etmək üçün sözləri siçanla seçin və ya əvvəl birinci, sonra sonuncu sözə klikləyin.',
+      'Ayarlarda (⚙) mushafı, tərcümə və təfsirləri (bir neçəsini), istiazə, bəsmələ, istinadları, şrift və ölçüləri seçin.',
+      '«Əlavə et» düyməsini basın — mətn Word-da kursorun olduğu yerə əlavə olunur.'],
+    faq: [
+      ['Word-da ərəb mətni adi şriftlə və ya səhv görünür', 'Quraşdırıcını yenidən işə salın, sonra Word-u tam bağlayıb (Mac: Cmd+Q) yenidən açın.'],
+      ['Word «We weren\'t able to load all of your fonts» deyir', 'Quraşdırıcını yenidən işə salın: o, şriftlərin təkrar nüsxələrini silir. Sonra Word-u yenidən açın.'],
+      ['QPC V1 / V2 / V4 mushafında qəribə işarələr çıxır', 'Bu mushaflar 604 səhifənin hər biri üçün ayrıca şrift istifadə edir. Onları quraşdırıcı quraşdırır; sonra Word-u yenidən açın.'],
+      ['Tərcümə və ya təfsir əlavə olunmur', 'Ayarlarda lazımi tərcümə və təfsirləri işarələyin (bir neçəsi ola bilər) — «Tərcüməni əlavə et» / «Təfsiri əlavə et» özü aktivləşir. «Tərcümə istinadı» (Surə: 1-2) əlavə edir və ya silir.'],
+      ['Word-dakı panel yeni versiyaya yenilənmədi', 'Word-u bağlayın və əlavənin keşini təmizləyin. Mac (Terminal): {macCache} · Windows: {winCache} qovluğunu silin. Sonra Word-u açın.'],
+      ['Word-da Khatt al-Quran düyməsi yoxdur', 'Quraşdırıcını işə salıb Word-u yenidən açın. Mac-da həmçinin: Insert → Add-ins → My Add-ins → Khatt al-Quran.'],
+      ['Word olmadan istifadə etmək olar?', 'Bəli, saytda: ayələri seçin, «Kopyala» basın və istədiyiniz yerə yapışdırın (Ctrl+V / Cmd+V).']],
+    remove: 'Şriftləri və əlavəni silmək üçün:' };
+
+  H.fa = { title: 'راهنما', h: ['درباره برنامه', 'نصب', 'نحوه استفاده', 'پرسش و پاسخ', 'حذف', 'نویسنده'],
+    about: 'خط القرآن آیات قرآن را در Microsoft Word و دیگر اسناد درج می‌کند: متن عربی مصحف انتخاب‌شده با قلم خودش، ترجمه‌ها و تفسیرها به زبان‌های بسیار، همراه با نام سوره و شماره آیه. منابع: QUL (qul.tarteel.ai)، read.tafsir.one.',
+    install: 'نصب‌کننده را یک بار اجرا کنید: همه قلم‌ها و افزونه خط القرآن برای Word را نصب می‌کند. دسترسی مدیر لازم نیست.',
+    mac: 'macOS: ‏Terminal را باز کنید (Launchpad ← Terminal)، فرمان را بچسبانید و Enter را بزنید:',
+    win: 'Windows 10/11: ‏PowerShell را باز کنید، فرمان را بچسبانید و Enter را بزنید:',
+    then: 'سپس Word را کاملاً ببندید (Mac: Cmd+Q) و دوباره باز کنید: دکمه خط القرآن در زبانه Home ظاهر می‌شود.',
+    more: 'فایل‌های نصب و فقط قلم‌ها',
+    use: ['در Word: ‏Home ← خط القرآن.',
+      'جستجو: شماره (2:255، 2:1-5)، نام سوره با آیات (بقره 30-37)، واژه‌های عربی (با اعراب یا بدون آن) یا واژه‌های ترجمه.',
+      'سوره و بازه آیات را انتخاب کنید. برای درج بخشی از آیه، واژه‌ها را با ماوس انتخاب کنید یا نخست واژه اول و سپس واژه آخر را بزنید.',
+      'در تنظیمات (⚙) مصحف، ترجمه‌ها و تفسیرها (چند مورد با هم)، استعاذه، بسمله، ارجاع‌ها، قلم‌ها و اندازه‌ها را انتخاب کنید.',
+      'دکمه «درج» را بزنید — متن در جای مکان‌نما در Word درج می‌شود.'],
+    faq: [
+      ['متن عربی در Word با قلم معمولی یا نادرست نمایش داده می‌شود', 'نصب‌کننده را دوباره اجرا کنید، سپس Word را کاملاً ببندید (Mac: Cmd+Q) و دوباره باز کنید.'],
+      ['Word پیام «We weren\'t able to load all of your fonts» می‌دهد', 'نصب‌کننده را دوباره اجرا کنید: نسخه‌های تکراری قلم‌ها را حذف می‌کند. سپس Word را دوباره باز کنید.'],
+      ['در مصحف QPC V1 / V2 / V4 نشانه‌های عجیب دیده می‌شود', 'این مصحف‌ها برای هر یک از ۶۰۴ صفحه قلم جداگانه دارند. نصب‌کننده آن‌ها را نصب می‌کند؛ پس از نصب Word را دوباره باز کنید.'],
+      ['ترجمه یا تفسیر درج نمی‌شود', 'در تنظیمات ترجمه‌ها و تفسیرهای لازم را علامت بزنید (چند مورد ممکن است) — «افزودن ترجمه» / «افزودن تفسیر» خودکار روشن می‌شود. «ارجاع ترجمه» (سوره: 1-2) را می‌افزاید یا برمی‌دارد.'],
+      ['پنل Word به نسخه جدید به‌روز نشد', 'Word را ببندید و حافظه موقت افزونه را پاک کنید. Mac ‏(Terminal): {macCache} · Windows: پوشه {winCache} را حذف کنید. سپس Word را باز کنید.'],
+      ['دکمه خط القرآن در Word نیست', 'نصب‌کننده را اجرا کرده و Word را دوباره باز کنید. در Mac همچنین: Insert ← Add-ins ← My Add-ins ← خط القرآن.'],
+      ['آیا بدون Word می‌توان استفاده کرد؟', 'بله، در وب‌سایت: آیات را انتخاب کنید، «کپی» را بزنید و هر جا خواستید بچسبانید (Ctrl+V / Cmd+V).']],
+    remove: 'برای حذف قلم‌ها و افزونه:' };
+
+  H.ur = { title: 'مدد', h: ['پروگرام کے بارے میں', 'انسٹال کرنا', 'استعمال کا طریقہ', 'سوال و جواب', 'ہٹانا', 'مصنف'],
+    about: 'خط القرآن قرآن کی آیات Microsoft Word اور دوسری دستاویزات میں داخل کرتا ہے: منتخب مصحف کا عربی متن اس کے اپنے فونٹ میں، بہت سی زبانوں میں ترجمے اور تفاسیر، سورت کے نام اور آیت نمبر کے ساتھ۔ ماخذ: QUL (qul.tarteel.ai)، read.tafsir.one۔',
+    install: 'انسٹالر ایک بار چلائیں: یہ تمام فونٹس اور Word کے لیے خط القرآن ایڈ اِن انسٹال کرتا ہے۔ ایڈمنسٹریٹر کے حقوق ضروری نہیں۔',
+    mac: 'macOS: ‏Terminal کھولیں (Launchpad ← Terminal)، کمانڈ پیسٹ کریں اور Enter دبائیں:',
+    win: 'Windows 10/11: ‏PowerShell کھولیں، کمانڈ پیسٹ کریں اور Enter دبائیں:',
+    then: 'پھر Word کو مکمل بند کریں (Mac: Cmd+Q) اور دوبارہ کھولیں: Home ٹیب میں خط القرآن بٹن نظر آئے گا۔',
+    more: 'انسٹالر فائلیں اور صرف فونٹس',
+    use: ['Word میں: ‏Home ← خط القرآن۔',
+      'تلاش: نمبر (2:255، 2:1-5)، سورت کا نام آیات کے ساتھ (بقرہ 30-37)، عربی الفاظ (اعراب کے ساتھ یا بغیر) یا ترجمے کے الفاظ۔',
+      'سورت اور آیات کی حد منتخب کریں۔ آیت کا کچھ حصہ داخل کرنے کے لیے الفاظ کو ماؤس سے منتخب کریں یا پہلے پہلے لفظ پھر آخری لفظ پر کلک کریں۔',
+      'ترتیبات (⚙) میں مصحف، ترجمے اور تفاسیر (کئی ایک ساتھ)، استعاذہ، بسملہ، حوالے، فونٹس اور سائز منتخب کریں۔',
+      '«داخل کریں» دبائیں — متن Word میں کرسر کی جگہ داخل ہو جائے گا۔'],
+    faq: [
+      ['Word میں عربی متن عام فونٹ میں یا غلط دکھائی دیتا ہے', 'انسٹالر دوبارہ چلائیں، پھر Word کو مکمل بند کریں (Mac: Cmd+Q) اور دوبارہ کھولیں۔'],
+      ['Word میں «We weren\'t able to load all of your fonts» آتا ہے', 'انسٹالر دوبارہ چلائیں: یہ فونٹس کی دہری نقلیں ہٹا دیتا ہے۔ پھر Word دوبارہ کھولیں۔'],
+      ['QPC V1 / V2 / V4 مصحف میں عجیب نشانات آتے ہیں', 'یہ مصاحف 604 صفحات میں سے ہر ایک کے لیے الگ فونٹ استعمال کرتے ہیں۔ انسٹالر انہیں انسٹال کرتا ہے؛ اس کے بعد Word دوبارہ کھولیں۔'],
+      ['ترجمہ یا تفسیر داخل نہیں ہوتی', 'ترتیبات میں مطلوبہ ترجمے اور تفاسیر نشان زد کریں (کئی ہو سکتے ہیں) — «ترجمہ شامل کریں» / «تفسیر شامل کریں» خود بخود آن ہو جاتا ہے۔ «ترجمے کا حوالہ» (سورت: 1-2) شامل کرتا یا ہٹاتا ہے۔'],
+      ['Word کا پینل نئے ورژن پر اپ ڈیٹ نہیں ہوا', 'Word بند کریں اور ایڈ اِن کا کیش صاف کریں۔ Mac ‏(Terminal): {macCache} · Windows: فولڈر {winCache} حذف کریں۔ پھر Word کھولیں۔'],
+      ['Word میں خط القرآن بٹن نہیں ہے', 'انسٹالر چلائیں اور Word دوبارہ کھولیں۔ Mac پر یہ بھی: Insert ← Add-ins ← My Add-ins ← خط القرآن۔'],
+      ['کیا Word کے بغیر استعمال ہو سکتا ہے؟', 'جی ہاں، ویب سائٹ پر: آیات منتخب کریں، «کاپی» دبائیں اور کہیں بھی پیسٹ کریں (Ctrl+V / Cmd+V)۔']],
+    remove: 'فونٹس اور ایڈ اِن ہٹانے کے لیے:' };
+
+  H.id = { title: 'Bantuan', h: ['Tentang', 'Pemasangan', 'Cara memakai', 'Tanya jawab', 'Menghapus', 'Penulis'],
+    about: 'Khatt al-Quran menyisipkan ayat Al-Qur’an ke Microsoft Word dan dokumen lain: teks Arab dari mushaf yang dipilih dengan fonnya sendiri, terjemahan dan tafsir dalam banyak bahasa, beserta nama surah dan nomor ayat. Sumber: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Jalankan pemasang sekali: ia memasang semua fon dan add-in Khatt al-Quran untuk Word. Tidak perlu hak administrator.',
+    mac: 'macOS: buka Terminal (Launchpad → Terminal), tempel perintah lalu tekan Enter:',
+    win: 'Windows 10/11: buka PowerShell, tempel perintah lalu tekan Enter:',
+    then: 'Lalu tutup Word sepenuhnya (Mac: Cmd+Q) dan buka lagi: tombol Khatt al-Quran muncul di tab Home.',
+    more: 'Berkas pemasang dan fon saja',
+    use: ['Di Word: Home → Khatt al-Quran.',
+      'Pencarian: nomor (2:255, 2:1-5), nama surah dengan ayat (Baqarah 30-37), kata Arab (dengan atau tanpa harakat) atau kata dari terjemahan.',
+      'Pilih surah dan rentang ayat. Untuk menyisipkan sebagian ayat, sorot kata-kata dengan tetikus, atau klik kata pertama lalu kata terakhir.',
+      'Di Pengaturan (⚙) pilih mushaf, terjemahan dan tafsir (beberapa sekaligus), isti‘adzah, basmalah, rujukan, fon dan ukuran.',
+      'Tekan Sisipkan — teks masuk ke posisi kursor di Word.'],
+    faq: [
+      ['Teks Arab di Word memakai fon biasa atau tampil salah', 'Jalankan pemasang lagi, lalu tutup Word sepenuhnya (Mac: Cmd+Q) dan buka kembali.'],
+      ['Word menampilkan “We weren\'t able to load all of your fonts”', 'Jalankan pemasang lagi: ia menghapus salinan fon yang ganda. Lalu buka Word kembali.'],
+      ['Mushaf QPC V1 / V2 / V4 menampilkan simbol aneh', 'Mushaf ini memakai fon tersendiri untuk tiap 604 halaman. Pemasang memasangnya; buka Word kembali sesudahnya.'],
+      ['Terjemahan atau tafsir tidak tersisip', 'Centang terjemahan dan tafsir yang diperlukan di Pengaturan (boleh beberapa) — “Tambahkan terjemahan” / “Tambahkan tafsir” menyala sendiri. “Rujukan terjemahan” menambah atau menghapus (Surah: 1-2).'],
+      ['Panel di Word tidak diperbarui ke versi baru', 'Tutup Word dan bersihkan cache add-in. Mac (Terminal): {macCache} · Windows: hapus folder {winCache}. Lalu buka Word.'],
+      ['Tidak ada tombol Khatt al-Quran di Word', 'Jalankan pemasang dan buka Word kembali. Di Mac juga: Insert → Add-ins → My Add-ins → Khatt al-Quran.'],
+      ['Bisakah dipakai tanpa Word?', 'Bisa, di situs web: pilih ayat, tekan Salin lalu tempel di mana saja (Ctrl+V / Cmd+V).']],
+    remove: 'Untuk menghapus fon dan add-in:' };
+
+  H.ms = { title: 'Bantuan', h: ['Tentang', 'Pemasangan', 'Cara menggunakan', 'Soal jawab', 'Nyahpasang', 'Pengarang'],
+    about: 'Khatt al-Quran memasukkan ayat al-Quran ke dalam Microsoft Word dan dokumen lain: teks Arab mushaf yang dipilih dengan fonnya sendiri, terjemahan dan tafsir dalam banyak bahasa, bersama nama surah dan nombor ayat. Sumber: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: 'Jalankan pemasang sekali: ia memasang semua fon dan add-in Khatt al-Quran untuk Word. Hak pentadbir tidak diperlukan.',
+    mac: 'macOS: buka Terminal (Launchpad → Terminal), tampal arahan dan tekan Enter:',
+    win: 'Windows 10/11: buka PowerShell, tampal arahan dan tekan Enter:',
+    then: 'Kemudian tutup Word sepenuhnya (Mac: Cmd+Q) dan buka semula: butang Khatt al-Quran muncul pada tab Home.',
+    more: 'Fail pemasang dan fon sahaja',
+    use: ['Dalam Word: Home → Khatt al-Quran.',
+      'Carian: nombor (2:255, 2:1-5), nama surah dengan ayat (Baqarah 30-37), perkataan Arab (dengan atau tanpa baris) atau perkataan terjemahan.',
+      'Pilih surah dan julat ayat. Untuk memasukkan sebahagian ayat, serlahkan perkataan dengan tetikus, atau klik perkataan pertama kemudian yang terakhir.',
+      'Dalam Tetapan (⚙) pilih mushaf, terjemahan dan tafsir (beberapa sekali gus), isti‘azah, basmalah, rujukan, fon dan saiz.',
+      'Tekan Masukkan — teks dimasukkan pada kedudukan kursor dalam Word.'],
+    faq: [
+      ['Teks Arab dalam Word dalam fon biasa atau kelihatan salah', 'Jalankan pemasang sekali lagi, kemudian tutup Word sepenuhnya (Mac: Cmd+Q) dan buka semula.'],
+      ['Word memaparkan “We weren\'t able to load all of your fonts”', 'Jalankan pemasang sekali lagi: ia membuang salinan fon yang berulang. Kemudian buka semula Word.'],
+      ['Mushaf QPC V1 / V2 / V4 memaparkan simbol pelik', 'Mushaf ini menggunakan fon berasingan untuk setiap 604 halaman. Pemasang memasangnya; buka semula Word selepas itu.'],
+      ['Terjemahan atau tafsir tidak dimasukkan', 'Tandakan terjemahan dan tafsir yang diperlukan dalam Tetapan (boleh beberapa) — “Tambah terjemahan” / “Tambah tafsir” dihidupkan sendiri. “Rujukan terjemahan” menambah atau membuang (Surah: 1-2).'],
+      ['Panel dalam Word tidak dikemas kini ke versi baharu', 'Tutup Word dan kosongkan cache add-in. Mac (Terminal): {macCache} · Windows: padam folder {winCache}. Kemudian buka Word.'],
+      ['Tiada butang Khatt al-Quran dalam Word', 'Jalankan pemasang dan buka semula Word. Pada Mac juga: Insert → Add-ins → My Add-ins → Khatt al-Quran.'],
+      ['Bolehkah digunakan tanpa Word?', 'Boleh, di laman web: pilih ayat, tekan Salin dan tampal di mana-mana (Ctrl+V / Cmd+V).']],
+    remove: 'Untuk membuang fon dan add-in:' };
+
+  H.bn = { title: 'সহায়তা', h: ['পরিচিতি', 'ইনস্টল', 'ব্যবহারের নিয়ম', 'প্রশ্ন ও উত্তর', 'আনইনস্টল', 'লেখক'],
+    about: 'Khatt al-Quran কুরআনের আয়াত Microsoft Word ও অন্যান্য নথিতে যুক্ত করে: নির্বাচিত মুসহাফের আরবি লেখা তার নিজস্ব ফন্টে, বহু ভাষায় অনুবাদ ও তাফসির, সূরার নাম ও আয়াত নম্বরসহ। উৎস: QUL (qul.tarteel.ai), read.tafsir.one।',
+    install: 'ইনস্টলারটি একবার চালান: এটি সব ফন্ট এবং Word-এর জন্য Khatt al-Quran অ্যাড-ইন ইনস্টল করে। অ্যাডমিনিস্ট্রেটর অধিকার লাগে না।',
+    mac: 'macOS: Terminal খুলুন (Launchpad → Terminal), কমান্ডটি পেস্ট করে Enter চাপুন:',
+    win: 'Windows 10/11: PowerShell খুলুন, কমান্ডটি পেস্ট করে Enter চাপুন:',
+    then: 'তারপর Word সম্পূর্ণ বন্ধ করে (Mac: Cmd+Q) আবার খুলুন: Home ট্যাবে Khatt al-Quran বোতাম দেখা যাবে।',
+    more: 'ইনস্টলার ফাইল ও শুধু ফন্ট',
+    use: ['Word-এ: Home → Khatt al-Quran।',
+      'খোঁজ: নম্বর (2:255, 2:1-5), আয়াতসহ সূরার নাম (Baqarah 30-37), আরবি শব্দ (হরকতসহ বা ছাড়া) অথবা অনুবাদের শব্দ।',
+      'সূরা ও আয়াতের পরিসর বেছে নিন। আয়াতের অংশ যুক্ত করতে মাউস দিয়ে শব্দগুলো নির্বাচন করুন, অথবা প্রথমে প্রথম শব্দে, পরে শেষ শব্দে ক্লিক করুন।',
+      'সেটিংসে (⚙) মুসহাফ, অনুবাদ ও তাফসির (একাধিক), ইস্তিআযা, বিসমিল্লাহ, সূত্র, ফন্ট ও আকার বেছে নিন।',
+      '«যুক্ত করুন» চাপুন — লেখা Word-এ কার্সরের জায়গায় যুক্ত হবে।'],
+    faq: [
+      ['Word-এ আরবি লেখা সাধারণ ফন্টে বা ভুলভাবে দেখায়', 'ইনস্টলারটি আবার চালান, তারপর Word সম্পূর্ণ বন্ধ করে (Mac: Cmd+Q) আবার খুলুন।'],
+      ['Word বলে “We weren\'t able to load all of your fonts”', 'ইনস্টলারটি আবার চালান: এটি ফন্টের দ্বিগুণ কপি সরিয়ে দেয়। তারপর Word আবার খুলুন।'],
+      ['QPC V1 / V2 / V4 মুসহাফে অদ্ভুত চিহ্ন দেখা যায়', 'এই মুসহাফগুলো ৬০৪ পৃষ্ঠার প্রতিটির জন্য আলাদা ফন্ট ব্যবহার করে। ইনস্টলার এগুলো ইনস্টল করে; এরপর Word আবার খুলুন।'],
+      ['অনুবাদ বা তাফসির যুক্ত হয় না', 'সেটিংসে প্রয়োজনীয় অনুবাদ ও তাফসিরে টিক দিন (একাধিক হতে পারে) — «অনুবাদ যোগ করুন» / «তাফসির যোগ করুন» নিজেই চালু হয়। «অনুবাদের সূত্র» (সূরা: 1-2) যোগ বা বাদ দেয়।'],
+      ['Word-এর প্যানেল নতুন সংস্করণে আপডেট হয়নি', 'Word বন্ধ করে অ্যাড-ইনের ক্যাশ মুছুন। Mac (Terminal): {macCache} · Windows: {winCache} ফোল্ডারটি মুছুন। তারপর Word খুলুন।'],
+      ['Word-এ Khatt al-Quran বোতাম নেই', 'ইনস্টলার চালিয়ে Word আবার খুলুন। Mac-এ আরও: Insert → Add-ins → My Add-ins → Khatt al-Quran।'],
+      ['Word ছাড়া কি ব্যবহার করা যায়?', 'হ্যাঁ, ওয়েবসাইটে: আয়াত বেছে «কপি» চাপুন এবং যেকোনো জায়গায় পেস্ট করুন (Ctrl+V / Cmd+V)।']],
+    remove: 'ফন্ট ও অ্যাড-ইন সরাতে:' };
+
+  H.hi = { title: 'सहायता', h: ['परिचय', 'इंस्टॉल करना', 'उपयोग कैसे करें', 'प्रश्न और उत्तर', 'हटाना', 'लेखक'],
+    about: 'Khatt al-Quran क़ुरआन की आयतें Microsoft Word और अन्य दस्तावेज़ों में डालता है: चुने हुए मुसहफ़ का अरबी पाठ उसके अपने फ़ॉन्ट में, कई भाषाओं में अनुवाद और तफ़सीर, सूरह के नाम और आयत संख्या के साथ। स्रोत: QUL (qul.tarteel.ai), read.tafsir.one।',
+    install: 'इंस्टॉलर को एक बार चलाएँ: यह सभी फ़ॉन्ट और Word के लिए Khatt al-Quran ऐड-इन इंस्टॉल करता है। व्यवस्थापक अधिकार ज़रूरी नहीं।',
+    mac: 'macOS: Terminal खोलें (Launchpad → Terminal), कमांड पेस्ट करें और Enter दबाएँ:',
+    win: 'Windows 10/11: PowerShell खोलें, कमांड पेस्ट करें और Enter दबाएँ:',
+    then: 'फिर Word को पूरी तरह बंद करें (Mac: Cmd+Q) और दोबारा खोलें: Home टैब पर Khatt al-Quran बटन दिखेगा।',
+    more: 'इंस्टॉलर फ़ाइलें और केवल फ़ॉन्ट',
+    use: ['Word में: Home → Khatt al-Quran।',
+      'खोज: संख्या (2:255, 2:1-5), आयतों के साथ सूरह का नाम (Baqarah 30-37), अरबी शब्द (हरकत सहित या बिना) या अनुवाद के शब्द।',
+      'सूरह और आयतों की सीमा चुनें। आयत का हिस्सा डालने के लिए शब्दों को माउस से चुनें, या पहले पहले शब्द पर फिर आख़िरी शब्द पर क्लिक करें।',
+      'सेटिंग्स (⚙) में मुसहफ़, अनुवाद और तफ़सीर (एक साथ कई), इस्तिआज़ा, बिस्मिल्लाह, संदर्भ, फ़ॉन्ट और आकार चुनें।',
+      '«डालें» दबाएँ — पाठ Word में कर्सर की जगह पर आ जाएगा।'],
+    faq: [
+      ['Word में अरबी पाठ सामान्य फ़ॉन्ट में या ग़लत दिखता है', 'इंस्टॉलर दोबारा चलाएँ, फिर Word को पूरी तरह बंद करें (Mac: Cmd+Q) और दोबारा खोलें।'],
+      ['Word “We weren\'t able to load all of your fonts” दिखाता है', 'इंस्टॉलर दोबारा चलाएँ: यह फ़ॉन्ट की दोहरी प्रतियाँ हटा देता है। फिर Word दोबारा खोलें।'],
+      ['QPC V1 / V2 / V4 मुसहफ़ में अजीब चिह्न दिखते हैं', 'ये मुसहफ़ 604 पृष्ठों में से हर एक के लिए अलग फ़ॉन्ट इस्तेमाल करते हैं। इंस्टॉलर इन्हें इंस्टॉल करता है; उसके बाद Word दोबारा खोलें।'],
+      ['अनुवाद या तफ़सीर नहीं डाली जाती', 'सेटिंग्स में ज़रूरी अनुवाद और तफ़सीर पर निशान लगाएँ (कई हो सकते हैं) — «अनुवाद जोड़ें» / «तफ़सीर जोड़ें» अपने आप चालू हो जाता है। «अनुवाद संदर्भ» (सूरह: 1-2) जोड़ता या हटाता है।'],
+      ['Word का पैनल नए संस्करण में अपडेट नहीं हुआ', 'Word बंद करें और ऐड-इन का कैश साफ़ करें। Mac (Terminal): {macCache} · Windows: फ़ोल्डर {winCache} हटाएँ। फिर Word खोलें।'],
+      ['Word में Khatt al-Quran बटन नहीं है', 'इंस्टॉलर चलाएँ और Word दोबारा खोलें। Mac पर यह भी: Insert → Add-ins → My Add-ins → Khatt al-Quran।'],
+      ['क्या Word के बिना उपयोग हो सकता है?', 'हाँ, वेबसाइट पर: आयतें चुनें, «कॉपी» दबाएँ और कहीं भी पेस्ट करें (Ctrl+V / Cmd+V)।']],
+    remove: 'फ़ॉन्ट और ऐड-इन हटाने के लिए:' };
+
+  H.zh = { title: '帮助', h: ['关于', '安装', '使用方法', '常见问题', '卸载', '作者'],
+    about: 'Khatt al-Quran 可将古兰经经文插入 Microsoft Word 及其他文档：所选经本的阿拉伯文原文（使用其专用字体）、多种语言的译文和经注，并附章名和节号。来源：QUL (qul.tarteel.ai)、read.tafsir.one。',
+    install: '运行一次安装程序：它会安装所有字体以及 Word 的 Khatt al-Quran 加载项。无需管理员权限。',
+    mac: 'macOS：打开“终端”（启动台 → 终端），粘贴命令并按回车：',
+    win: 'Windows 10/11：打开 PowerShell，粘贴命令并按回车：',
+    then: '然后完全退出 Word（Mac：Cmd+Q）并重新打开：“开始”选项卡上会出现 Khatt al-Quran 按钮。',
+    more: '安装文件和单独的字体',
+    use: ['在 Word 中：开始 → Khatt al-Quran。',
+      '搜索：编号（2:255、2:1-5）、章名加节号（Baqarah 30-37）、阿拉伯文词语（带或不带标音符号）或译文中的词语。',
+      '选择章和节的范围。若只插入某节的一部分，可用鼠标拖选词语，或先点第一个词再点最后一个词。',
+      '在设置（⚙）中选择经本、译文和经注（可多选）、求护词、太斯米、出处、字体和字号。',
+      '点击“插入”——文本将插入到 Word 中光标所在位置。'],
+    faq: [
+      ['Word 中的阿拉伯文显示为普通字体或显示错误', '重新运行安装程序，然后完全退出 Word（Mac：Cmd+Q）并重新打开。'],
+      ['Word 提示 “We weren\'t able to load all of your fonts”', '重新运行安装程序：它会删除重复的字体副本。然后重新打开 Word。'],
+      ['QPC V1 / V2 / V4 经本显示奇怪的符号', '这些经本的 604 页每页都使用单独的字体。安装程序会安装这些字体；安装后请重新打开 Word。'],
+      ['译文或经注没有插入', '在设置中勾选所需的译文和经注（可多选）——“添加译文”/“添加经注”会自动开启。“译文出处”用于添加或去掉（章名: 1-2）。'],
+      ['Word 中的面板没有更新到新版本', '退出 Word 并清除加载项缓存。Mac（终端）：{macCache} · Windows：删除文件夹 {winCache}。然后打开 Word。'],
+      ['Word 中没有 Khatt al-Quran 按钮', '运行安装程序并重新打开 Word。在 Mac 上也可以：插入 → 加载项 → 我的加载项 → Khatt al-Quran。'],
+      ['不用 Word 可以使用吗？', '可以，在网站上：选择经文，点击“复制”，然后粘贴到任意位置（Ctrl+V / Cmd+V）。']],
+    remove: '卸载字体和加载项：' };
+
+  H.ko = { title: '도움말', h: ['소개', '설치', '사용 방법', '질문과 답변', '제거', '만든 사람'],
+    about: 'Khatt al-Quran은 꾸란 구절을 Microsoft Word와 다른 문서에 넣어 줍니다: 선택한 무스하프의 아랍어 원문을 고유 글꼴로, 여러 언어의 번역과 타프시르를 장 이름과 절 번호와 함께 넣습니다. 출처: QUL (qul.tarteel.ai), read.tafsir.one.',
+    install: '설치 프로그램을 한 번 실행하세요. 모든 글꼴과 Word용 Khatt al-Quran 추가 기능을 설치합니다. 관리자 권한은 필요 없습니다.',
+    mac: 'macOS: 터미널을 열고(Launchpad → 터미널) 명령을 붙여넣은 뒤 Enter를 누르세요:',
+    win: 'Windows 10/11: PowerShell을 열고 명령을 붙여넣은 뒤 Enter를 누르세요:',
+    then: '그다음 Word를 완전히 종료하고(Mac: Cmd+Q) 다시 여세요. 홈 탭에 Khatt al-Quran 버튼이 나타납니다.',
+    more: '설치 파일과 글꼴만',
+    use: ['Word에서: 홈 → Khatt al-Quran.',
+      '검색: 번호(2:255, 2:1-5), 장 이름과 절(Baqarah 30-37), 아랍어 단어(모음 부호 유무 상관없음) 또는 번역문 단어.',
+      '장과 절 범위를 선택하세요. 절의 일부만 넣으려면 마우스로 단어를 끌어 선택하거나 첫 단어와 마지막 단어를 차례로 클릭하세요.',
+      '설정(⚙)에서 무스하프, 번역과 타프시르(여러 개 가능), 이스티아자, 바스말라, 출처, 글꼴과 크기를 선택하세요.',
+      '삽입을 누르면 텍스트가 Word의 커서 위치에 들어갑니다.'],
+    faq: [
+      ['Word에서 아랍어가 일반 글꼴로 보이거나 잘못 보입니다', '설치 프로그램을 다시 실행한 뒤 Word를 완전히 종료하고(Mac: Cmd+Q) 다시 여세요.'],
+      ['Word에 “We weren\'t able to load all of your fonts”가 나옵니다', '설치 프로그램을 다시 실행하세요. 중복된 글꼴 사본을 제거합니다. 그다음 Word를 다시 여세요.'],
+      ['QPC V1 / V2 / V4 무스하프에 이상한 기호가 보입니다', '이 무스하프들은 604쪽 각각에 별도의 글꼴을 씁니다. 설치 프로그램이 설치하며, 설치 후 Word를 다시 여세요.'],
+      ['번역이나 타프시르가 들어가지 않습니다', '설정에서 필요한 번역과 타프시르를 선택하세요(여러 개 가능). “번역 추가” / “타프시르 추가”가 자동으로 켜집니다. “번역 출처”는 (장: 1-2)를 넣거나 뺍니다.'],
+      ['Word의 패널이 새 버전으로 바뀌지 않았습니다', 'Word를 종료하고 추가 기능 캐시를 지우세요. Mac(터미널): {macCache} · Windows: {winCache} 폴더를 삭제하세요. 그다음 Word를 여세요.'],
+      ['Word에 Khatt al-Quran 버튼이 없습니다', '설치 프로그램을 실행하고 Word를 다시 여세요. Mac에서는 삽입 → 추가 기능 → 내 추가 기능 → Khatt al-Quran도 있습니다.'],
+      ['Word 없이도 쓸 수 있나요?', '네, 웹사이트에서 구절을 선택하고 복사를 누른 뒤 원하는 곳에 붙여넣으세요(Ctrl+V / Cmd+V).']],
+    remove: '글꼴과 추가 기능을 제거하려면:' };
+
+  H.ja = { title: 'ヘルプ', h: ['概要', 'インストール', '使い方', 'よくある質問', 'アンインストール', '作者'],
+    about: 'Khatt al-Quran はクルアーンの節を Microsoft Word などの文書に挿入します。選んだムスハフのアラビア語本文を専用フォントで、多言語の翻訳とタフスィールを章名・節番号付きで挿入できます。出典：QUL (qul.tarteel.ai)、read.tafsir.one。',
+    install: 'インストーラーを一度実行してください。すべてのフォントと Word 用 Khatt al-Quran アドインがインストールされます。管理者権限は不要です。',
+    mac: 'macOS：ターミナルを開き（Launchpad → ターミナル）、コマンドを貼り付けて Enter を押します：',
+    win: 'Windows 10/11：PowerShell を開き、コマンドを貼り付けて Enter を押します：',
+    then: 'その後 Word を完全に終了し（Mac：Cmd+Q）、再度開くと「ホーム」タブに Khatt al-Quran ボタンが表示されます。',
+    more: 'インストーラーとフォントのみ',
+    use: ['Word で：ホーム → Khatt al-Quran。',
+      '検索：番号（2:255、2:1-5）、章名と節（Baqarah 30-37）、アラビア語の語（母音記号の有無は問わない）、または訳文の語。',
+      '章と節の範囲を選びます。節の一部だけを挿入するには、マウスで語をドラッグするか、最初の語と最後の語を順にクリックします。',
+      '設定（⚙）でムスハフ、翻訳とタフスィール（複数可）、イスティアーザ、バスマラ、出典、フォントとサイズを選びます。',
+      '「挿入」を押すと、Word のカーソル位置にテキストが挿入されます。'],
+    faq: [
+      ['Word のアラビア語が通常のフォントで表示される、または正しく表示されない', 'インストーラーを再実行し、Word を完全に終了して（Mac：Cmd+Q）再度開いてください。'],
+      ['Word に「We weren\'t able to load all of your fonts」と表示される', 'インストーラーを再実行してください。重複したフォントのコピーを取り除きます。その後 Word を開き直します。'],
+      ['QPC V1 / V2 / V4 のムスハフで変な記号が表示される', 'これらのムスハフは 604 ページそれぞれに別のフォントを使います。インストーラーがインストールするので、その後 Word を開き直してください。'],
+      ['翻訳やタフスィールが挿入されない', '設定で必要な翻訳とタフスィールにチェックを入れてください（複数可）。「翻訳を追加」/「タフスィールを追加」は自動でオンになります。「翻訳の出典」で（章: 1-2）の有無を切り替えます。'],
+      ['Word のパネルが新しいバージョンに更新されない', 'Word を終了し、アドインのキャッシュを消去します。Mac（ターミナル）：{macCache} · Windows：フォルダー {winCache} を削除します。その後 Word を開きます。'],
+      ['Word に Khatt al-Quran ボタンがない', 'インストーラーを実行し、Word を開き直してください。Mac では 挿入 → アドイン → 個人用アドイン → Khatt al-Quran からも開けます。'],
+      ['Word なしでも使えますか？', 'はい。ウェブサイトで節を選び、「コピー」を押して好きな場所に貼り付けてください（Ctrl+V / Cmd+V）。']],
+    remove: 'フォントとアドインを削除するには：' };
+
+  var RTL = { ar: 1, fa: 1, ur: 1 };
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pre(s) { return '<pre>' + esc(s) + '</pre>'; }
+  var sel = document.getElementById('lang');
+  sel.innerHTML = I18n.languages.map(function (l) { return '<option value="' + l.id + '">' + esc(l.name) + '</option>'; }).join('');
+
+  function show(lang) {
+    if (!H[lang]) lang = 'en';
+    var x = H[lang], ids = ['about', 'install', 'use', 'faq', 'remove', 'contact'];
+    sel.value = lang;
+    document.documentElement.lang = lang.split('_')[0];
+    document.documentElement.dir = RTL[lang] ? 'rtl' : 'ltr';
+    document.title = 'Khatt al-Quran — ' + x.title;
+    document.getElementById('t-title').textContent = x.title;
+    document.getElementById('nav').innerHTML = ids.map(function (id, i) { return '<a href="#' + id + '">' + esc(x.h[i]) + '</a>'; }).join('');
+    var html = '';
+    html += '<section id="about"><h2>' + esc(x.h[0]) + '</h2><p>' + esc(x.about) + '</p></section>';
+    html += '<section id="install"><h2>' + esc(x.h[1]) + '</h2><p>' + esc(x.install) + '</p><p>' + esc(x.mac) + '</p>' + pre(CMD.mac) +
+      '<p>' + esc(x.win) + '</p>' + pre(CMD.win) + '<p>' + esc(x.then) + '</p><p><a href="install.html" target="_blank">' + esc(x.more) + '</a></p></section>';
+    html += '<section id="use"><h2>' + esc(x.h[2]) + '</h2><ol>' + x.use.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></section>';
+    html += '<section id="faq"><h2>' + esc(x.h[3]) + '</h2>' + x.faq.map(function (f) {
+      // commands on their own lines (inline they get mixed up in right-to-left text)
+      var a = esc(f[1]).replace('{macCache}', '</p>' + pre(CMD.macCache) + '<p>').replace('{winCache}', '</p>' + pre(CMD.winCache) + '<p>');
+      return '<details><summary>' + esc(f[0]) + '</summary><p>' + a + '</p></details>';
+    }).join('') + '</section>';
+    html += '<section id="remove"><h2>' + esc(x.h[4]) + '</h2><p>' + esc(x.remove) + '</p><p>macOS:</p>' + pre(CMD.macDel) +
+      '<p>Windows (PowerShell):</p>' + pre(CMD.winDel) + '</section>';
+    html += '<section id="contact"><h2>' + esc(x.h[5]) + '</h2><p>Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a></p></section>';
+    document.getElementById('content').innerHTML = html;
+  }
+  var lang = (location.search.match(/[?&]lang=([\w]+)/) || [])[1];
+  if (!lang) try { lang = JSON.parse(localStorage.getItem('myquran-settings') || '{}').uiLang; } catch (e) {}
+  if (!lang) lang = (navigator.language || 'en').slice(0, 2);
+  sel.addEventListener('change', function () { show(sel.value); history.replaceState(null, '', '?lang=' + sel.value); });
+  show(lang);
+})();
+</script>
+</body>
+</html>

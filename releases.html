@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Khatt al-Quran — What's new</title>
+<link rel="icon" href="assets/icon-32.png">
+<script>
+  try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
+        if (t !== 'auto') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="stylesheet" href="style.css?v=21">
+<style>
+  .page { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .top h1 { margin: 0; flex: 1; font-size: 22px; }
+  .intro { color: var(--muted); margin: 10px 0 4px; }
+  .rel { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; margin: 14px 0; box-shadow: var(--shadow); }
+  .rel h2 { margin: 0; font-size: 18px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .rel .ver { background: var(--accent); color: var(--accent-fg); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; }
+  .rel .date { color: var(--muted); font-size: 13px; font-weight: 400; margin-inline-start: auto; }
+  .rel ul { margin: 10px 0 0; padding-inline-start: 20px; } .rel li { margin: 5px 0; }
+  .rel.latest { border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <img src="assets/icon-64.png" width="36" height="36" alt="">
+    <h1>Khatt al-Quran — <span id="t-title"></span></h1>
+    <select id="lang" aria-label="Language"><option value="uz">Ўзбекча</option><option value="ru">Русский</option><option value="en">English</option><option value="ar">العربية</option></select>
+  </div>
+  <p class="intro" id="t-intro"></p>
+  <div id="list"></div>
+  <p class="author">Abdulloh Hamidulloh al-Madiyniy · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="help.html">Help</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
+</div>
+<script>
+(function () {
+  'use strict';
+  /* newest first; each release: [version, date, title by language, changes by language] */
+  var T = {
+    uz: { title: 'Янгиликлар', intro: 'Дастурнинг илк кунидан бугунгача бўлган барча нашрлари ва уларда нима ўзгаргани.', latest: 'Энг сўнгги' },
+    ru: { title: 'Что нового', intro: 'Все версии программы с первого дня до сегодняшнего и что в них изменилось.', latest: 'Последняя' },
+    en: { title: "What's new", intro: 'Every version of the app from the first day to today, and what changed in each.', latest: 'Latest' },
+    ar: { title: 'ما الجديد', intro: 'جميع إصدارات البرنامج منذ اليوم الأول حتى اليوم، وما الذي تغيّر في كل منها.', latest: 'الأحدث' }
+  };
+  var R = [
+    ['3.0', '2026-10-05', { uz: 'Khatt al-Quran — янги ном', ru: 'Khatt al-Quran — новое имя', en: 'Khatt al-Quran — a new name', ar: 'خط القرآن — اسم جديد' }, {
+      uz: ['Лойиҳа энди <b>Khatt al-Quran (خط القرآن)</b> деб аталади.',
+           'Браузердаги Word ва iPad\'да оятлар энди расм эмас, <b>матн</b> сифатида қўйилади — уларни белгилаш, қидириш ва нусха олиш мумкин. Расм фақат саҳифа шрифтли мусҳафлар (V1/V2/V4) учун қолди.',
+           'Оят ҳаволаси энди сатр охирида бўлинмайди.'],
+      ru: ['Проект теперь называется <b>Khatt al-Quran (خط القرآن)</b>.',
+           'В Word в браузере и на iPad аяты теперь вставляются <b>текстом</b>, а не картинкой — их можно выделять, искать и копировать. Картинкой остаются только мусхафы со страничными шрифтами (V1/V2/V4).',
+           'Ссылка на аят больше не разрывается на конце строки.'],
+      en: ['The project is now called <b>Khatt al-Quran (خط القرآن)</b>.',
+           'In Word on the web and on iPad, ayahs are now inserted as <b>text</b> instead of a picture — you can select, search and copy them. Only the page-exact mushafs (V1/V2/V4) still use a picture there.',
+           'The ayah reference no longer breaks at the end of a line.'],
+      ar: ['أصبح اسم المشروع <b>خط القرآن (Khatt al-Quran)</b>.',
+           'في Word على الويب وعلى iPad تُدرج الآيات الآن <b>نصًّا</b> لا صورة، فيمكن تحديدها والبحث فيها ونسخها. وتبقى الصورة لمصاحف خطوط الصفحات (V1/V2/V4) فقط.',
+           'لم يعد مرجع الآية ينقسم في آخر السطر.'] }],
+    ['2.6', '2026-10-05', { uz: 'Матн кўриниши тўлиқ сизнинг қўлингизда', ru: 'Полный контроль над оформлением', en: 'Full control over formatting', ar: 'تحكّم كامل في التنسيق' }, {
+      uz: ['Янги «Формат» бўлими: араб матни, аъузу, басмала, ҳавола, таржима ва тафсир учун алоҳида шрифт, ўлчам, қалин, курсив, тагига чизиш ва ранг.',
+           'Абзацларни текислаш ва қатор оралиғини танлаш.',
+           'Ўзгаришлар дарҳол намунада кўринади.'],
+      ru: ['Новый раздел «Формат»: для арабского текста, аузу, басмалы, ссылки, перевода и тафсира — свой шрифт, размер, жирный, курсив, подчёркивание и цвет.',
+           'Выравнивание абзацев и межстрочный интервал.',
+           'Изменения сразу видны в образце.'],
+      en: ['New "Format" section: its own font, size, bold, italic, underline and colour for the Arabic text, isti‘adhah, basmalah, reference, translation and tafsir.',
+           'Paragraph alignment and line spacing.',
+           'Changes show up instantly in a preview.'],
+      ar: ['قسم «التنسيق» الجديد: خط وحجم وعريض ومائل وتسطير ولون لكل من النص العربي والاستعاذة والبسملة والمرجع والترجمة والتفسير.',
+           'محاذاة الفقرات وتباعد الأسطر.',
+           'تظهر التغييرات فورًا في المعاينة.'] }],
+    ['2.5', '2026-10-05', { uz: 'Биринчи танишув', ru: 'Первое знакомство', en: 'A warm welcome', ar: 'ترحيب أول' }, {
+      uz: ['Биринчи очилганда тилни танлаш ойнаси: инглиз, араб, рус, урду, ўзбек ва бошқа тиллар.',
+           'Танланган тилга қараб дастур ўзи шу тилдаги таржима ва тафсирни ёқади (араб тилида — фақат мусҳаф).',
+           'Windows ўрнатувчиси энди жараённи кўрсатиб туради.'],
+      ru: ['При первом запуске — экран выбора языка: английский, арабский, русский, урду, узбекский и другие.',
+           'По выбранному языку программа сама включает перевод и тафсир на этом языке (для арабского — только мусхаф).',
+           'Установщик для Windows теперь показывает ход установки.'],
+      en: ['On first launch, a welcome screen to choose your language: English, Arabic, Russian, Urdu, Uzbek and more.',
+           'Based on your language, a translation and a tafsir in that language are switched on for you (Arabic: the mushaf only).',
+           'The Windows installer now shows its progress.'],
+      ar: ['عند التشغيل الأول تظهر شاشة لاختيار اللغة: الإنجليزية والعربية والروسية والأردية والأوزبكية وغيرها.',
+           'بحسب اللغة المختارة تُفعَّل ترجمة وتفسير بتلك اللغة تلقائيًا (وللعربية المصحف فقط).',
+           'يعرض مثبّت Windows الآن سير التثبيت.'] }],
+    ['2.4', '2026-10-04', { uz: 'Microsoft Store\'га тайёргарлик', ru: 'Подготовка к Microsoft Store', en: 'Getting ready for the Microsoft Store', ar: 'الاستعداد لمتجر Microsoft' }, {
+      uz: ['Янги белги (логотип).', 'Махфийлик сиёсати ва фойдаланиш шартлари саҳифалари.', 'Word тугмаси ва тавсифлари инглиз, ўзбек, рус ва араб тилларида.'],
+      ru: ['Новый значок (логотип).', 'Страницы политики конфиденциальности и условий использования.', 'Кнопка и описания в Word на английском, узбекском, русском и арабском.'],
+      en: ['A new icon.', 'Privacy policy and terms of use pages.', 'The Word button and descriptions in English, Uzbek, Russian and Arabic.'],
+      ar: ['أيقونة جديدة.', 'صفحتا سياسة الخصوصية وشروط الاستخدام.', 'زر Word وأوصافه بالإنجليزية والأوزبكية والروسية والعربية.'] }],
+    ['2.3', '2026-10-04', { uz: 'Ўз манзилимиз', ru: 'Собственный адрес', en: 'A home of its own', ar: 'عنوان خاص' }, {
+      uz: ['Сайт ва қўшимча янги манзилда: <b>quran.abdulloh.org</b> — тезроқ ва ишончлироқ.', 'Алоқа учун почта: quran@abdulloh.org.'],
+      ru: ['Сайт и надстройка по новому адресу: <b>quran.abdulloh.org</b> — быстрее и надёжнее.', 'Почта для связи: quran@abdulloh.org.'],
+      en: ['The site and the add-in moved to <b>quran.abdulloh.org</b> — faster and more reliable.', 'Contact e-mail: quran@abdulloh.org.'],
+      ar: ['انتقل الموقع والإضافة إلى <b>quran.abdulloh.org</b> — أسرع وأكثر موثوقية.', 'بريد التواصل: quran@abdulloh.org.'] }],
+    ['2.2', '2026-10-04', { uz: 'Янги дизайн', ru: 'Новый дизайн', en: 'A new design', ar: 'تصميم جديد' }, {
+      uz: ['Замонавий, тоза кўриниш ва бир хил шрифтлар.', '12 та мавзу (ёруғ, қоронғи, сепия, океан ва бошқалар) ҳамда тизимга мос режим.', 'Созламалар қулай бўлимларга ажратилди.', 'Гап ўртасида қўйилганда оят шу жойда янги абзацдан қўйилади.'],
+      ru: ['Современный чистый вид и единые шрифты.', '12 тем (светлая, тёмная, сепия, океан и другие) и режим «как в системе».', 'Настройки разделены на удобные вкладки.', 'При вставке в середину предложения аят ставится с нового абзаца прямо в этом месте.'],
+      en: ['A modern, clean look with consistent fonts.', '12 themes (light, dark, sepia, ocean and more) plus a follow-the-system mode.', 'Settings organised into tabs.', 'Inserting in the middle of a sentence now starts a new paragraph right there.'],
+      ar: ['مظهر حديث ونظيف بخطوط موحّدة.', '12 سمة (فاتح وداكن وبني ومحيط وغيرها) ووضع يتبع النظام.', 'الإعدادات مرتبة في تبويبات.', 'عند الإدراج في وسط الجملة تبدأ الآية فقرة جديدة في الموضع نفسه.'] }],
+    ['2.1', '2026-10-03', { uz: 'Ёрдам ва қулайлик', ru: 'Справка и удобство', en: 'Help and convenience', ar: 'المساعدة والسهولة' }, {
+      uz: ['22 тилда тўлиқ ёрдам саҳифаси: ўрнатиш, фойдаланиш, савол-жавоблар.', 'Тиллар номи сизнинг тилингизда (масалан, «Турк тили (Türkçe)»), таржималар рўйхатида тез қидирув.', 'Арабча ҳавола ва таржима ҳаволаси алоҳида ёқилади.', 'Word\'даги панель янги версияга ўзи янгиланади.', 'Шрифтларни ўрнатиш янада ишончли бўлди.'],
+      ru: ['Полная справка на 22 языках: установка, использование, вопросы и ответы.', 'Названия языков на вашем языке (например, «Турецкий (Türkçe)»), быстрый поиск по переводам.', 'Арабская ссылка и ссылка перевода включаются отдельно.', 'Панель в Word сама обновляется до новой версии.', 'Установка шрифтов стала надёжнее.'],
+      en: ['A complete help page in 22 languages: installation, usage, questions and answers.', 'Language names in your own language (e.g. "Turkish (Türkçe)"), quick search in the translation lists.', 'The Arabic reference and the translation reference can be switched on separately.', 'The Word panel updates itself to the newest version.', 'More reliable font installation.'],
+      ar: ['صفحة مساعدة كاملة بـ22 لغة: التثبيت والاستخدام والأسئلة.', 'أسماء اللغات بلغتك (مثل «التركية (Türkçe)»)، وبحث سريع في قوائم الترجمات.', 'يمكن تفعيل المرجع العربي ومرجع الترجمة كلٌّ على حدة.', 'تتحدث لوحة Word تلقائيًا إلى أحدث إصدار.', 'تثبيت الخطوط أصبح أكثر موثوقية.'] }],
+    ['2.0.1–2.0.4', '2026-10-03', { uz: 'Тузатишлар', ru: 'Исправления', en: 'Fixes and polish', ar: 'إصلاحات وتحسينات' }, {
+      uz: ['Mac\'даги Word\'да шрифтлар тўғри кўринади.', 'Тафсир таржима каби: бир абзацда, оят рақамлари билан.', 'Сура номлари таржима тилига мос (кирилл, лотин ёки араб).', 'Созламалар ишончли сақланади; бир нечта таржима ва тафсир биргаликда қўйилади.', 'Араб матни оддий (қалин эмас), ҳавола кичикроқ.'],
+      ru: ['Шрифты правильно отображаются в Word на Mac.', 'Тафсир оформляется как перевод: одним абзацем, с номерами аятов.', 'Названия сур по языку перевода (кириллица, латиница или арабский).', 'Настройки надёжно сохраняются; несколько переводов и тафсиров вставляются вместе.', 'Арабский текст обычный (не жирный), ссылка меньше.'],
+      en: ['Fonts now display correctly in Word for Mac.', 'Tafsir is laid out like a translation: one paragraph with ayah numbers.', 'Surah names follow the language of the translation (Cyrillic, Latin or Arabic).', 'Settings are saved reliably; several translations and tafsirs are inserted together.', 'Arabic text in regular weight, a smaller reference.'],
+      ar: ['تظهر الخطوط بشكل صحيح في Word على Mac.', 'يُنسَّق التفسير مثل الترجمة: فقرة واحدة بأرقام الآيات.', 'أسماء السور بحسب لغة الترجمة (سيريلية أو لاتينية أو عربية).', 'تُحفظ الإعدادات بثبات، وتُدرج عدة ترجمات وتفاسير معًا.', 'النص العربي بخط عادي، والمرجع أصغر.'] }],
+    ['2.0', '2026-10-02', { uz: 'Катта янгиланиш', ru: 'Большое обновление', en: 'The big update', ar: 'التحديث الكبير' }, {
+      uz: ['90+ тилда ~200 таржима ва 30+ тилда ~100 тафсир; бир нечтасини бирдан қўйиш мумкин.', 'Кўплаб мусҳафлар: Усмоний, Имлоий, Индопак, Насталиқ, рангли тажвид ва саҳифама-саҳифа аниқ Quran Library V1/V2/V4.', 'Аъузу, басмала ва ҳавола қўшиш.', 'Интерфейс 22 тилда, сура ҳақида маълумот.', 'Mac ва Windows учун бир буйруқли ўрнатувчи.'],
+      ru: ['~200 переводов на 90+ языках и ~100 тафсиров на 30+ языках; можно вставлять несколько сразу.', 'Много мусхафов: Усмани, Имлаи, Индопак, Насталик, цветной таджвид и постраничные Quran Library V1/V2/V4.', 'Истиаза, басмала и ссылка на источник.', 'Интерфейс на 22 языках, сведения о сурах.', 'Установщик для Mac и Windows одной командой.'],
+      en: ['~200 translations in 90+ languages and ~100 tafsirs in 30+ languages — several at once.', 'Many mushafs: Uthmani, Imlaei, Indopak, Nastaleeq, colour Tajweed and the page-exact Quran Library V1/V2/V4.', 'Isti‘adhah, basmalah and a source reference.', 'Interface in 22 languages, information about each surah.', 'One-command installer for Mac and Windows.'],
+      ar: ['نحو 200 ترجمة بأكثر من 90 لغة ونحو 100 تفسير بأكثر من 30 لغة، ويمكن إدراج عدة منها معًا.', 'مصاحف كثيرة: العثماني والإملائي والهندي والنستعليق والتجويد الملوّن ومصاحف Quran Library V1/V2/V4 المطابقة للصفحات.', 'الاستعاذة والبسملة ومرجع الآية.', 'واجهة بـ22 لغة ومعلومات عن كل سورة.', 'مثبّت بأمر واحد لـMac وWindows.'] }],
+    ['1.0', '2026-10-01', { uz: 'Илк қадам', ru: 'Первые шаги', en: 'First steps', ar: 'الخطوات الأولى' }, {
+      uz: ['Сайт ва Word учун қўшимча: оятни топиб, ҳужжатга бир босишда қўйиш.', 'Араб матни ўзгаришсиз, барча белгилари билан.', 'Рақам, сура номи, арабча сўз ёки таржимадан қидириш.', 'Ўзбекча таржима ва тафсир; оятнинг бир қисмини сичқонча билан танлаш.'],
+      ru: ['Сайт и надстройка для Word: найти аят и вставить в документ одним нажатием.', 'Арабский текст без изменений, со всеми знаками.', 'Поиск по номеру, названию суры, арабским словам или тексту перевода.', 'Узбекский перевод и тафсир; выбор части аята мышью.'],
+      en: ['A website and a Word add-in: find an ayah and insert it with one click.', 'The Arabic text unchanged, with all its marks.', 'Search by number, surah name, Arabic words or translation text.', 'Uzbek translation and tafsir; select part of an ayah with the mouse.'],
+      ar: ['موقع وإضافة لبرنامج Word: ابحث عن الآية وأدرجها بنقرة واحدة.', 'النص العربي دون تغيير وبجميع علاماته.', 'البحث بالرقم أو اسم السورة أو الكلمات العربية أو نص الترجمة.', 'ترجمة وتفسير بالأوزبكية، وتحديد جزء من الآية بالفأرة.'] }]
+  ];
+  var MONTHS = { uz: ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'],
+    ru: ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'],
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] };
+  function date(d, l) { var p = d.split('-'); return +p[2] + ' ' + MONTHS[l][+p[1] - 1] + ' ' + p[0]; }
+  var sel = document.getElementById('lang');
+  function show(l) {
+    if (!T[l]) l = 'en';
+    sel.value = l; document.documentElement.lang = l; document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';
+    document.title = 'Khatt al-Quran — ' + T[l].title;
+    document.getElementById('t-title').textContent = T[l].title;
+    document.getElementById('t-intro').textContent = T[l].intro;
+    document.getElementById('list').innerHTML = R.map(function (r, i) {
+      return '<section class="rel' + (i ? '' : ' latest') + '"><h2><span class="ver">' + r[0] + '</span>' + r[2][l] +
+        (i ? '' : ' <span class="muted small">· ' + T[l].latest + '</span>') + '<span class="date">' + date(r[1], l) + '</span></h2>' +
+        '<ul>' + r[3][l].map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></section>';
+    }).join('');
+  }
+  var lang = (location.search.match(/[?&]lang=(\w+)/) || [])[1];
+  if (!lang) try { lang = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').uiLang || '').split('_')[0]; } catch (e) {}
+  if (!lang) lang = (navigator.language || 'en').slice(0, 2);
+  sel.addEventListener('change', function () { show(sel.value); history.replaceState(null, '', '?lang=' + sel.value); });
+  show(lang);
+})();
+</script>
+</body>
+</html>

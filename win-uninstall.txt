@@ -1,0 +1,8 @@
+# Khatt al-Quran: remove its fonts and the Word add-in (Windows).
+#   irm https://quran.abdulloh.org/win-uninstall.txt | iex
+$FontReg = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+(Get-Item $FontReg).Property | Where-Object { $_ -like 'MyQuran *' } | ForEach-Object { Remove-ItemProperty -Path $FontReg -Name $_ }
+$Dev = 'HKCU:\Software\Microsoft\Office\16.0\WEF\Developer'
+if (Test-Path $Dev) { Remove-ItemProperty -Path $Dev -Name '5392de1f-c12d-4292-8fb5-64c79333149e' -ErrorAction SilentlyContinue }
+Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA 'MyQuran') -ErrorAction SilentlyContinue
+Write-Host "Khatt al-Quran removed. Restart Word (sign out and in if fonts are still listed)."
