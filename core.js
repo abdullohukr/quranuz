@@ -31,23 +31,35 @@
             .replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); });
   }
 
-  /* Arabic normalisation for search. Three levels, from strict to loose:
+  /* Arabic normalisation for search. Four levels, from strict to loose:
      0: diacritics removed (dagger alef dropped)      الرحمن  العلمين
      1: dagger alef -> alef (imla'i spelling)          الرحمان العالمين
-     2: skeleton: no alef / hamza at all               لرحمن   لعلمين            */
+     2: skeleton: no alef / hamza, no doubled letters  لرحمن   لعلمين
+     3: consonants only (no و / ي either), compared as whole words with a space allowed between any
+        two letters (see search): الصلوة / الصلاة, فسويهن / فسواهن, بعدما / بعد ما.
+     The Uthmani text and the usual (imla'i) spelling differ in long vowels, hamza seats and word joins:
+     الصلوٰة / الصلاة, شیـٔا / شيئا, ٱلَّیۡل / الليل, إبرٰهـۧم / إبراهيم, یـٰۤأیها / يا أيها. */
   function normArabic(s, level) {
+    if (level === 3) return normArabic(s, 2).replace(/[وي]/g, '').replace(/(.)\1+/g, '$1').replace(/\s+/g, ' ').trim();
     s = toLatinDigits(s).replace(/\s+(?=ٰ)/g, '').replace(/[ ⁠]/g, '')
-      .replace(/۝[0-9]+/g, ' ').replace(/[0-9]/g, ' ');
+      .replace(/۝[0-9]+/g, ' ').replace(/[0-9]/g, ' ')
+      .replace(/ص([^ء-ي\s]*)ۜ/g, 'س$1')    // یبصۜط, بصۜطة: read and usually written with س
+      .replace(/وٰ/g, 'ا')                            // الصلوٰة, الحیوٰة: الصلاة, الحياة
+      .replace(/ىٰ(?=[^ء-ي\s]*[ء-ي])/g, 'ا')   // فبهدىٰهم, افترىٰه: inside a word ى is read ا
+      .replace(/ى([^ء-ي\s]*)[ٕٔ]/g, '$1')            // أولـٰۤىِٕك: ى is only the seat of the hamza
+      .replace(/(ه[^ء-ي\s]*)[ۥۦ]/g, '$1')           // بهۦ, لهۥ: not written
+      .replace(/[ۦۧ]/g, 'ي').replace(/ۥ/g, 'و');          // إبرٰهـۧم, یحیۦ, داوۥد
     if (level === 1) s = s.replace(/ٰ/g, 'ا');
     else s = s.replace(/ٰ/g, '');
     s = s.replace(MARKS, '')
       .replace(/[ٱأإآ]/g, 'ا')
-      .replace(/[ىیي]/g, 'ي').replace(/ئ/g, 'ي')
-      .replace(/ؤ/g, 'و').replace(/ء/g, '')
+      .replace(/[ىیي]/g, 'ي')
+      .replace(/[ئؤء]/g, '')                               // hamza and its seats: شيئا / شیـٔا, رؤوف / رءوف
       .replace(/ة/g, 'ه').replace(/ۀ/g, 'ه').replace(/ک/g, 'ك')
-      .replace(/[^ء-ي\s]/g, ' ');
-    if (level === 2) s = s.replace(/ا/g, '');
-    return s.replace(/\s+/g, ' ').trim();
+      .replace(/[^ء-ي\s]/g, ' ')
+      .replace(/(^|\s)(يا|ها)\s+(?=\S)/g, '$1$2');       // يا أيها, ها أنتم: one word in the Uthmani text
+    if (level === 2) s = s.replace(/ا/g, '').replace(/(.)\1+/g, '$1');   // الليل / ٱلَّیۡل
+    return s.replace(/ا+/g, 'ا').replace(/\s+/g, ' ').trim();
   }
 
   /* Any language: lower case, no accents / punctuation. */
@@ -129,9 +141,10 @@
 
   Quran.prototype._buildIndex = function () {
     if (this._idx) return this._idx;
-    var idx = [[], [], []];
+    var idx = [[], [], [], []];
     for (var i = 0; i < this.baseAyahs.length; i++)
       for (var l = 0; l < 3; l++) idx[l].push(' ' + normArabic(this.baseAyahs[i], l) + ' ');
+    for (var j = 0; j < this.baseAyahs.length; j++) idx[3].push(' ' + normArabic(this.baseAyahs[j], 3) + ' ');
     this._idx = idx;
     return idx;
   };
@@ -195,9 +208,15 @@
     if (ref) for (var a = ref.from; a <= ref.to; a++) add(this.index(ref.sura, a));
     if (isArabic(q)) {
       var idx = this._buildIndex();
-      for (var l = 0; l < 3 && out.length < limit; l++) {
+      for (var l = 0; l < 4 && out.length < limit; l++) {
+        if (l >= 2 && out.length) break;             // the loose levels only when the stricter ones found nothing
         var nq = normArabic(q, l);
-        if (!nq) continue;
+        if (!nq || l === 3 && nq.length < 3) continue;
+        if (l === 3) {                                 // whole words, a space allowed between any two letters
+          var re = new RegExp(' ' + nq.replace(/ /g, '').split('').join(' ?') + ' ');
+          for (var k = 0; k < idx[3].length; k++) if (re.test(idx[3][k])) add(k);
+          continue;
+        }
         for (var i = 0; i < idx[l].length; i++) if (idx[l][i].indexOf(nq) >= 0) add(i);
       }
     }

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="29">
+<meta name="myquran-version" content="30">
 <link rel="icon" href="assets/icon-32.png">
 <link rel="apple-touch-icon" href="assets/icon-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=30">
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-<script src="i18n.js?v=29"></script>
-<script src="core.js?v=29"></script>
+<script src="i18n.js?v=30"></script>
+<script src="core.js?v=30"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -55,7 +55,7 @@
     </div>
   </section>
 </main>
-<footer class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" target="_blank" data-i18n="privacy">Privacy</a> · <a href="terms.html" target="_blank" data-i18n="terms">Terms</a> · <a href="releases.html" target="_blank" data-i18n="whatsNew">What's new</a> · <a href="help.html" target="_blank" data-i18n="help">Help</a></footer>
+<footer class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" target="_blank" data-i18n="privacy">Privacy</a> · <a href="terms.html" target="_blank" data-i18n="terms">Terms</a> · <a href="#updates" id="updates-btn" data-i18n="updates">Updates</a> · <a href="releases.html" target="_blank" data-i18n="whatsNew">What's new</a> · <a href="help.html" target="_blank" data-i18n="help">Help</a></footer>
 
 <dialog id="settings" class="sheet">
   <form method="dialog">
@@ -162,7 +162,31 @@
   </form>
 </dialog>
 
+<dialog id="updates" class="sheet">
+  <form method="dialog">
+    <div class="sheet-head">
+      <h2 data-i18n="updates">Updates</h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="sheet-body">
+      <div class="upd-state"><p id="upd-status" class="upd-status"></p>
+        <button type="button" id="upd-now" class="btn primary" data-i18n="updNow" hidden>Update now</button></div>
+      <section id="upd-local" class="upd-local" hidden>
+        <h3 data-i18n="updComputer">Fonts and the Word add-in on this computer</h3>
+        <p class="small muted" data-i18n="updComputerNote"></p>
+        <p><a id="upd-download" class="btn" target="_blank" rel="noopener" data-i18n="updDownload">Download the installer</a>
+          <a href="install.html" target="_blank" class="small" data-i18n="updAllWays">All ways to install</a></p>
+      </section>
+      <section>
+        <h3 data-i18n="whatsNew">What's new</h3>
+        <div id="upd-news" class="upd-news"></div>
+        <p class="small"><a href="releases.html" target="_blank" data-i18n="updAll">All versions</a></p>
+      </section>
+    </div>
+  </form>
+</dialog>
+
 <div id="toast" role="status"></div>
-<script src="app.js?v=29"></script>
+<script src="app.js?v=30"></script>
 </body>
 </html>

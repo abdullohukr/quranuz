@@ -1088,6 +1088,52 @@
     });
   }
   footerLinks();
+  /* Updates window (footer): is this panel the newest version, the latest release notes, and the
+     installer that updates the fonts and the Word add-in on this computer. The release list
+     (releases.js, also used by releases.html) is loaded with the newest version in its address. */
+  function loadReleases(v) {
+    return new Promise(function (ok, fail) {
+      var s = document.createElement('script');
+      s.src = 'releases.js?v=' + encodeURIComponent(v);
+      s.onload = function () { s.remove(); window.KhattReleases ? ok(window.KhattReleases) : fail(); };
+      s.onerror = function () { s.remove(); fail(); };
+      document.head.appendChild(s);
+    });
+  }
+  function showNews(list) {
+    var l = settings.uiLang.split('_')[0], L = { uz: 1, ru: 1, en: 1, ar: 1 }[l] ? l : 'en';
+    $('upd-news').innerHTML = list.slice(0, 3).map(function (r) {
+      return '<div class="rel"><b><span class="ver">' + esc(r[0]) + '</span>' + esc(r[2][L]) + '<span class="date">' + esc(r[1]) + '</span></b>' +
+        '<ul>' + r[3][L].map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+    }).join('');
+  }
+  function openUpdates() {
+    var meta = document.querySelector('meta[name="myquran-version"]'), mine = meta ? meta.content : '';
+    var st = $('upd-status'), now = $('upd-now');
+    st.className = 'upd-status'; st.textContent = t('updChecking'); now.hidden = true;
+    if (!HOST) {
+      var mac = /Mac/.test(navigator.platform || '') && !windows;
+      $('upd-download').href = 'install/' + (windows ? 'Khatt-al-Quran-Windows.exe' : mac ? 'Khatt-al-Quran-Mac.pkg' : '');
+      $('upd-download').hidden = !(windows || mac);
+      $('upd-local').hidden = false;
+    }
+    $('updates').showModal();
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (d) {
+      return loadReleases(d.v).then(function (list) {
+        showNews(list);
+        if (d.v === mine) { st.textContent = t('updLatest', { v: list[0][0] }); return; }
+        st.textContent = t('updNew', { v: list[0][0] }); st.classList.add('new'); now.hidden = false;
+        now.onclick = function () {
+          try { sessionStorage.setItem('myquran-reload', d.v); } catch (e) {}
+          location.replace(location.pathname + '?v=' + encodeURIComponent(d.v) + (HOST ? '&host=' + HOST : ''));
+        };
+      });
+    }).catch(function () {
+      st.textContent = t('updOffline');
+      loadReleases(mine).then(showNews, function () {});
+    });
+  }
+  $('updates-btn').addEventListener('click', function (e) { e.preventDefault(); openUpdates(); });
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
     setOnline: function (v) { online = !!v; } };   // tests only

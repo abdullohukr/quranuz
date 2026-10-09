@@ -240,6 +240,12 @@ chmod 644 "$FONTS/"*.ttf "$FONTS/"*.otf 2>/dev/null || true
 step 5 "Word add-in" "Word қўшимчаси" "Надстройка для Word" "الوظيفة الإضافية لبرنامج Word"
 mkdir -p "$WEF"
 curl -fsSL "$SITE/manifest.xml" -o "$TMP/manifest.xml" || curl -fsSL "$MIRROR/manifest.xml" -o "$TMP/manifest.xml" || true
+# older copies of our manifest under another file name (same add-in Id, e.g. manifest.xml 1.0.0.0): Word then
+# had two add-ins with one Id and could show the old one; they are moved to ~/MyQuran-old-fonts
+for m in "$WEF"/*.xml; do
+  [ -f "$m" ] && [ "$m" != "$WEF/MyQuran.xml" ] && grep -q '<Id>5392de1f-c12d-4292-8fb5-64c79333149e</Id>' "$m" &&
+    mkdir -p "$OLD" && mv -f "$m" "$OLD/old-addin-$(basename "$m")" && warn "old copy of the add-in moved: $(basename "$m")"
+done
 if grep -q "<OfficeApp" "$TMP/manifest.xml" 2>/dev/null; then cp -f "$TMP/manifest.xml" "$WEF/MyQuran.xml"; else warn "manifest not downloaded, the add-in keeps its previous version"; fi
 [ -f "$WEF/MyQuran.xml" ] && ok "Home -> Khatt al-Quran"
 
