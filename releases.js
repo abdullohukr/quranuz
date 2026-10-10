@@ -1,6 +1,11 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.7.1', '2026-10-09', { uz: 'Нусха рақами', ru: 'Номер версии', en: 'Version number', ar: 'رقم الإصدار' }, {
+    uz: ['Панел пастида, муаллиф номи ва ҳаволалар қаторида жорий нусха рақами кўрсатилади; уни босилса «Янгиланишлар» очилади.'],
+    ru: ['Внизу панели, рядом с именем автора и ссылками, показан номер текущей версии; нажатие открывает «Обновления».'],
+    en: ['The current version number is shown at the bottom of the panel, next to the author and the links; clicking it opens Updates.'],
+    ar: ['يظهر رقم الإصدار الحالي أسفل اللوحة بجانب اسم المؤلف والروابط، والنقر عليه يفتح «التحديثات».'] }],
   ['3.7', '2026-10-09', { uz: 'Янгиланишлар тугмаси, осон ўрнатиш, яхшироқ қидирув', ru: 'Кнопка «Обновления», простая установка, лучший поиск', en: 'Updates button, easy install, better search', ar: 'زر التحديثات وتثبيت أسهل وبحث أفضل' }, {
     uz: ['Панел пастида «Янгиланишлар» тугмаси: янги нусха чиққанини кўрсатади, бир босишда янгилайди ва сўнгги янгиликларни ёзади.',
          'Mac учун <b>Khatt-al-Quran-Mac.pkg</b> ва Windows учун <b>Khatt-al-Quran-Windows.exe</b>: юклаб олиб, икки марта босиш кифоя — буйруқ ёзиш шарт эмас.',

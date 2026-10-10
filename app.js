@@ -1134,6 +1134,16 @@
     });
   }
   $('updates-btn').addEventListener('click', function (e) { e.preventDefault(); openUpdates(); });
+  /* Footer: the version of this panel (the newest release in releases.js of this build); opens Updates */
+  (function () {
+    var meta = document.querySelector('meta[name="myquran-version"]');
+    loadReleases(meta ? meta.content : '').then(function (list) {
+      var a = document.querySelector('#app-version a');
+      a.textContent = 'v' + list[0][0];
+      a.addEventListener('click', function (e) { e.preventDefault(); openUpdates(); });
+      $('app-version').hidden = false;
+    }, function () {});
+  })();
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
     setOnline: function (v) { online = !!v; } };   // tests only
