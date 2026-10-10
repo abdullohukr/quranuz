@@ -1086,6 +1086,9 @@
       var page = a.dataset.page || (a.dataset.page = a.getAttribute('href'));
       a.href = page + '?v=' + v + '&lang=' + settings.uiLang;
     });
+    // Uzbek calls both the Updates window and the versions page «Дастур нашри»: one link (the version number
+    // next to it opens the window)
+    $('updates-link').hidden = t('updates') === t('whatsNew');
   }
   footerLinks();
   /* Updates window (footer): is this panel the newest version, the latest release notes, and the

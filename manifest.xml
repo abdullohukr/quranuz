@@ -375,11 +375,11 @@
           <bt:Override Locale="ja-JP" Value="ヘルプ"/>
         </bt:String>
         <bt:String id="Tab.News" DefaultValue="What's new">
-          <bt:Override Locale="uz-UZ" Value="Янгиликлар"/>
-          <bt:Override Locale="uz-Cyrl-UZ" Value="Янгиликлар"/>
+          <bt:Override Locale="uz-UZ" Value="Дастур нашри"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Дастур нашри"/>
           <bt:Override Locale="ru-RU" Value="Что нового"/>
           <bt:Override Locale="ar-SA" Value="ما الجديد"/>
-          <bt:Override Locale="uz-Latn-UZ" Value="Yangiliklar"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Dastur nashri"/>
           <bt:Override Locale="tr-TR" Value="Yenilikler"/>
           <bt:Override Locale="fr-FR" Value="Nouveautés"/>
           <bt:Override Locale="de-DE" Value="Neuigkeiten"/>
