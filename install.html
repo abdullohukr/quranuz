@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran — Install</title>
 <link rel="icon" href="assets/icon-32.png">
-<link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="style.css?v=34">
 <style>
   .page { max-width: 760px; margin: 0 auto; padding: 16px; }
   .tabs { display: flex; gap: 6px; margin: 8px 0 16px; }
@@ -42,7 +42,7 @@
       <li>Or open PowerShell and paste:</li></ol>
     <pre>irm https://quran.abdulloh.org/win.txt | iex</pre>
     <p class="small"><span data-l="uz">Интернетсиз ўрнатиш учун ҳаммаси ичида бўлган нусха (~270 МБ):</span><span data-l="ru">Версия без интернета, всё внутри (~270 МБ):</span><span data-l="en">Offline version, everything inside (~270 MB):</span>
-      <a href="https://github.com/abdullohukr/quranuz/releases/download/installer/Khatt-al-Quran-Setup-Offline-Windows.exe">Khatt-al-Quran-Setup-Offline-Windows.exe</a></p>
+      <a href="download/Khatt-al-Quran-Setup-Offline-Windows.exe" data-rel="installer">Khatt-al-Quran-Setup-Offline-Windows.exe</a> <span class="rel-info small muted"></span></p>
   </section>
 
   <section class="os">
@@ -55,7 +55,7 @@
       <li>Or open <b>Terminal</b> (Launchpad → Terminal), paste and press Enter:</li></ol>
     <pre>curl -fsSL https://quran.abdulloh.org/mac.sh | bash</pre>
     <p class="small"><span data-l="uz">Интернетсиз ўрнатиш учун ҳаммаси ичида бўлган нусха (~270 МБ):</span><span data-l="ru">Версия без интернета, всё внутри (~270 МБ):</span><span data-l="en">Offline version, everything inside (~270 MB):</span>
-      <a href="https://github.com/abdullohukr/quranuz/releases/download/installer/Khatt-al-Quran-Setup-Offline-Mac.dmg">Khatt-al-Quran-Setup-Offline-Mac.dmg</a></p>
+      <a href="download/Khatt-al-Quran-Setup-Offline-Mac.dmg" data-rel="installer">Khatt-al-Quran-Setup-Offline-Mac.dmg</a> <span class="rel-info small muted"></span></p>
   </section>
 
   <section class="os">
@@ -66,9 +66,9 @@
     <p class="small muted">
       <span data-l="uz">Фақат шрифтлар (қўлда ўрнатиш учун):</span><span data-l="ru">Только шрифты (ручная установка):</span><span data-l="en">Fonts only (manual install):</span>
       <a href="fonts/MyQuran-fonts.zip" download>MyQuran-fonts.zip</a> ·
-      <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V1-fonts.zip">QPC V1</a> ·
-      <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V2-fonts.zip">QPC V2</a> ·
-      <a href="https://github.com/abdullohukr/quranuz/releases/download/fonts/MyQuran-QPC-V4-fonts.zip">QPC V4</a> ·
+      <a href="download/MyQuran-QPC-V1-fonts.zip">QPC V1</a> ·
+      <a href="download/MyQuran-QPC-V2-fonts.zip">QPC V2</a> ·
+      <a href="download/MyQuran-QPC-V4-fonts.zip">QPC V4</a> ·
       <a href="manifest.xml" download>manifest.xml</a></p>
   </section>
 
@@ -130,6 +130,16 @@
     }
     [].forEach.call(document.querySelectorAll('.tabs button'), function (b) { b.onclick = function () { set(b.dataset.set); }; });
     set(lang);
+    /* Offline installers: size and date of the current release, read from GitHub, so the page follows each new
+       build by itself (the files are downloaded through quran.abdulloh.org/download/, see 404.html) */
+    if (window.fetch) fetch('https://api.github.com/repos/abdullohukr/quranuz/releases/tags/installer').then(function (r) { return r.ok ? r.json() : null; }).then(function (rel) {
+      if (!rel) return;
+      [].forEach.call(document.querySelectorAll('a[data-rel=installer]'), function (a) {
+        var f = a.getAttribute('href').split('/').pop();
+        var x = (rel.assets || []).filter(function (y) { return y.name === f; })[0];
+        if (x) a.nextElementSibling.textContent = '· ' + Math.round(x.size / 1048576) + ' MB · ' + x.updated_at.slice(0, 10);
+      });
+    }).catch(function () {});
   })();
 </script>
 </body>

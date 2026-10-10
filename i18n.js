@@ -330,11 +330,11 @@
   Object.keys(ALL).forEach(function (k) { for (var l in ALL[k]) if (L[l][k] == null) L[l][k] = ALL[k][l]; });
   /* 3.7: the Updates window */
   var UPD = {
-    uz: { updates: 'Янгиланишлар', updChecking: 'Янги нусха текширилмоқда…', updLatest: 'Сизда энг сўнгги нусха ({v}).', updNew: 'Янги нусха чиқди: {v}', updNow: 'Ҳозир янгилаш',
+    uz: { updates: 'Дастур нашри', updChecking: 'Янги нусха текширилмоқда…', updLatest: 'Сизда энг сўнгги нусха ({v}).', updNew: 'Янги нусха чиқди: {v}', updNow: 'Ҳозир янгилаш',
       updOffline: 'Текшириб бўлмади: интернет йўқ.', updComputer: 'Шу компьютердаги шрифтлар ва Word қўшимчаси',
       updComputerNote: 'Панел ўзи янгиланади. Шрифтлар ва қўшимчани янгилаш учун ўрнатувчини яна ишга туширинг: ўзгармаган файллар қайта юкланмайди.',
       updDownload: 'Ўрнатувчини юклаб олиш', updAllWays: 'Бошқа усуллар', updAll: 'Барча нашрлар' },
-    uz_latn: { updates: 'Yangilanishlar', updChecking: 'Yangi nusxa tekshirilmoqda…', updLatest: 'Sizda eng soʻnggi nusxa ({v}).', updNew: 'Yangi nusxa chiqdi: {v}', updNow: 'Hozir yangilash',
+    uz_latn: { updates: 'Dastur nashri', updChecking: 'Yangi nusxa tekshirilmoqda…', updLatest: 'Sizda eng soʻnggi nusxa ({v}).', updNew: 'Yangi nusxa chiqdi: {v}', updNow: 'Hozir yangilash',
       updOffline: 'Tekshirib boʻlmadi: internet yoʻq.', updComputer: 'Shu kompyuterdagi shriftlar va Word qoʻshimchasi',
       updComputerNote: 'Panel oʻzi yangilanadi. Shriftlar va qoʻshimchani yangilash uchun oʻrnatuvchini yana ishga tushiring: oʻzgarmagan fayllar qayta yuklanmaydi.',
       updDownload: 'Oʻrnatuvchini yuklab olish', updAllWays: 'Boshqa usullar', updAll: 'Barcha nashrlar' },
