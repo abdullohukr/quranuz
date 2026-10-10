@@ -9,7 +9,15 @@
 # the same fonts in the home folder are moved to ~/MyQuran-old-fonts (duplicate fonts make Word
 # show "We weren't able to load all of your fonts").
 # Uninstall:        curl -fsSL https://quran.abdulloh.org/mac-uninstall.sh | bash
+# Options for the setup program (tools/installers/app); without them the script works as before:
+#   KHATT_SRC=<dir>        offline: MyQuran-fonts.zip, MyQuran-QPC-V1/V2/V4-fonts.zip and manifest.xml from this folder
+#   KHATT_ONLY=fonts,word  install only these parts (default: all)
+#   KHATT_UI=1             no colours; progress lines for the program: "@@step <n> <total> <id>",
+#                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@error <text>", "@@done"
 set -e
+SRC="${KHATT_SRC:-}" UI="" ONLY=",${KHATT_ONLY:-fonts,word},"
+if [ "${KHATT_UI:-}" = 1 ]; then UI=1; fi
+want() { case "$ONLY" in *",$1,"*) return 0 ;; esac; return 1; }
 SITE="https://quran.abdulloh.org"
 MIRROR="https://abdullohukr.github.io/quranuz"   # the same site on GitHub Pages
 REL="https://github.com/abdullohukr/quranuz/releases/download/fonts"   # QPC packages (GitHub Releases: no traffic limit); our site is the fallback
@@ -22,19 +30,25 @@ LIST="$APP/fonts.txt"                  # file names of the fonts this installer 
 STATE="$APP/packages.txt"              # size and ETag of each package installed: unchanged QPC packages are not downloaded again
 AGENT="$HOME/Library/LaunchAgents/uz.myquran.fonts.plist"
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+ERR=""   # an @@error line was printed
+trap 'rc=$?; rm -rf "$TMP"; if [ -n "$UI" ] && [ $rc -ne 0 ] && [ -z "$ERR" ]; then echo "@@error exit code $rc"; fi' EXIT
 
 # Output: every step is a coloured heading with its number and the time since the start, then one line per
 # language (English, Uzbek, Russian, Arabic); results in green, warnings in yellow.
 B=$'\033[1m' DIM=$'\033[2m' CY=$'\033[36m' GR=$'\033[32m' YE=$'\033[33m' RE=$'\033[31m' N=$'\033[0m'
-STEPS=6
+if [ -n "$UI" ]; then B="" DIM="" CY="" GR="" YE="" RE="" N=""; fi
+STEP=0 STEPS=0
+if want fonts; then STEPS=$((STEPS + 5)); fi
+if want word; then STEPS=$((STEPS + 1)); fi
 clock() { printf '%02d:%02d' $((SECONDS / 60)) $((SECONDS % 60)); }
-step() {   # number, English, Uzbek, Russian, Arabic
-  printf '\n%s%s━━━ %s/%s ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ %s%s\n' "$CY" "$B" "$1" "$STEPS" "$(clock)" "$N"
+step() {   # id, English, Uzbek, Russian, Arabic
+  STEP=$((STEP + 1))
+  if [ -n "$UI" ]; then echo "@@step $STEP $STEPS $1"; fi
+  printf '\n%s%s━━━ %s/%s ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ %s%s\n' "$CY" "$B" "$STEP" "$STEPS" "$(clock)" "$N"
   printf '  %s%s%s\n  %s\n  %s\n  %s\n' "$B" "$2" "$N" "$3" "$4" "$5"
 }
-ok() { printf '  %s✓ %s%s\n' "$GR" "$1" "$N"; }
-warn() { printf '  %s! %s%s\n' "$YE" "$1" "$N"; }
+ok() { if [ -n "$UI" ]; then echo "@@ok $1"; else printf '  %s✓ %s%s\n' "$GR" "$1" "$N"; fi; }
+warn() { if [ -n "$UI" ]; then echo "@@warn $1"; else printf '  %s! %s%s\n' "$YE" "$1" "$N"; fi; }
 
 # Fonts that are still registered but whose files are gone (an older MyQuran folder, fonts deleted by
 # hand) make Word say "We weren't able to load all of your fonts": unregister every font of
@@ -112,7 +126,26 @@ fetch_all() {   # name url, name url...
     if [ "$(wc -c < "$TMP/$name" 2>/dev/null | tr -d ' ')" != "$size" ] || ! unzip -tq "$TMP/$name" >/dev/null 2>&1; then rm -f "$TMP/$name"; fi
   done < "$TMP/sizes"
 }
-step 1 "Downloading the fonts (8 connections)" "Шрифтлар юклаб олинмоқда" "Скачивание шрифтов" "تنزيل الخطوط"
+# offline (KHATT_SRC): a package of the folder that is a valid zip is used in place (linked, not copied)
+take_zip() {   # $1 name in $TMP, $2 file name in $SRC
+  if [ -f "$SRC/$2" ] && unzip -tq "$SRC/$2" >/dev/null 2>&1; then
+    ln -sf "$SRC/$2" "$TMP/$1"; echo "$1 $(wc -c < "$SRC/$2" | tr -d ' ') local" >> "$TMP/heads"; return 0
+  fi
+  warn "no valid $2 in $SRC"; return 1
+}
+unchanged() { grep -qxF "$1" "$TMP/unchanged" 2>/dev/null; }
+
+if want fonts; then   # ---- fonts: steps 1-4 ----
+if [ -n "$SRC" ]; then
+step download "Checking the font packages" "Шрифт пакетлари текширилмоқда" "Проверка пакетов шрифтов" "فحص حزم الخطوط"
+scan_fonts &
+SCAN=$!
+take_zip main.zip MyQuran-fonts.zip & J0=$!
+take_zip qpc-V1.zip MyQuran-QPC-V1-fonts.zip & J1=$!
+take_zip qpc-V2.zip MyQuran-QPC-V2-fonts.zip & J2=$!
+take_zip qpc-V4.zip MyQuran-QPC-V4-fonts.zip & J4=$!
+else
+step download "Downloading the fonts (8 connections)" "Шрифтлар юклаб олинмоқда" "Скачивание шрифтов" "تنزيل الخطوط"
 scan_fonts &
 SCAN=$!
 : > "$TMP/sizes"
@@ -127,17 +160,25 @@ progress() {   # MB downloaded of the total, and the time
     left=$(( (SECONDS - DL0) * (total - done) / done ))
     left="$(printf '· left ~%d:%02d' $((left / 60)) $((left % 60)))"
   fi
-  printf '\r  %s%s / %s MB%s   %s %s     ' "$B" "$done" "${total:-?}" "$N" "$(clock)" "$left"
+  if [ -n "$UI" ]; then
+    if [ "${total:-0}" -gt 0 ]; then echo "@@pct $((done * 100 / total)) $done / $total MB $left"; fi
+  else
+    printf '\r  %s%s / %s MB%s   %s %s     ' "$B" "$done" "${total:-?}" "$N" "$(clock)" "$left"
+  fi
 }
 DL0=$SECONDS
 while kill -0 $FA 2>/dev/null; do progress; sleep 1; done
 progress; echo
 [ -f "$TMP/main.zip" ] || fetch_zip main.zip "$SITE/fonts/MyQuran-fonts.zip" "$MIRROR/fonts/MyQuran-fonts.zip" & J0=$!
-unchanged() { grep -qxF "$1" "$TMP/unchanged" 2>/dev/null; }
 [ -f "$TMP/qpc-V1.zip" ] || unchanged V1 || fetch_zip qpc-V1.zip "$REL/MyQuran-QPC-V1-fonts.zip" "$SITE/fonts/MyQuran-QPC-V1-fonts.zip" & J1=$!
 [ -f "$TMP/qpc-V2.zip" ] || unchanged V2 || fetch_zip qpc-V2.zip "$REL/MyQuran-QPC-V2-fonts.zip" "$SITE/fonts/MyQuran-QPC-V2-fonts.zip" & J2=$!
 [ -f "$TMP/qpc-V4.zip" ] || unchanged V4 || fetch_zip qpc-V4.zip "$REL/MyQuran-QPC-V4-fonts.zip" "$SITE/fonts/MyQuran-QPC-V4-fonts.zip" & J4=$!
+fi
 if ! wait $J0; then
+  if [ -n "$UI" ]; then
+    ERR=1; if [ -n "$SRC" ]; then echo "@@error No valid MyQuran-fonts.zip in $SRC. Nothing was changed."
+    else echo "@@error The fonts could not be downloaded. Nothing was changed."; fi
+  fi
   printf '\n  %s%s%s\n  %s\n  %s\n  %s\n' "$RE" "The fonts could not be downloaded. Nothing was changed. Check the internet connection and run the command again." "$N" \
     "Шрифтлар юклаб олинмади, ҳеч нарса ўзгартирилмади. Интернетни текшириб, буйруқни қайта ишга туширинг." \
     "Шрифты не скачались, ничего не изменено. Проверьте интернет и запустите команду ещё раз." \
@@ -158,7 +199,7 @@ done
 wait $SCAN 2>/dev/null || true
 wait
 
-ok "downloaded"
+if [ -n "$SRC" ]; then ok "ready"; else ok "downloaded"; fi
 pgrep -x "Microsoft Word" >/dev/null && { { warn "Word is closed for the installation"; printf '    Word ёпилади\n    Word будет закрыт\n    سيُغلق Word أثناء التثبيت\n'; }; osascript -e 'quit app "Microsoft Word"' >/dev/null 2>&1 || true; sleep 2; }
 
 # remove the previous installation: the 2.0.x folder + its CoreText login agent, and the fonts of the last run
@@ -197,7 +238,7 @@ cat "$TMP/list-kept" > "$LIST" 2>/dev/null || : > "$LIST"
 # (forget_missing runs only at the end: here the fonts just removed are about to come back at the same
 # paths, and unregistering them now made macOS keep them switched off after they were copied back)
 
-step 2 "Fonts already on this Mac" "Компьютердаги шрифтлар текширилди" "Проверены шрифты на компьютере" "فحص الخطوط الموجودة على الجهاز"
+step scan "Fonts already on this Mac" "Компьютердаги шрифтлар текширилди" "Проверены шрифты на компьютере" "فحص الخطوط الموجودة على الجهاز"
 ok "$(wc -l < "$TMP/installed.txt" | tr -d ' ') fonts found"
 
 install_dir() {   # $1 a package unpacked into $TMP/x-*
@@ -227,19 +268,22 @@ install_dir() {   # $1 a package unpacked into $TMP/x-*
   ok "$copied installed$( [ $skipped -gt 0 ] && echo ", $skipped system copies kept" )"
 }
 
-step 3 "Khatt al-Quran fonts" "Khatt al-Quran шрифтлари" "Шрифты Khatt al-Quran" "خطوط خط القرآن"
+step fonts "Khatt al-Quran fonts" "Khatt al-Quran шрифтлари" "Шрифты Khatt al-Quran" "خطوط خط القرآن"
 install_dir "$TMP/x-main"
 
-step 4 "Mushaf page fonts QPC V1, V2, V4 (3 × 604)" "QPC саҳифа шрифтлари" "Постраничные шрифты QPC" "خطوط صفحات المصحف QPC"
+step qpc "Mushaf page fonts QPC V1, V2, V4 (3 × 604)" "QPC саҳифа шрифтлари" "Постраничные шрифты QPC" "خطوط صفحات المصحف QPC"
 for v in V1 V2 V4; do
   printf '  QPC %s\n' "$v"
   if [ -d "$TMP/x-qpc-$v" ]; then install_dir "$TMP/x-qpc-$v"; else ok "$(grep -c "^QPC-$v-" "$LIST") kept from the last installation"; fi
 done
 chmod 644 "$FONTS/"*.ttf "$FONTS/"*.otf 2>/dev/null || true
+fi   # ---- fonts ----
 
-step 5 "Word add-in" "Word қўшимчаси" "Надстройка для Word" "الوظيفة الإضافية لبرنامج Word"
+if want word; then
+step word "Word add-in" "Word қўшимчаси" "Надстройка для Word" "الوظيفة الإضافية لبرنامج Word"
 mkdir -p "$WEF"
-curl -fsSL "$SITE/manifest.xml" -o "$TMP/manifest.xml" || curl -fsSL "$MIRROR/manifest.xml" -o "$TMP/manifest.xml" || true
+if [ -n "$SRC" ]; then cp -f "$SRC/manifest.xml" "$TMP/manifest.xml" 2>/dev/null || true
+else curl -fsSL "$SITE/manifest.xml" -o "$TMP/manifest.xml" || curl -fsSL "$MIRROR/manifest.xml" -o "$TMP/manifest.xml" || true; fi
 # older copies of our manifest under another file name (same add-in Id, e.g. manifest.xml 1.0.0.0): Word then
 # had two add-ins with one Id and could show the old one; they are moved to ~/MyQuran-old-fonts
 for m in "$WEF"/*.xml; do
@@ -248,14 +292,18 @@ for m in "$WEF"/*.xml; do
 done
 if grep -q "<OfficeApp" "$TMP/manifest.xml" 2>/dev/null; then cp -f "$TMP/manifest.xml" "$WEF/MyQuran.xml"; else warn "manifest not downloaded, the add-in keeps its previous version"; fi
 [ -f "$WEF/MyQuran.xml" ] && ok "Home -> Khatt al-Quran"
+# Word shows the task pane from its WebKit cache; clear it so the current version is loaded
+rm -rf "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/WebKit/NetworkCache"
+fi
 
+if want fonts; then   # ---- fonts: step 6 ----
 sort -u -o "$LIST" "$LIST"
 # remember the packages installed now (and the unchanged ones) for the next run
 while read -r name size etag; do
   v="${name#qpc-}"; v="${v%.zip}"
   if [ -f "$TMP/$name" ] || unchanged "$v"; then echo "$name $size $etag"; fi
 done < "$TMP/heads" > "$TMP/state" 2>/dev/null && mv -f "$TMP/state" "$STATE"
-step 6 "Word's font list" "Word шрифтлар рўйхати" "Список шрифтов Word" "قائمة الخطوط في Word"
+step wordfonts "Word's font list" "Word шрифтлар рўйхати" "Список шрифтов Word" "قائمة الخطوط في Word"
 # The fonts are switched on like Font Book does it (persistent user scope). Installers up to 3.4 unregistered
 # them at this scope while they were being replaced, and macOS then kept them off at the same paths;
 # registering them again switches them back on ("already registered" errors are expected and ignored).
@@ -412,8 +460,6 @@ EOF
 ok "$(osascript -l JavaScript "$APP/word-fonts.js" 2>&1)"
 mkdir -p "$HOME/Library/LaunchAgents"
 launchctl bootstrap "gui/$(id -u)" "$AGENT" >/dev/null 2>&1 || true
-# Word shows the task pane from its WebKit cache; clear it so the current version is loaded
-rm -rf "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/WebKit/NetworkCache"
 
 ok="$(osascript -l JavaScript 2>/dev/null <<'JS' || true
 ObjC.import('AppKit'); ObjC.import('CoreText');
@@ -427,10 +473,12 @@ case "$ok" in
   *) warn "Scheherazade New is not active yet ($ok). Restart the Mac and open Word again; if it stays, send the output of:"
      echo "    curl -fsSL $SITE/mac-check.sh | bash" ;;
 esac
+fi   # ---- fonts ----
 printf '\n%s%s━━━ Done in %d min %02d s ━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$GR" "$B" $((SECONDS / 60)) $((SECONDS % 60)) "$N"
 printf '  %sOpen Word: Home → Khatt al-Quran.%s If the Arabic text is in a plain font, quit Word (Cmd+Q) and open it again.\n' "$B" "$N"
 printf '  Тайёр. Word\x27ни очинг: Главная → Khatt al-Quran. Араб матни оддий шрифтда бўлса, Word\x27ни ёпиб (Cmd+Q) қайта очинг.\n'
 printf '  Готово. Откройте Word: Главная → Khatt al-Quran. Если арабский текст обычным шрифтом — закройте Word (Cmd+Q) и откройте снова.\n'
 printf '  تمّ التثبيت. افتح Word: الصفحة الرئيسية ← Khatt al-Quran. إذا ظهر النص العربي بخط عادي فأغلق Word (Cmd+Q) وافتحه من جديد.\n'
 [ -d "$OLD" ] && printf '  %sOld font copies: %s%s\n' "$DIM" "$OLD" "$N"
+if [ -n "$UI" ]; then echo "@@done"; fi
 true

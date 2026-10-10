@@ -1,6 +1,15 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.8', '2026-10-10', { uz: 'Ўрнатиш дастури', ru: 'Программа установки', en: 'Setup program', ar: 'برنامج التثبيت' }, {
+    uz: ['Mac учун ойнали ўрнатиш дастури: «Онлайн» тугмаси энг янги нусхани юклаб ўрнатади, нима ўрнатилишини (шрифтлар, Word қўшимчаси) белгилаш ва жараённи кузатиш мумкин; Terminal керак эмас.',
+         'Windows учун худди шундай дастурнинг синов нусхаси.'],
+    ru: ['Программа установки с окном для Mac: кнопка «Онлайн» скачивает и ставит последнюю версию, можно выбрать, что ставить (шрифты, надстройка Word), и видеть ход установки; Терминал не нужен.',
+         'Тестовая версия такой же программы для Windows.'],
+    en: ['A setup program with a window for Mac: “Online” downloads and installs the latest version; you can choose what to install (fonts, the Word add-in) and follow the progress — no Terminal.',
+         'A test version of the same program for Windows.'],
+    ar: ['برنامج تثبيت بواجهة لأجهزة Mac: زر «عبر الإنترنت» ينزّل أحدث إصدار ويثبّته، ويمكنك اختيار ما يُثبَّت (الخطوط، إضافة Word) ومتابعة التقدّم، دون الحاجة إلى Terminal.',
+         'نسخة تجريبية من البرنامج نفسه لـWindows.'] }],
   ['3.7.1', '2026-10-09', { uz: 'Нусха рақами', ru: 'Номер версии', en: 'Version number', ar: 'رقم الإصدار' }, {
     uz: ['Панел пастида, муаллиф номи ва ҳаволалар қаторида жорий нусха рақами кўрсатилади; уни босилса «Янгиланишлар» очилади.'],
     ru: ['Внизу панели, рядом с именем автора и ссылками, показан номер текущей версии; нажатие открывает «Обновления».'],

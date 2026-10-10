@@ -3,8 +3,23 @@
 #   irm https://quran.abdulloh.org/win.txt | iex
 # Fonts go to their own folder %LOCALAPPDATA%\MyQuran\Fonts and are registered for the
 # current user. Every run is a clean reinstall (close Word first). Uninstall:  irm https://quran.abdulloh.org/win-uninstall.txt | iex
+# Options for the setup program (tools/installers/app); without them the script works as before:
+#   KHATT_SRC=<dir>        offline: MyQuran-fonts.zip, MyQuran-QPC-V1/V2/V4-fonts.zip and manifest.xml from this folder
+#   KHATT_ONLY=fonts,word  install only these parts (default: all)
+#   KHATT_UI=1             no progress bars, no questions; progress lines for the program: "@@step <n> <total> <id>",
+#                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@wait <id>", "@@error <text>", "@@done"
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'Continue'
+$Src = [string]$env:KHATT_SRC
+$UI = $env:KHATT_UI -eq '1'
+$Only = @(([string]$env:KHATT_ONLY).Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+if (-not $Only.Count) { $Only = @('fonts', 'word') }
+function Want($id) { $Only -contains $id }
+function Emit($t) { [Console]::Out.WriteLine($t) }
+if ($UI) {
+  $ProgressPreference = 'SilentlyContinue'
+  try { [Console]::OutputEncoding = New-Object Text.UTF8Encoding $false } catch {}
+}
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 [Net.ServicePointManager]::DefaultConnectionLimit = 16   # .NET allows only 2 connections per server by default
 $Site = 'https://quran.abdulloh.org'
@@ -29,17 +44,21 @@ try { $Host.UI.RawUI.WindowTitle = 'Khatt al-Quran' } catch {}
 # Output: every step is a coloured heading with its number and the time since the start, then one line per
 # language (English, Uzbek, Russian; the Windows console cannot show Arabic letters joined and right to left).
 $Clock = [Diagnostics.Stopwatch]::StartNew()
-$Steps = 6
+$Steps = 0; $StepN = 0
+if (Want 'fonts') { $Steps += 5 }
+if (Want 'word') { $Steps += 1 }
 function T { '{0:00}:{1:00}' -f [int][Math]::Floor($Clock.Elapsed.TotalMinutes), $Clock.Elapsed.Seconds }
-function Step($n, $en, $uz, $ru) {
+function Step($id, $en, $uz, $ru) {
+  $script:StepN++; $n = $script:StepN
+  if ($UI) { Emit "@@step $n $Steps $id" }
   Write-Host ''
   Write-Host ("─── $n/$Steps " + ('─' * 38) + ' ' + (T)) -ForegroundColor Cyan
   Write-Host "  $en" -ForegroundColor White
   Write-Host "  $uz" -ForegroundColor Gray
   Write-Host "  $ru" -ForegroundColor Gray
 }
-function Ok($t) { Write-Host "  √ $t" -ForegroundColor Green }
-function Warn($t) { Write-Host "  ! $t" -ForegroundColor Yellow }
+function Ok($t) { if ($UI) { Emit "@@ok $t" } else { Write-Host "  √ $t" -ForegroundColor Green } }
+function Warn($t) { if ($UI) { Emit "@@warn $t" } else { Write-Host "  ! $t" -ForegroundColor Yellow } }
 
 # A click inside the console window starts a text selection and PAUSES the script until Enter or Esc
 # ("QuickEdit"): it looked as if the installer hung. QuickEdit is off while the installer runs.
@@ -53,7 +72,11 @@ $QuickEdit = [MyQuran.Con]::GetConsoleMode($ConIn, [ref]$ConMode)
 if ($QuickEdit) { [void][MyQuran.Con]::SetConsoleMode($ConIn, ($ConMode -band (-bnot [uint32]0x40)) -bor 0x80) }
 function Restore-Console { if ($QuickEdit) { [void][MyQuran.Con]::SetConsoleMode($ConIn, $ConMode) } }
 
-if (Get-Process WINWORD -ErrorAction SilentlyContinue) {
+if ($UI -and (Want 'fonts') -and (Get-Process WINWORD -ErrorAction SilentlyContinue)) {
+  Emit '@@wait word'   # the program asks to close Word; go on as soon as it is closed
+  while (Get-Process WINWORD -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 }
+}
+if (-not $UI -and (Get-Process WINWORD -ErrorAction SilentlyContinue)) {
   Warn 'Close Word first, then press Enter'
   Write-Host "    Word'ni yoping, so'ng Enter tugmasini bosing"
   Write-Host '    Закройте Word и нажмите Enter'
@@ -88,7 +111,8 @@ function Invoke-Parallel($Items, [scriptblock]$Work, $Label, [scriptblock]$Measu
     $done = [double]$m[0]; $total = [Math]::Max(1, [double]$m[1])
     $left = if ($done -gt 0) { [int]($watch.Elapsed.TotalSeconds * ($total - $done) / $done) } else { -1 }
     $txt = '{0:N0} / {1:N0}{2}   elapsed {3}' -f $done, $total, $m[2], (T)
-    if ($left -ge 0) { Write-Progress -Activity $Label -Status $txt -PercentComplete ([Math]::Min(100, [int](100 * $done / $total))) -SecondsRemaining $left }
+    if ($UI) { Emit ('@@pct {0} {1}' -f [Math]::Min(100, [int](100 * $done / $total)), $txt) }
+    elseif ($left -ge 0) { Write-Progress -Activity $Label -Status $txt -PercentComplete ([Math]::Min(100, [int](100 * $done / $total))) -SecondsRemaining $left }
     else { Write-Progress -Activity $Label -Status $txt -PercentComplete 0 }
     Start-Sleep -Milliseconds 300
   }
@@ -107,7 +131,9 @@ function Get-File($url, $out, $label) {
       $fs.Write($buf, 0, $n); $done += $n
       if ($total -gt 0 -and ($done - $shown) -ge 512KB) {
         $shown = $done
-        Write-Progress -Activity $label -Status ('{0:N1} / {1:N1} MB' -f ($done / 1MB), ($total / 1MB)) -PercentComplete ([int](100 * $done / $total))
+        $st = '{0:N1} / {1:N1} MB' -f ($done / 1MB), ($total / 1MB)
+        if ($UI) { Emit ('@@pct {0} {1}' -f [int](100 * $done / $total), $st) }
+        else { Write-Progress -Activity $label -Status $st -PercentComplete ([int](100 * $done / $total)) }
       }
     }
   } finally { $fs.Close(); $in.Close(); $res.Close(); Write-Progress -Activity $label -Completed }
@@ -122,7 +148,9 @@ function Get-Zip($out, [string[]]$urls) {
   return $false
 }
 
-Step 1 'Downloading the fonts (8 connections)' 'Shriftlar yuklab olinmoqda' 'Скачивание шрифтов'
+if (Want 'fonts') {   # ---- fonts: steps 1-5 ----
+if ($Src) { Step 'download' 'Checking the font packages' 'Shrift paketlari tekshirilmoqda' 'Проверка пакетов шрифтов' }
+else { Step 'download' 'Downloading the fonts (8 connections)' 'Shriftlar yuklab olinmoqda' 'Скачивание шрифтов' }
 # Everything is downloaded and checked BEFORE the installed fonts are touched. The servers give about 1 MB/s
 # per connection: every package is fetched in 16 MB pieces, 8 at a time; a package whose pieces do not make
 # a valid zip is downloaded again in one piece (with the fallbacks).
@@ -137,6 +165,16 @@ $Pkgs = [ordered]@{
 $StateFile = Join-Path $Home2 'packages.txt'
 $Before = @(); if (Test-Path $StateFile) { $Before = @(Get-Content $StateFile) }
 $parts = @(); $sizes = @{}; $Heads = @{}; $Unchanged = @()
+# offline (KHATT_SRC): the packages of the folder are copied, nothing is downloaded
+$Files = @{ 'main.zip' = 'MyQuran-fonts.zip'; 'qpc-V1.zip' = 'MyQuran-QPC-V1-fonts.zip'; 'qpc-V2.zip' = 'MyQuran-QPC-V2-fonts.zip'; 'qpc-V4.zip' = 'MyQuran-QPC-V4-fonts.zip' }
+if ($Src) {
+  foreach ($k in $Pkgs.Keys) {
+    $f = Join-Path $Src $Files[$k]; $out = Join-Path $Tmp $k
+    if ((Test-Path $f) -and (Test-Zip $f)) { Copy-Item -Force $f $out; $Heads[$k] = "$k $((Get-Item $f).Length) local" }
+    else { Warn "no valid $($Files[$k]) in $Src" }
+  }
+}
+if (-not $Src) {
 foreach ($k in $Pkgs.Keys) {
   $size = 0; $etag = ''
   try { $r = [Net.HttpWebRequest]::Create($Pkgs[$k][0]); $r.Method = 'HEAD'; $resp = $r.GetResponse(); $size = $resp.ContentLength; $etag = [string]$resp.Headers['ETag']; $resp.Close() } catch {}
@@ -182,8 +220,13 @@ foreach ($k in $Pkgs.Keys) {
   }
   if (-not (Test-Path $out)) { [void](Get-Zip $out $Pkgs[$k]) }
 }
+}
 $MainZip = Join-Path $Tmp 'main.zip'
 if (-not (Test-Path $MainZip)) {
+  if ($UI) {
+    if ($Src) { Emit "@@error No valid MyQuran-fonts.zip in $Src. Nothing was changed." }
+    else { Emit '@@error The fonts could not be downloaded. Nothing was changed.' }
+  }
   Write-Host ''
   Write-Host '  The fonts could not be downloaded. Nothing was changed. Check the internet connection and run the command again.' -ForegroundColor Red
   Write-Host "  Shriftlar yuklab olinmadi, hech narsa o'zgartirilmadi. Internetni tekshirib, buyruqni qayta ishga tushiring." -ForegroundColor Red
@@ -191,7 +234,7 @@ if (-not (Test-Path $MainZip)) {
   Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue; Restore-Console; return
 }
 $got = 0; foreach ($k in $Pkgs.Keys) { $f = Join-Path $Tmp $k; if (Test-Path $f) { $got += (Get-Item $f).Length } }
-Ok ('{0:N0} MB downloaded' -f ($got / 1MB))
+Ok ('{0:N0} MB {1}' -f ($got / 1MB), $(if ($Src) { 'ready' } else { 'downloaded' }))
 # QPC packages whose installed fonts stay: unchanged, or not downloaded now (then the previous ones are kept)
 $Keep = @()
 foreach ($v in 'V1', 'V2', 'V4') {
@@ -200,7 +243,7 @@ foreach ($v in 'V1', 'V2', 'V4') {
 }
 function Test-Kept($file) { $file -match 'QPC-(V\d)-' -and $Keep -contains $Matches[1] }
 
-Step 2 'Removing the previous installation' "Oldingi o'rnatish olib tashlanmoqda" 'Удаление прежней установки'
+Step 'cleanup' 'Removing the previous installation' "Oldingi o'rnatish olib tashlanmoqda" 'Удаление прежней установки'
 # Clean reinstall: unregister and delete the previous MyQuran fonts; copies of the same font
 # files installed by hand for this user are moved to %LOCALAPPDATA%\MyQuran\OldFonts.
 $unload = @()
@@ -249,33 +292,38 @@ function Install-Zip($zip) {
   Ok ("$copied installed" + $(if ($kept) { ", $kept already installed for all users (kept)" } else { '' }))
 }
 
-Step 3 'Khatt al-Quran fonts' 'Khatt al-Quran shriftlari' 'Шрифты Khatt al-Quran'
+Step 'fonts' 'Khatt al-Quran fonts' 'Khatt al-Quran shriftlari' 'Шрифты Khatt al-Quran'
 Install-Zip $MainZip
 
-Step 4 'Mushaf page fonts QPC V1, V2, V4 (3 × 604)' 'QPC sahifa shriftlari' 'Постраничные шрифты QPC'
+Step 'qpc' 'Mushaf page fonts QPC V1, V2, V4 (3 × 604)' 'QPC sahifa shriftlari' 'Постраничные шрифты QPC'
 foreach ($v in 'V1', 'V2', 'V4') {
   Write-Host "  QPC $v"
   if ($Keep -contains $v) { Ok ("{0} kept from the last installation" -f @(Get-ChildItem $FontDir -Filter "QPC-$v-p*.ttf").Count) }
   else { Install-Zip (Join-Path $Tmp "qpc-$v.zip") }
 }
 
-Step 5 'Switching the fonts on' 'Shriftlar yoqilmoqda' 'Подключение шрифтов'
+Step 'fontson' 'Switching the fonts on' 'Shriftlar yoqilmoqda' 'Подключение шрифтов'
 Invoke-Parallel $Load { param($batch, $st) foreach ($f in $batch) { [void][MyQuran.Gdi]::AddFontResourceW($f); $st.n++ } } 'Switching the fonts on'
 $r = [IntPtr]::Zero
 [void][MyQuran.Gdi]::SendMessageTimeoutW([IntPtr]0xffff, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero, 2, 1000, [ref]$r)  # WM_FONTCHANGE
 Ok "$($Load.Count) fonts in $FontDir   ($(T))"
 
-Step 6 'Word add-in' "Word qo'shimchasi" 'Надстройка для Word'
-$Manifest = Join-Path $Home2 'manifest.xml'
-try { Invoke-WebRequest -UseBasicParsing "$Site/manifest.xml" -OutFile $Manifest } catch { Invoke-WebRequest -UseBasicParsing "$Mirror/manifest.xml" -OutFile $Manifest }
-$Id = ([xml](Get-Content $Manifest -Raw)).OfficeApp.Id
-$Dev = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Microsoft\Office\16.0\WEF\Developer')
-$Dev.SetValue($Id, $Manifest); $Dev.Close(); $FontKey.Close()
-Ok 'Home -> Khatt al-Quran'
-
 # remember the packages installed now (and the unchanged ones) for the next run
 @($Heads.Keys | Where-Object { (Test-Path (Join-Path $Tmp $_)) -or ($_ -match '^qpc-(V\d)' -and $Unchanged -contains $Matches[1]) } | ForEach-Object { $Heads[$_] }) |
   Set-Content -Path $StateFile -Encoding ASCII
+}   # ---- fonts ----
+
+if (Want 'word') {
+Step 'word' 'Word add-in' "Word qo'shimchasi" 'Надстройка для Word'
+$Manifest = Join-Path $Home2 'manifest.xml'
+if ($Src) { Copy-Item -Force (Join-Path $Src 'manifest.xml') $Manifest }
+else { try { Invoke-WebRequest -UseBasicParsing "$Site/manifest.xml" -OutFile $Manifest } catch { Invoke-WebRequest -UseBasicParsing "$Mirror/manifest.xml" -OutFile $Manifest } }
+$Id = ([xml](Get-Content $Manifest -Raw)).OfficeApp.Id
+$Dev = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Microsoft\Office\16.0\WEF\Developer')
+$Dev.SetValue($Id, $Manifest); $Dev.Close()
+Ok 'Home -> Khatt al-Quran'
+}
+$FontKey.Close()
 Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue
 Restore-Console
 Write-Host ''
@@ -284,3 +332,4 @@ Write-Host ($done + ('─' * 30)) -ForegroundColor Green
 Write-Host '  Open Word: Home -> Khatt al-Quran.' -ForegroundColor White
 Write-Host "  Tayyor. Word'ni oching: Bosh sahifa (Home) -> Khatt al-Quran."
 Write-Host '  Готово. Откройте Word: Главная -> Khatt al-Quran.'
+if ($UI) { Emit '@@done' }

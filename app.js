@@ -1113,7 +1113,7 @@
     st.className = 'upd-status'; st.textContent = t('updChecking'); now.hidden = true;
     if (!HOST) {
       var mac = /Mac/.test(navigator.platform || '') && !windows;
-      $('upd-download').href = 'install/' + (windows ? 'Khatt-al-Quran-Windows.exe' : mac ? 'Khatt-al-Quran-Mac.pkg' : '');
+      $('upd-download').href = 'install/' + (windows ? 'Khatt-al-Quran-Windows.exe' : mac ? 'Khatt-al-Quran-Setup-Mac.dmg' : '');
       $('upd-download').hidden = !(windows || mac);
       $('upd-local').hidden = false;
     }
