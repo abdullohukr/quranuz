@@ -1,6 +1,15 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.8.1', '2026-10-10', { uz: 'Интернетсиз ўрнатиш', ru: 'Установка без интернета', en: 'Offline install', ar: 'التثبيت دون إنترنت' }, {
+    uz: ['Mac ва Windows учун интернетсиз ўрнатиш дастури: барча шрифтлар ва Word қўшимчаси файл ичида (~270 МБ), ҳеч нарса юклаб олинмайди. Ўрнатиш саҳифасида.',
+         'Кичик ўрнатиш дастурида энди битта «Онлайн» тугмаси.'],
+    ru: ['Программа установки без интернета для Mac и Windows: все шрифты и надстройка Word внутри файла (~270 МБ), ничего не скачивается. На странице установки.',
+         'В малой программе установки теперь одна кнопка «Онлайн».'],
+    en: ['An offline setup program for Mac and Windows: all fonts and the Word add-in are inside the file (~270 MB), nothing is downloaded. On the install page.',
+         'The small setup program now has one button, “Online”.'],
+    ar: ['برنامج تثبيت دون إنترنت لـMac وWindows: جميع الخطوط وإضافة Word داخل الملف (نحو 270 ميغابايت)، ولا يُنزَّل شيء. في صفحة التثبيت.',
+         'برنامج التثبيت الصغير فيه الآن زر واحد: «عبر الإنترنت».'] }],
   ['3.8', '2026-10-10', { uz: 'Ўрнатиш дастури', ru: 'Программа установки', en: 'Setup program', ar: 'برنامج التثبيت' }, {
     uz: ['Mac учун ойнали ўрнатиш дастури: «Онлайн» тугмаси энг янги нусхани юклаб ўрнатади, нима ўрнатилишини (шрифтлар, Word қўшимчаси) белгилаш ва жараённи кузатиш мумкин; Terminal керак эмас.',
          'Windows учун худди шундай дастурнинг синов нусхаси.'],
