@@ -6,13 +6,17 @@
 <title>Khatt al-Quran</title>
 <script>
 /* The site is the download address for everything (users do not go to GitHub): files too big for the site
-   live in the releases of the public repo, and quran.abdulloh.org/download/<file> leads to them, so a new
+   live in the releases of the public repo (one per version, kept), and quran.abdulloh.org/download/ leads to them, so a new
    release appears here by itself. GitHub Pages serves this page for every unknown address. */
 (function () {
-  var m = location.pathname.match(/\/download\/([\w.\-]+)$/);
+  var REL = 'https://github.com/abdullohukr/quranuz/releases/download/';
+  // /download/<release>/<file>: any version "v3.8.2", "installer" (newest offline programs), "fonts"
+  var m = location.pathname.match(/\/download\/(v\d+(?:\.\d+)*|installer|fonts)\/([\w.\-]+)$/);
+  if (m) { location.replace(REL + m[1] + '/' + m[2]); return; }
+  // /download/<file>: the newest offline programs and the QPC packages
+  m = location.pathname.match(/\/download\/([\w.\-]+)$/);
   if (!m) return;
-  var f = m[1], REL = 'https://github.com/abdullohukr/quranuz/releases/download/';
-  var tag = /^MyQuran-QPC-V\d-fonts\.zip$/.test(f) ? 'fonts' : /^Khatt-al-Quran-Setup-Offline-/.test(f) ? 'installer' : '';
+  var f = m[1], tag = /^MyQuran-QPC-V\d-fonts\.zip$/.test(f) ? 'fonts' : /^Khatt-al-Quran-Setup-Offline-/.test(f) ? 'installer' : '';
   if (tag) location.replace(REL + tag + '/' + f);
 })();
 </script>

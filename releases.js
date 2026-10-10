@@ -1,6 +1,11 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.8.3', '2026-10-10', { uz: 'Барча нашрлар сайтда', ru: 'Все версии на сайте', en: 'All versions on the site', ar: 'كل الإصدارات في الموقع' }, {
+    uz: ['«Янгиликлар» саҳифасида ҳар бир нашр ёнида унинг ўрнатиш дастурлари (Mac, Windows; онлайн ва интернетсиз): шу нашрдан бошлаб олдинги нусхаларни ҳам юклаб олиш мумкин.'],
+    ru: ['На странице «Что нового» у каждой версии есть её программы установки (Mac, Windows; онлайн и без интернета): начиная с этой версии можно скачать и прошлые.'],
+    en: ['On the “What’s new” page every version has its own setup programs (Mac, Windows; online and offline): from this version on, earlier versions can be downloaded too.'],
+    ar: ['في صفحة «ما الجديد» لكل إصدار برامج التثبيت الخاصة به (Mac وWindows، عبر الإنترنت ودونه): ابتداءً من هذا الإصدار يمكن تنزيل الإصدارات السابقة أيضًا.'] }],
   ['3.8.2', '2026-10-10', { uz: 'Ҳаммаси сайтдан', ru: 'Всё с сайта', en: 'Everything from the site', ar: 'كل شيء من الموقع' }, {
     uz: ['Интернетсиз ўрнатиш дастури ва QPC шрифтлари энди quran.abdulloh.org манзилидан юклаб олинади; ўрнатиш саҳифаси ҳар бир янги нусханинг ҳажми ва санасини ўзи кўрсатади.',
          'Ўзбекча панелда «Янгиланишлар» ўрнига «Дастур нашри».'],
