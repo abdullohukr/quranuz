@@ -279,3 +279,6 @@ footer.author .app-version { white-space: nowrap; }
 .fmt-preview { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius-s); padding: 8px 12px; max-height: 220px; overflow: auto; }
 .fmt-preview p { margin: 4px 0; }
 .fmt-preview .arabic { font-size: 22px; margin: 0; }
+
+/* picture background colour (settings → Insert) */
+input[type=color].sample { width: 28px; height: 22px; padding: 0; border: 1px solid var(--line, #8884); border-radius: 4px; background: none; cursor: pointer; }

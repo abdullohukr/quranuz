@@ -10,6 +10,7 @@
     brackets: true, auza: false, basmala: false, ref: false, trRef: true, newPara: true,
     ayahNums: true, hizb: true, sajda: true, waqf: true,
     arFont: '', arSize: 18, arBold: false, uzFont: '', uzSize: 14, arText: false,
+    picBgOn: false, picBg: '#ffffff',                  // the Arabic as a picture: transparent unless a background is switched on
     auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0    // 0 / '': automatic
   };
   var QUOTES = { en: ['“', '”'], tr: ['“', '”'], id: ['“', '”'], ms: ['“', '”'], az: ['“', '”'], zh: ['“', '”'],
@@ -720,6 +721,7 @@
       });
       if (cur.length) lines.push({ toks: cur, w: width, last: true });
       cv.width = W; cv.height = Math.max(1, lines.length) * lineH;
+      if (settings.picBgOn && /^#[0-9a-f]{6}$/i.test(settings.picBg)) { ctx.fillStyle = settings.picBg; ctx.fillRect(0, 0, W, cv.height); }   // else: transparent PNG
       ctx.textBaseline = 'alphabetic'; ctx.direction = 'rtl'; ctx.textAlign = 'right';
       var align = F.align || 'both';
       lines.forEach(function (ln, i) {
@@ -869,7 +871,7 @@
 
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
-            ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara',
+            ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', picBgOn: 's-picbg-on', picBg: 's-picbg',
             ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf' };
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
   function langLabel(x) {

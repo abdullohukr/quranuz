@@ -325,6 +325,7 @@
     off: { uz: 'ўчирилган', uz_latn: 'oʻchirilgan', ar: 'متوقّف', en: 'off', ru: 'выключено', tr: 'kapalı', fr: 'désactivé', de: 'aus',
       es: 'desactivado', kk: 'өшірулі', ky: 'өчүрүлгөн', tg: 'хомӯш', az: 'söndürülüb', fa: 'خاموش', ur: 'بند', id: 'nonaktif',
       ms: 'dimatikan', bn: 'বন্ধ', hi: 'बंद', zh: '已关闭', ko: '꺼짐', ja: 'オフ' },
+    picBg: { uz: 'Расм фони (қўшилмаса — шаффоф)', uz_latn: 'Rasm foni (qoʻshilmasa — shaffof)', ar: 'خلفية الصورة (شفافة إن لم تُفعَّل)', en: 'Picture background (transparent unless on)', ru: 'Фон картинки (без включения — прозрачный)', tr: 'Resim arka planı (kapalıysa şeffaf)', fr: 'Fond de l’image (transparent si désactivé)', de: 'Bildhintergrund (ohne Haken transparent)', es: 'Fondo de la imagen (transparente si está apagado)', kk: 'Сурет фоны (қосылмаса — мөлдір)', ky: 'Сүрөттүн фону (күйгүзүлбөсө — тунук)', tg: 'Заминаи расм (агар фаъол нест — шаффоф)', az: 'Şəkil fonu (söndürülübsə şəffaf)', fa: 'پس‌زمینه تصویر (بدون فعال‌سازی شفاف)', ur: 'تصویر کا پس منظر (بند ہو تو شفاف)', id: 'Latar gambar (transparan jika mati)', ms: 'Latar gambar (lutsinar jika mati)', bn: 'ছবির পটভূমি (বন্ধ থাকলে স্বচ্ছ)', hi: 'चित्र की पृष्ठभूमि (बंद हो तो पारदर्शी)', zh: '图片背景（关闭时为透明）', ko: '그림 배경 (꺼 두면 투명)', ja: '画像の背景（オフなら透明）' },
     'script.quranLibrary': { uz_latn: 'Quran Library' }
   };
   Object.keys(ALL).forEach(function (k) { for (var l in ALL[k]) if (L[l][k] == null) L[l][k] = ALL[k][l]; });

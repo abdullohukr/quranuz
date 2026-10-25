@@ -426,6 +426,36 @@
     return out;
   }
 
-  return { Quran: Quran, normArabic: normArabic, normText: normText, arNum: arNum,
+  /* What each place the panel (or the text itself) goes to can do. One rule for all of them: insert as TEXT
+     whenever the host can show it correctly, and as a PICTURE (transparent, see ayahPicture) only when it cannot.
+       text      the host has editable text with fonts and right-to-left
+       qpcText   the QPC page fonts (one font per mushaf page, private-use glyphs) work as text there
+       picture   the host can take a picture
+     `online` hosts (Word on the web / iPad) have no locally installed fonts, so qpcText is false there. */
+  var HOSTS = {
+    word:       { text: true,  qpcText: true,  picture: true },
+    wordOnline: { text: true,  qpcText: false, picture: true },
+    gdocs:      { text: true,  qpcText: false, picture: false },
+    wp:         { text: true,  qpcText: false, picture: false },
+    ext:        { text: true,  qpcText: false, picture: false },
+    indesign:   { text: true,  qpcText: true,  picture: true },
+    incopy:     { text: true,  qpcText: true,  picture: true },
+    photoshop:  { text: true,  qpcText: false, picture: true },
+    illustrator:{ text: true,  qpcText: false, picture: true },
+    aftereffects:{ text: true, qpcText: false, picture: true },
+    premiere:   { text: false, qpcText: false, picture: true },
+    telegram:   { text: true,  qpcText: false, picture: true },
+    mcp:        { text: true,  qpcText: false, picture: false }
+  };
+  /* 'text' | 'picture' | 'plain' (QPC is not possible there: use the ordinary Unicode mushaf in that host) */
+  function renderMode(host, isQpcScript) {
+    var h = HOSTS[host];
+    if (!h) return 'text';
+    if (!isQpcScript) return h.text ? 'text' : (h.picture ? 'picture' : 'plain');
+    if (h.text && h.qpcText) return 'text';
+    return h.picture ? 'picture' : 'plain';
+  }
+
+  return { Quran: Quran, HOSTS: HOSTS, renderMode: renderMode, normArabic: normArabic, normText: normText, arNum: arNum,
            tafsirParagraphs: tafsirParagraphs, stripHtml: stripHtml, AUZA: AUZA, BASMALA: BASMALA };
 });
