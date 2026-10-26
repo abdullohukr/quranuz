@@ -171,7 +171,8 @@
 
   /* "2:255", "2 255", "2:1-5", "Бақара 30-37", "Al-Baqarah 5", "البقرة ٢٥٥", "2" */
   Quran.prototype.parseRef = function (q) {
-    q = toLatinDigits(q.trim());
+    q = toLatinDigits(q.trim()).replace(/\s+/g, ' ');
+    if (q.length > 80) return null;                     // a reference is short; long text is a text search (also keeps the regexes below fast)
     var m = q.match(/^(\d{1,3})(?:\s*[:.,\s]\s*(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?)?$/);
     var sura, from, to;
     if (m) { sura = +m[1]; from = m[2] ? +m[2] : 1; to = m[3] ? +m[3] : from; }
