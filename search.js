@@ -1,0 +1,853 @@
+/* Search in every language: the client of the static search index of translations, tafsirs and
+   transliterations, the encoder / decoder of its chunks and an in-memory builder. No DOM: the site, the Word panel,
+   the extension, Node (index builder, MCP) and Cloudflare Workers use the same code. The text normalisation is
+   QuranCore.text (web/core.js), shared with the builder. Format: docs/search-index-format.md.
+
+     var s = QuranSearch.Search({ fetch, bases?, version?, cache?, timeout? });
+     s.run(query, { quran, scope, langs, uiLang, selected, prefer, kinds, limit, onProgress, onResults })
+       -> Promise<[{sura, aya, score, hits: [{src, kind, ranges? | wordFrom, wordTo}]}]> (never rejects;
+          the array has .warnings [] and .partial when a part of the data could not be loaded)            */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
+  else root.QuranSearch = factory(root.QuranCore);
+})(typeof self !== 'undefined' ? self : this, function (core) {
+  'use strict';
+
+  var T = core.text;
+  var AYAHS = 6236;
+  var DEFAULT_LANGS = ['en', 'ar', 'ru', 'tr', 'uz'];
+  // web/search/ is published with the site: the main branch of the public repository (not qul-data)
+  var BASES = ['https://quran.abdulloh.org/', 'https://cdn.jsdelivr.net/gh/abdullohukr/quranuz@main/',
+               'https://raw.githubusercontent.com/abdullohukr/quranuz/main/'];
+  var MAGIC = [0x4B, 0x51, 0x53, 0x31];          // "KQS1"
+  var MAX_QUERY = 200, MAX_WORDS = 12, MAX_PAIRS = 24, MAX_POSTINGS = 600000;
+
+  /* ---------- bytes ---------- */
+  function utf8(s) {
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(s);
+    var out = [];
+    for (var i = 0; i < s.length; i++) {
+      var c = s.charCodeAt(i);
+      if (c >= 0xD800 && c < 0xDC00 && i + 1 < s.length) { c = 0x10000 + ((c - 0xD800) << 10) + (s.charCodeAt(++i) - 0xDC00); }
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0 | c >> 6, 0x80 | c & 63);
+      else if (c < 0x10000) out.push(0xE0 | c >> 12, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+      else out.push(0xF0 | c >> 18, 0x80 | c >> 12 & 63, 0x80 | c >> 6 & 63, 0x80 | c & 63);
+    }
+    return new Uint8Array(out);
+  }
+  var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8', { fatal: true }) : null;
+  function fromUtf8(b, from, to) {
+    if (decoder) return decoder.decode(b.subarray(from, to));
+    var s = '';
+    for (var i = from; i < to;) {
+      var c = b[i++];
+      if (c >= 0xF0) c = (c & 7) << 18 | (b[i++] & 63) << 12 | (b[i++] & 63) << 6 | b[i++] & 63;
+      else if (c >= 0xE0) c = (c & 15) << 12 | (b[i++] & 63) << 6 | b[i++] & 63;
+      else if (c >= 0xC0) c = (c & 31) << 6 | b[i++] & 63;
+      if (c >= 0x10000) { c -= 0x10000; s += String.fromCharCode(0xD800 + (c >> 10), 0xDC00 + (c & 1023)); }
+      else s += String.fromCharCode(c);
+    }
+    return s;
+  }
+  function Writer() { this.b = new Uint8Array(1024); this.n = 0; }
+  Writer.prototype.room = function (k) {
+    if (this.n + k <= this.b.length) return;
+    var nb = new Uint8Array(Math.max(this.b.length * 2, this.n + k)); nb.set(this.b.subarray(0, this.n)); this.b = nb;
+  };
+  Writer.prototype.u = function (v) {            // unsigned LEB128
+    this.room(5);
+    while (v >= 0x80) { this.b[this.n++] = v & 0x7F | 0x80; v = Math.floor(v / 128); }
+    this.b[this.n++] = v;
+  };
+  Writer.prototype.bytes = function (a) { this.room(a.length); this.b.set(a, this.n); this.n += a.length; };
+  Writer.prototype.done = function () { return this.b.slice(0, this.n); };
+  function varLen(v) { var k = 1; while (v >= 0x80) { v = Math.floor(v / 128); k++; } return k; }
+  function readU(b, st) {                        // st = {p}
+    var v = 0, mul = 1, c;
+    do {
+      if (st.p >= b.length) throw new Error('chunk: truncated');
+      c = b[st.p++]; v += (c & 0x7F) * mul; mul *= 128;
+      if (mul > 0x800000000) throw new Error('chunk: bad number');
+    } while (c & 0x80);
+    return v;
+  }
+
+  /* ---------- chunks ----------
+     entries: [{term, df, pairs: [ayah, src, ayah, src, ...] (any order) | null, ayahs: [ayah, ...] | null}]
+     A term is written as a bitmap of ayahs (no sources) when it has more than `bitmapPairs` pairs.          */
+  function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+  function encodeChunk(entries, opts) {
+    opts = opts || {};
+    var ayahs = opts.ayahs || AYAHS, bitmapPairs = opts.bitmapPairs || 8000;
+    var list = entries.slice().sort(function (x, y) { return cmp(x.term, y.term); });
+    var w = new Writer(), prev = new Uint8Array(0);
+    w.bytes(MAGIC);
+    w.u(list.length);
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i], tb = utf8(e.term), sh = 0;
+      if (i && list[i - 1].term === e.term) throw new Error('chunk: duplicate term ' + e.term);
+      while (sh < tb.length && sh < prev.length && tb[sh] === prev[sh]) sh++;
+      w.u(sh); w.u(tb.length - sh); w.bytes(tb.subarray(sh));
+      prev = tb;
+      var body = new Writer(), mode = 0, df;
+      if (e.pairs && e.pairs.length / 2 <= bitmapPairs) {
+        var codes = [];
+        for (var k = 0; k < e.pairs.length; k += 2) codes.push(e.pairs[k] * 65536 + e.pairs[k + 1]);
+        codes.sort(function (a, b) { return a - b; });
+        var last = 0, lastCode = -1, cnt = 0;
+        for (var j = 0; j < codes.length; j++) {
+          if (codes[j] === lastCode) continue;
+          var ay = Math.floor(codes[j] / 65536), src = codes[j] % 65536;
+          body.u(ay - last); body.u(src); last = ay; lastCode = codes[j]; cnt++;
+        }
+        df = cnt;
+      } else {
+        mode = 1;
+        var bm = new Uint8Array(Math.ceil(ayahs / 8)), set = e.ayahs || [];
+        if (e.pairs) { set = []; for (var m = 0; m < e.pairs.length; m += 2) set.push(e.pairs[m]); }
+        for (var q = 0; q < set.length; q++) bm[set[q] >> 3] |= 1 << (set[q] & 7);
+        body.bytes(bm);
+        df = e.df || (e.pairs ? e.pairs.length / 2 : set.length);
+      }
+      var bb = body.done();
+      w.u(df); w.u(mode); w.u(bb.length); w.bytes(bb);
+    }
+    return w.done();
+  }
+
+  /* -> {terms[], find(term) -> i | -1, prefix(p, max) -> [i], df(i), mode(i), postings(i) -> Uint32Array
+         [ayah, src, ...] (mode 0) | ayahs(i) -> [ayah] (mode 1)}; throws on a broken chunk */
+  function decodeChunk(buf, ayahs) {
+    var b = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    ayahs = ayahs || AYAHS;
+    for (var i = 0; i < 4; i++) if (b[i] !== MAGIC[i]) throw new Error('chunk: not a search chunk');
+    var st = { p: 4 }, n = readU(b, st);
+    if (n > b.length) throw new Error('chunk: bad term count');
+    var terms = new Array(n), dfs = new Array(n), modes = new Array(n), offs = new Array(n), lens = new Array(n);
+    var prev = new Uint8Array(0);
+    for (var k = 0; k < n; k++) {
+      var sh = readU(b, st), sl = readU(b, st);
+      if (sh > prev.length || st.p + sl > b.length) throw new Error('chunk: bad term');
+      var tb = new Uint8Array(sh + sl);
+      tb.set(prev.subarray(0, sh)); tb.set(b.subarray(st.p, st.p + sl), sh);
+      st.p += sl; prev = tb;
+      terms[k] = fromUtf8(tb, 0, tb.length);
+      dfs[k] = readU(b, st); modes[k] = readU(b, st); lens[k] = readU(b, st); offs[k] = st.p;
+      if (modes[k] > 1 || st.p + lens[k] > b.length) throw new Error('chunk: bad postings');
+      if (modes[k] === 0 ? dfs[k] * 2 > lens[k] : lens[k] !== Math.ceil(ayahs / 8)) throw new Error('chunk: bad postings size');
+      st.p += lens[k];
+    }
+    function find(t) {
+      var lo = 0, hi = n - 1;
+      while (lo <= hi) { var m = (lo + hi) >> 1; if (terms[m] < t) lo = m + 1; else if (terms[m] > t) hi = m - 1; else return m; }
+      return -1;
+    }
+    return {
+      terms: terms, bytes: b.length,
+      find: find,
+      prefix: function (p, max) {
+        var lo = 0, hi = n, out = [];
+        while (lo < hi) { var m = (lo + hi) >> 1; if (terms[m] < p) lo = m + 1; else hi = m; }
+        for (var j = lo; j < n && out.length < (max || 50) && terms[j].slice(0, p.length) === p; j++) out.push(j);
+        return out;
+      },
+      df: function (j) { return dfs[j]; },
+      mode: function (j) { return modes[j]; },
+      postings: function (j) {
+        var s = { p: offs[j] }, end = offs[j] + lens[j], out = new Uint32Array(dfs[j] * 2), c = 0, ay = 0;
+        while (s.p < end && c < out.length) { ay += readU(b, s); out[c++] = ay; out[c++] = readU(b, s); }
+        if (ay >= ayahs) throw new Error('chunk: ayah out of range');
+        return c === out.length ? out : out.subarray(0, c);
+      },
+      ayahs: function (j) {
+        var out = [];
+        for (var a = 0; a < ayahs; a++) if (b[offs[j] + (a >> 3)] & 1 << (a & 7)) out.push(a);
+        return out;
+      }
+    };
+  }
+
+  /* the group of a term: by the script of its first letter (manifest.groups[<set>-<script>]) */
+  function scriptKey(term) {
+    var c = term.charCodeAt(0);
+    if (c >= 0xD800 && c < 0xDC00) c = 0x10000 + ((c - 0xD800) << 10) + (term.charCodeAt(1) - 0xDC00);
+    return (T.scriptOf(c) || 'Zyyy').toLowerCase();
+  }
+  function textBlock(ayah, size) { return Math.floor(ayah / size); }
+
+  /* ---------- an in-memory builder (tests, small indexes; the big one uses the same functions) ----------
+     b = new Builder({ayahs}); b.addSource({id, lang, kind: 'tr'|'tafsir'|'translit', name, script?}, texts[6236]);
+     b.finish({groups?, chunkBytes?, bitmapPairs?, text?, version?}) -> {version, manifest, files: {path: Uint8Array|string}} */
+  function Builder(o) { o = o || {}; this.ayahs = o.ayahs || AYAHS; this.sources = []; this.texts = []; this.post = {}; }
+  Builder.prototype.addSource = function (meta, texts) {
+    var n = this.sources.length, stem = meta.lang === 'ar', post = this.post, sample = '';
+    if (n >= 65535) throw new Error('too many sources');
+    for (var i = 0; i < this.ayahs; i++) {
+      var t = texts[i];
+      if (!t) continue;
+      t = core.stripHtml(t);
+      if (sample.length < 2000) sample += ' ' + t;
+      var seen = {}, list = T.terms(t, { stem: stem });
+      for (var k = 0; k < list.length; k++) {
+        var term = list[k];
+        if (seen[term] || term.length > 60) continue;
+        seen[term] = 1;
+        (post[term] || (post[term] = [])).push(i * 65536 + n);
+      }
+    }
+    this.sources.push({ id: meta.id, lang: meta.lang, script: meta.script || T.detectScript(sample) || 'Latn',
+                        kind: meta.kind || 'tr', stem: stem ? 1 : 0, name: meta.name || meta.id, text: 1 });
+    this.texts.push(texts);
+    return n;
+  };
+  Builder.prototype.finish = function (o) {
+    o = o || {};
+    var self = this, chunkBytes = o.chunkBytes || 65536, bitmapPairs = o.bitmapPairs || 8000, block = o.block || 195;
+    var langs = {};
+    this.sources.forEach(function (s) { langs[s.lang] = 1; });
+    var sets = o.groups || [{ name: 'core', langs: DEFAULT_LANGS }];
+    var inSet = {};
+    sets.forEach(function (g) { g.langs.forEach(function (l) { inSet[l] = 1; }); });
+    Object.keys(langs).sort().forEach(function (l) { if (!inSet[l]) sets.push({ name: l, langs: [l] }); });
+    if (o.all) sets.push({ name: 'all', langs: Object.keys(langs).sort() });
+    var files = {}, groups = {};
+    var terms = Object.keys(this.post).sort(cmp);
+    sets.forEach(function (g) {
+      var allowed = {};
+      self.sources.forEach(function (s, n) { if (g.langs.indexOf(s.lang) >= 0) allowed[n] = 1; });
+      var byScript = {}, langsOf = {};
+      terms.forEach(function (term) {
+        var codes = self.post[term], pairs = [], key = scriptKey(term), ls = langsOf[key] || (langsOf[key] = {});
+        for (var i = 0; i < codes.length; i++) {
+          var src = codes[i] % 65536;
+          if (allowed[src]) { pairs.push(Math.floor(codes[i] / 65536), src); ls[self.sources[src].lang] = 1; }
+        }
+        if (!pairs.length) return;
+        (byScript[key] || (byScript[key] = [])).push({ term: term, pairs: pairs });
+      });
+      Object.keys(byScript).forEach(function (sk) {
+        var name = g.name + '-' + sk, list = byScript[sk], first = [], sizes = [], cur = [], size = 0;
+        function flush() {
+          if (!cur.length) return;
+          var bin = encodeChunk(cur, { ayahs: self.ayahs, bitmapPairs: bitmapPairs });
+          files[name + '/' + first.length + '.bin'] = bin;
+          first.push(first.length ? cur[0].term : '');
+          sizes.push(bin.length);
+          cur = []; size = 0;
+        }
+        list.forEach(function (e) {
+          var est = e.pairs.length / 2 > bitmapPairs ? Math.ceil(self.ayahs / 8) : e.pairs.length * 1.6;
+          if (size && size + est > chunkBytes) flush();
+          cur.push(e); size += est + e.term.length + 6;
+        });
+        flush();
+        // the languages that really have words of this script in the group
+        groups[name] = { set: g.name, langs: Object.keys(langsOf[sk]).sort(), script: sk, first: first, bytes: sizes };
+      });
+    });
+    var docs = 0;
+    if (o.text !== false) {
+      this.texts.forEach(function (texts, n) {
+        for (var b = 0; b * block < self.ayahs; b++) {
+          var arr = [];
+          for (var a = b * block; a < Math.min(self.ayahs, (b + 1) * block); a++) {
+            arr.push(texts[a] ? core.stripHtml(texts[a]).replace(/\s+/g, ' ').trim() : null);
+          }
+          files['text/' + n + '/' + b + '.json'] = JSON.stringify(arr);
+        }
+      });
+    }
+    this.texts.forEach(function (texts) { for (var a = 0; a < self.ayahs; a++) if (texts[a]) docs++; });
+    var manifest = { format: 1, ayahs: this.ayahs, docs: docs, defaultLangs: DEFAULT_LANGS, sources: this.sources,
+                     groups: groups, text: o.text !== false ? { block: block, count: Math.ceil(this.ayahs / block) } : null };
+    var version = o.version || hashFiles(files, JSON.stringify(manifest));
+    manifest.version = version;
+    var out = {};
+    Object.keys(files).forEach(function (p) { out['search/v' + version + '/' + p] = files[p]; });
+    out['search/v' + version + '/manifest.json'] = JSON.stringify(manifest);
+    out['search/current.json'] = JSON.stringify({ version: version });
+    return { version: version, manifest: manifest, files: out };
+  };
+  function hashFiles(files, extra) {                // FNV-1a over the paths and bytes: the version of the index
+    var h = 0x811C9DC5;
+    function mix(c) { h ^= c; h = Math.imul ? Math.imul(h, 0x01000193) >>> 0 : (h * 0x01000193) >>> 0; }
+    Object.keys(files).sort().forEach(function (p) {
+      var f = files[p], i;
+      for (i = 0; i < p.length; i++) mix(p.charCodeAt(i) & 255);
+      if (typeof f === 'string') for (i = 0; i < f.length; i++) mix(f.charCodeAt(i) & 255);
+      else for (i = 0; i < f.length; i++) mix(f[i]);
+    });
+    for (var j = 0; j < extra.length; j++) mix(extra.charCodeAt(j) & 255);
+    return ('0000000' + h.toString(16)).slice(-8);
+  }
+
+  /* ---------- loading: memory LRU -> Cache API -> mirrors (own site -> jsDelivr -> raw GitHub) ---------- */
+  function now() { return Date.now(); }
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function tick() { return typeof setTimeout === 'function' ? delay(0) : Promise.resolve(); }
+
+  function Loader(o) {
+    o = o || {};
+    this.fetch = o.fetch || (typeof fetch === 'function' ? function (u, init) { return fetch(u, init); } : null);
+    this.bases = (o.bases || (o.base ? [].concat(o.base) : BASES)).map(function (b) { return /\/$/.test(b) ? b : b + '/'; });
+    this.timeout = o.timeout || 6000;
+    this.retries = o.retries != null ? o.retries : 1;
+    this.retryPause = o.retryPause != null ? o.retryPause : 400;
+    this.deadMs = o.deadMs || 60000;
+    this.max = o.concurrency || 4;
+    this.memMax = Math.min(o.memoryBytes || 24e6, 30e6);
+    this.cacheName = o.cache === false ? null : (typeof o.cache === 'string' ? o.cache : 'khatt-search-v1');
+    this.cacheObj = o.cache && typeof o.cache === 'object' ? o.cache : null;
+    this.mem = {}; this.order = []; this.memBytes = 0;
+    this.inflight = {}; this.dead = {}; this.active = 0; this.queue = [];
+    this.stats = { network: 0, cache: 0, memory: 0, failed: 0, bytes: 0 };
+  }
+  Loader.prototype.remember = function (key, value, bytes) {
+    if (this.mem[key]) return;
+    this.mem[key] = { v: value, n: bytes }; this.order.push(key); this.memBytes += bytes;
+    while (this.memBytes > this.memMax && this.order.length > 1) {
+      var k = this.order.shift(); this.memBytes -= this.mem[k].n; delete this.mem[k];
+    }
+  };
+  Loader.prototype.recall = function (key) {
+    var e = this.mem[key];
+    if (!e) return undefined;
+    var i = this.order.indexOf(key);
+    if (i >= 0 && i !== this.order.length - 1) { this.order.splice(i, 1); this.order.push(key); }
+    return e.v;
+  };
+  Loader.prototype.slot = function (fn) {          // at most `max` requests at a time
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      function run() {
+        self.active++;
+        var p;
+        try { p = Promise.resolve(fn()); } catch (e) { p = Promise.reject(e); }
+        p.then(function (v) { done(); resolve(v); }, function (e) { done(); reject(e); });
+      }
+      function done() { self.active--; var nx = self.queue.shift(); if (nx) nx(); }
+      if (self.active < self.max) run(); else self.queue.push(run);
+    });
+  };
+  Loader.prototype.cache = function () {
+    if (this.cacheObj) return Promise.resolve(this.cacheObj);
+    if (!this.cacheName || typeof caches === 'undefined' || !caches.open) return Promise.resolve(null);
+    var self = this;
+    if (!this._cache) this._cache = caches.open(this.cacheName).catch(function () { self.cacheName = null; return null; });
+    return this._cache;
+  };
+  Loader.prototype.fetchOne = function (url) {
+    var self = this, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer;
+    return new Promise(function (resolve, reject) {
+      timer = setTimeout(function () { if (ctl) try { ctl.abort(); } catch (e) { /* ignore */ } reject(new Error('timeout')); }, self.timeout);
+      var p;
+      try { p = self.fetch(url, ctl ? { signal: ctl.signal } : undefined); } catch (e) { p = Promise.reject(e); }
+      Promise.resolve(p).then(function (r) {
+        if (!r || !r.ok) { var er = new Error('HTTP ' + (r ? r.status : '?')); er.status = r ? r.status : 0; throw er; }
+        return r.arrayBuffer().then(function (ab) { return { r: r, ab: ab }; });
+      }).then(function (v) { clearTimeout(timer); resolve(v); }, function (e) { clearTimeout(timer); reject(e); });
+    });
+  };
+  /* path relative to the bases; type 'bin' | 'json'; immutable: the answer may be kept in the Cache API forever */
+  Loader.prototype.get = function (path, type, immutable) {
+    var self = this, key = type + ':' + path, m = this.recall(key);
+    if (m !== undefined) { this.stats.memory++; return Promise.resolve(m); }
+    if (this.inflight[key]) return this.inflight[key];
+    var cacheKey = 'https://khatt-search.invalid/' + path;
+    function parse(ab) {
+      if (type === 'bin') return { v: new Uint8Array(ab), n: ab.byteLength * 3 };
+      var text = fromUtf8(new Uint8Array(ab), 0, ab.byteLength);
+      return { v: JSON.parse(text), n: text.length * 2 + 64 };
+    }
+    var p = (immutable ? this.cache().then(function (c) {
+      return c ? c.match(cacheKey).then(function (r) { return r ? r.arrayBuffer() : null; }).catch(function () { return null; }) : null;
+    }) : Promise.resolve(null)).then(function (ab) {
+      if (ab) {
+        try { var got = parse(ab); self.stats.cache++; return got; }
+        catch (e) { self.cache().then(function (c) { if (c && c['delete']) c['delete'](cacheKey); }); }
+      }
+      return self.network(path).then(function (res) {
+        var got = parse(res.ab);                     // throws on broken data: the caller skips this part
+        self.stats.network++; self.stats.bytes += res.ab.byteLength;
+        if (immutable) self.cache().then(function (c) {
+          if (c && typeof Response !== 'undefined') return c.put(cacheKey, new Response(res.ab));
+        }).catch(function () { /* full storage: no cache */ });
+        return got;
+      });
+    }).then(function (got) {
+      delete self.inflight[key];
+      self.remember(key, got.v, got.n);
+      return got.v;
+    }, function (e) { delete self.inflight[key]; self.stats.failed++; throw e; });
+    this.inflight[key] = p;
+    return p;
+  };
+  Loader.prototype.network = function (path) {
+    var self = this;
+    if (!this.fetch) return Promise.reject(new Error('no fetch'));
+    function round(attempt) {
+      var t = now(), live = self.bases.filter(function (b) { return !(self.dead[b] > t); });
+      if (!live.length) live = self.bases.slice(0, 1);          // all marked down: try the first one once
+      var all404 = true, lastErr = null;
+      function next(k) {
+        if (k >= live.length) {
+          if (!all404 && attempt < self.retries) return delay(self.retryPause * (attempt + 1)).then(function () { return round(attempt + 1); });
+          var e = lastErr || new Error('not loaded'); e.path = path; throw e;
+        }
+        var base = live[k];
+        return self.slot(function () { return self.fetchOne(base + path); }).then(null, function (e) {
+          lastErr = e;
+          if (e.status === 404) return next(k + 1);           // the file is not there (yet): try the next mirror
+          all404 = false;
+          self.dead[base] = now() + self.deadMs;               // down / slow: leave it alone for a while
+          return next(k + 1);
+        });
+      }
+      return next(0);
+    }
+    return round(0);
+  };
+
+  /* ---------- the query ---------- */
+  function cleanQuery(q) {
+    q = String(q == null ? '' : q).replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim();
+    return q.length > MAX_QUERY ? q.slice(0, MAX_QUERY) : q;
+  }
+  /* query words: [{forms: [{t, stem}], need: [term] (pairs: all of them), prefix}] */
+  function queryWords(q, prefixLast) {
+    var words = T.queryTerms(q).slice(0, MAX_WORDS), pairs = 0, out = [];
+    words.forEach(function (w, i) {
+      if (w.pairs) {
+        w.pairs.forEach(function (p) { if (pairs++ < MAX_PAIRS) out.push({ t: p, stem: p, prefix: false, pair: true }); });
+      } else out.push({ t: w.t, stem: w.stem, prefix: prefixLast && i === words.length - 1 && w.t.length >= 3, pair: false });
+    });
+    return out;
+  }
+  function scriptOfQuery(q) { return T.detectScript(q); }
+
+  /* text normalised for a phrase check / highlighting: stem: the Arabic-language variant */
+  function normFor(s, stem) {
+    return T.tokenize(s).map(function (t) { return t.pairs ? t.t : stem && T.scriptOf(t.t.charCodeAt(0)) === 'Arab' ? T.arStem(t.t) : t.t; }).join(' ');
+  }
+  function phraseIn(text, q, stem) {
+    var nq = normFor(q, stem);
+    if (!nq) return false;
+    var nt = ' ' + normFor(text, stem) + ' ';
+    return nt.indexOf(' ' + nq) >= 0 || /[^\s]/.test(nq) && T.tokenize(q).some(function (t) { return t.pairs; }) && nt.indexOf(nq) >= 0;
+  }
+
+  /* [[start, end]] of the query words in text (original offsets), for any script */
+  function highlight(text, q, script) {
+    text = String(text || '');
+    var toks = T.tokenize(text, true), qw = T.queryTerms(cleanQuery(q)), ranges = [];
+    if (!qw.length) return [];
+    var stem = script === 'Arab' || script === 'ar';
+    qw.forEach(function (w, wi) {
+      var last = wi === qw.length - 1;
+      toks.forEach(function (tk) {
+        if (w.pairs || tk.pairs) {
+          var from = 0, p;
+          while ((p = tk.t.indexOf(w.t, from)) >= 0) {
+            ranges.push([tk.a[p], tk.b[p + w.t.length - 1]]);
+            from = p + Math.max(1, w.t.length);
+          }
+          return;
+        }
+        var ok = tk.t === w.t || last && w.t.length >= 3 && tk.t.slice(0, w.t.length) === w.t;
+        if (!ok && T.scriptOf(tk.t.charCodeAt(0)) === 'Arab') ok = T.arStem(tk.t) === w.stem && (stem || w.stem.length >= 3);
+        if (ok) ranges.push([tk.a[0], tk.b[tk.t.length - 1]]);
+      });
+    });
+    ranges.sort(function (x, y) { return x[0] - y[0] || x[1] - y[1]; });
+    var out = [];
+    ranges.forEach(function (r) {
+      var l = out[out.length - 1];
+      if (l && r[0] <= l[1]) l[1] = Math.max(l[1], r[1]); else out.push([r[0], r[1]]);
+    });
+    return out;
+  }
+
+  /* groups to read for the terms of one script: the cheapest that cover the wanted languages */
+  function pickGroups(manifest, script, langs) {
+    var want = {}, left = 0, cands = [];
+    langs.forEach(function (l) { if (!want[l]) { want[l] = 1; left++; } });
+    Object.keys(manifest.groups || {}).forEach(function (name) {
+      var g = manifest.groups[name];
+      if (g.script !== script) return;
+      var hit = g.langs.filter(function (l) { return want[l]; }).length;
+      if (!hit) return;
+      var avg = g.bytes && g.bytes.length ? g.bytes.reduce(function (a, b) { return a + b; }, 0) / g.bytes.length : 32768;
+      // a request + its bytes + the share of languages nobody asked for
+      cands.push({ name: name, g: g, cost: 1 + avg / 65536 + 0.5 * (g.langs.length - hit) / g.langs.length });
+    });
+    var exist = {};
+    cands.forEach(function (c) { c.g.langs.forEach(function (l) { if (want[l]) exist[l] = 1; }); });
+    left = Object.keys(exist).length;
+    var out = [], covered = {};
+    while (left > 0) {
+      var best = null, bestV = 0;
+      cands.forEach(function (c) {
+        var gain = c.g.langs.filter(function (l) { return exist[l] && !covered[l]; }).length;
+        if (gain && gain / c.cost > bestV) { bestV = gain / c.cost; best = c; }
+      });
+      if (!best) break;
+      best.g.langs.forEach(function (l) { if (exist[l] && !covered[l]) { covered[l] = 1; left--; } });
+      out.push(best.name);
+      cands.splice(cands.indexOf(best), 1);
+    }
+    return out;
+  }
+  function chunkOf(group, term) {                   // last chunk whose first term <= term
+    var f = group.first, lo = 0, hi = f.length - 1;
+    while (lo < hi) { var m = (lo + hi + 1) >> 1; if (f[m] <= term) lo = m; else hi = m - 1; }
+    return lo;
+  }
+
+  /* ---------- the client ---------- */
+  function Search(o) {
+    if (!(this instanceof Search)) return new Search(o);
+    o = o || {};
+    this.o = o;
+    this.loader = new Loader(o);
+    this.version = o.version || null;
+    this.root = o.root || 'search/';
+  }
+  Search.prototype.manifest = function () {
+    var self = this;
+    if (this._manifest) return Promise.resolve(this._manifest);
+    var v = this.version ? Promise.resolve(this.version) : this.loader.get(this.root + 'current.json', 'json', false).then(function (c) {
+      if (!c || !c.version || !/^[\w.-]{1,64}$/.test(c.version)) throw new Error('bad current.json');
+      return c.version;
+    });
+    return v.then(function (ver) {
+      return self.loader.get(self.root + 'v' + ver + '/manifest.json', 'json', true).then(function (m) {
+        if (!m || m.format !== 1 || !m.sources || !m.groups) throw new Error('bad manifest');
+        m.version = ver;
+        self._manifest = m; self.version = ver;
+        return m;
+      });
+    });
+  };
+  Search.prototype.chunk = function (m, group, n) {
+    var self = this, key = 'dec:' + group + '/' + n, have = this.loader.recall(key);
+    if (have) return Promise.resolve(have);
+    return this.loader.get(this.root + 'v' + m.version + '/' + group + '/' + n + '.bin', 'bin', true).then(function (u8) {
+      var d = decodeChunk(u8, m.ayahs);
+      self.loader.remember(key, d, 64 + d.terms.length * 48);
+      return d;
+    });
+  };
+  Search.prototype.block = function (m, src, b) {
+    return this.loader.get(this.root + 'v' + m.version + '/text/' + src + '/' + b + '.json', 'json', true);
+  };
+
+  /* which sources take part */
+  function chooseSources(m, opts) {
+    var scope = opts.scope || 'default', langs = {}, ids = {}, kinds = null;
+    (opts.selected || []).forEach(function (id) { ids[id] = 1; });
+    if (opts.kinds) { kinds = {}; [].concat(opts.kinds).forEach(function (k) { kinds[k] = 1; }); }
+    if (scope === 'default') {
+      DEFAULT_LANGS.concat(opts.langs || [], opts.uiLang ? [opts.uiLang] : []).forEach(function (l) { langs[l] = 1; });
+      m.sources.forEach(function (s) { if (ids[s.id]) langs[s.lang] = 1; });
+    }
+    var out = [];
+    m.sources.forEach(function (s, n) {
+      if (kinds && !kinds[s.kind]) return;
+      if (scope === 'selected' ? ids[s.id] : scope === 'all' ? true : langs[s.lang] || ids[s.id]) out.push(n);
+    });
+    return out;
+  }
+
+  var K1 = 1.2, B = 0.6;
+  Search.prototype.run = function (query, opts) {
+    var self = this;
+    opts = opts || {};
+    var warnings = [], limit = Math.max(1, Math.min(opts.limit || 50, 500)), progress = opts.onProgress || function () {};
+    var q = cleanQuery(query), quran = opts.quran || null, local = [];
+    function finish(list, partial) {
+      list.warnings = warnings; list.partial = !!partial;
+      return list;
+    }
+    function emit(list, stage) { if (opts.onResults) try { opts.onResults(list, { stage: stage }); } catch (e) { /* the caller's problem */ } }
+    if (!q) return Promise.resolve(finish([], false));
+    // 1. at once: the Quran itself (reference, Arabic, transliteration) and the translations already in memory
+    try {
+      if (quran && quran.searchSmart) local = quran.searchSmart(q, { limit: limit, translations: opts.localTranslations }).map(fromLocal);
+      else if (quran) local = quran.search(q, opts.localTranslations || [], limit).map(function (r, k) { return { sura: r.sura, aya: r.aya, score: 20 - k / 100, hits: [{ src: 'quran', kind: 'ar' }] }; });
+    } catch (e) { warnings.push('local: ' + e.message); }
+    emit(local.slice(0, limit), 'local');
+    progress({ stage: 'local', done: 0, total: 1 });
+    if (opts.scope === 'quran') return Promise.resolve(finish(local.slice(0, limit), false));
+
+    var m, prefixLast = !/\s$/.test(String(query == null ? '' : query));
+    return this.manifest().then(function (man) {
+      m = man;
+      return self._index(q, m, opts, warnings, progress, prefixLast);
+    }).then(function (found) {
+      // nothing in the default languages: search everywhere (not when parts of the data are missing)
+      // (not for Arabic-script words the Quran itself has found: that would read every Urdu / Persian / … group)
+      var widen = !found.length && !warnings.length && (opts.scope || 'default') === 'default' && opts.widen !== false &&
+                  !(local.length && scriptOfQuery(q) === 'Arab');
+      if (!widen) return found;
+      var o2 = {};
+      for (var k in opts) o2[k] = opts[k];
+      o2.scope = 'all';
+      return self._index(q, m, o2, warnings, progress, prefixLast);
+    }).then(function (found) {
+      var list = merge(local, found, limit);
+      emit(clean(list.slice(0, limit), true), 'index');
+      return self._confirm(q, m, list, opts, warnings);
+    }).then(function (list) {
+      list = clean(list.slice(0, limit), false);
+      emit(list, 'final');
+      progress({ stage: 'done', done: 1, total: 1 });
+      return finish(list, warnings.length > 0);
+    }, function (e) {
+      warnings.push('index: ' + (e && e.message || e));
+      var list = local.slice(0, limit);
+      emit(list, 'final');
+      return finish(list, true);
+    }).then(null, function (e) {                       // never rejects
+      warnings.push('search: ' + (e && e.message || e));
+      return finish(local.slice(0, limit), true);
+    });
+  };
+
+  /* searchSmart score -> the scale of the index scores (Arabic of the Quran above everything else) */
+  function fromLocal(r) {
+    var s = r.score, t = core.SEARCH_TIERS;
+    var score = s >= t.ref ? 100 + (s - t.ref) / 10 : s >= t.part ? 30 + (s - 500) / 20 : s >= t.trAll ? 12 + (s - t.trAll) / 10 : 3 + (s - t.translit) / 8;
+    return { sura: r.sura, aya: r.aya, score: Math.round(score * 100) / 100, hits: r.hits, match: r.match };
+  }
+  function merge(local, found, limit) {
+    var by = {}, out = [];
+    local.concat(found).forEach(function (r) {
+      var k = r.sura + ':' + r.aya, e = by[k];
+      if (!e) { by[k] = e = { sura: r.sura, aya: r.aya, score: r.score, hits: r.hits.slice(), _i: r._i }; out.push(e); return; }
+      if (e._i == null) e._i = r._i;
+      e.score = Math.max(e.score, r.score) + 0.5;      // found both in the Quran and in the translations
+      r.hits.forEach(function (h) { if (!e.hits.some(function (x) { return x.src === h.src; })) e.hits.push(h); });
+    });
+    out.sort(function (x, y) { return y.score - x.score || x.sura - y.sura || x.aya - y.aya; });
+    return out.slice(0, Math.max(limit, 50));
+  }
+
+  /* copies without the internal fields (copy: for the intermediate results, the final ones are cleaned in place) */
+  function clean(list, copy) {
+    return list.map(function (r) {
+      var o = copy ? { sura: r.sura, aya: r.aya, score: r.score, hits: [] } : r;
+      var hits = (r.hits || []).map(function (h) {
+        var x = {};
+        for (var k in h) if (k.charAt(0) !== '_') x[k] = h[k];
+        return x;
+      });
+      o.hits = hits;
+      if (!copy) { delete r._i; delete r._all; }
+      return o;
+    });
+  }
+
+  Search.prototype._index = function (q, m, opts, warnings, progress, prefixLast) {
+    var self = this, srcs = chooseSources(m, opts);
+    if (!srcs.length) return Promise.resolve([]);
+    var allowed = {}, needStem = false, needFull = false;
+    srcs.forEach(function (n) { var st = !!m.sources[n].stem; allowed[n] = st ? 2 : 1; if (st) needStem = true; else needFull = true; });
+    var langs = {};
+    srcs.forEach(function (n) { langs[m.sources[n].lang] = 1; });
+    langs = Object.keys(langs);
+    var results = {};
+    // the query as typed first; the other alphabet (Latin <-> Cyrillic) only when that found little
+    function runVariant(v) {
+      var jobs = {}, words = queryWords(v.q, prefixLast && opts.prefix !== false);
+      words.forEach(function (w) {
+        var forms = [];
+        if (needFull) forms.push(w.t);
+        if (needStem && forms.indexOf(w.stem) < 0) forms.push(w.stem);
+        w.at = [];
+        forms.forEach(function (t) {
+          pickGroups(m, scriptKey(t), langs).forEach(function (g) {
+            var gr = m.groups[g], n = chunkOf(gr, t), key = g + '/' + n;
+            jobs[key] = jobs[key] || { g: g, n: n };
+            w.at.push({ t: t, key: key });
+            // a part of a word: its longer forms may begin in the next chunks (at most 2 more)
+            for (var nx = n + 1; w.prefix && nx <= n + 2 && nx < gr.first.length && gr.first[nx].slice(0, t.length) === t; nx++) {
+              key = g + '/' + nx;
+              jobs[key] = jobs[key] || { g: g, n: nx };
+              w.at.push({ t: t, key: key });
+            }
+          });
+        });
+      });
+      var keys = Object.keys(jobs), chunks = {}, done = 0;
+      progress({ stage: 'chunks', done: 0, total: keys.length });
+      return Promise.all(keys.map(function (k) {
+        return self.chunk(m, jobs[k].g, jobs[k].n).then(function (d) { chunks[k] = d; }, function (e) {
+          warnings.push('chunk ' + k + ': ' + (e && e.message || e));
+        }).then(function () { progress({ stage: 'chunks', done: ++done, total: keys.length }); });
+      })).then(tick).then(function () { scoreVariant({ v: v, words: words }, chunks, m, allowed, opts, results); });
+    }
+    function good() { var n = 0; for (var k in results) n++; return n; }
+    var step = runVariant({ q: q, w: 1 }), sc = scriptOfQuery(q), other = null;
+    if (sc === 'Latn' && /[a-z]/i.test(q)) other = T.latToCyr(q);
+    if (sc === 'Cyrl') other = T.cyrToLat(q);
+    if (other && T.norm(other) !== T.norm(q)) step = step.then(function () { if (good() < 3) return runVariant({ q: other, w: 0.8 }); });
+    return step.then(function () {
+      var list = Object.keys(results).map(function (k) { return results[k]; });
+      list.sort(function (x, y) { return y.score - x.score || x.i - y.i; });
+      return list.slice(0, 200).map(function (r) {
+        var loc = opts.quran ? opts.quran.locate(r.i) : locate(r.i);
+        return { sura: loc.sura, aya: loc.aya, score: Math.round(r.score * 100) / 100, hits: r.hits, _i: r.i, _all: r.all };
+      });
+    });
+  };
+
+  var SURA_AYAHS = null;
+  function locate(i) {                              // without a Quran object: the standard ayah counts
+    if (!SURA_AYAHS) SURA_AYAHS = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6];
+    var s = 0;
+    while (s < 113 && i >= SURA_AYAHS[s]) { i -= SURA_AYAHS[s]; s++; }
+    return { sura: s + 1, aya: i + 1 };
+  }
+
+  /* BM25 without term frequencies (a term is in an ayah of a source or not; the ayah length from the Arabic text).
+     An (ayah, source) needs every word, or with three words or more the words that carry half of the weight (idf).
+     Memory stays small: only the postings of the rarest words make candidates, the frequent ones only add to them. */
+  function scoreVariant(p, chunks, m, allowed, opts, results) {
+    var words = p.words.slice(0, 30), nW = words.length;
+    if (!nW) return;
+    var N = m.docs || m.ayahs * m.sources.length, total = 0, budget = MAX_POSTINGS, idf = [], lists = [];
+    var W = opts.quran && opts.quran._words ? opts.quran._words() : null, avg = 0;
+    if (W) { W.tables(); for (var a = 0; a < W.len.length; a++) avg += W.len[a]; avg /= W.len.length; }
+    words.forEach(function (w, j) {
+      var df = 0, ls = [];
+      w.at.forEach(function (at) {
+        var d = chunks[at.key];
+        if (!d) return;
+        var ids = w.prefix ? d.prefix(at.t, 40) : [], exact = d.find(at.t);
+        if (exact >= 0 && ids.indexOf(exact) < 0) ids.unshift(exact);
+        ids.forEach(function (id) {
+          df += d.df(id);
+          ls.push({ d: d, id: id, exact: id === exact, full: at.t === w.t, stem: at.t === w.stem });
+        });
+      });
+      idf[j] = Math.log(1 + (N - df + 0.5) / (df + 0.5));
+      total += idf[j];
+      lists[j] = { ls: ls, df: df };
+    });
+    if (!total) return;
+    var strict = nW <= 2;
+    // the words that make candidates: the rarest ones, until the rest weigh less than half (all: the rarest one)
+    var order = words.map(function (w, j) { return j; }).sort(function (x, y) { return lists[x].df - lists[y].df; });
+    var makes = {}, rest = total;
+    for (var o = 0; o < order.length; o++) {
+      if (strict ? o > 0 : rest < total * 0.5) break;
+      makes[order[o]] = 1; rest -= idf[order[o]];
+    }
+    var cand = typeof Map !== 'undefined' ? new Map() : null, candObj = cand ? null : {};
+    var pre = {}, anyMask = new Array(m.ayahs), anyPre = {};
+    function get(c) { return cand ? cand.get(c) : candObj[c]; }
+    function set(c, v) { if (cand) cand.set(c, v); else candObj[c] = v; }
+    order.forEach(function (j) {
+      var bit = 1 << j;
+      lists[j].ls.forEach(function (l) {
+        if (l.d.mode(l.id) === 1) {
+          l.d.ayahs(l.id).forEach(function (ay) { anyMask[ay] = (anyMask[ay] | 0) | bit; if (!l.exact) anyPre[ay] = (anyPre[ay] | 0) | bit; });
+          return;
+        }
+        if (budget <= 0) return;
+        var ps = l.d.postings(l.id);
+        budget -= ps.length / 2;
+        for (var k = 0; k < ps.length; k += 2) {
+          var src = ps[k + 1], kind = allowed[src];
+          if (!kind || (kind === 2 ? !l.stem : !l.full)) continue;
+          var code = ps[k] * 65536 + src, v = get(code);
+          if (v === undefined && !makes[j]) continue;
+          set(code, (v | 0) | bit);
+          if (!l.exact) pre[code] = (pre[code] | 0) | bit;
+        }
+      });
+    });
+    var fullMask = nW >= 31 ? -1 : (1 << nW) - 1;
+    function weigh(mask, pmask) {
+      var sc = 0, cnt = 0;
+      for (var j = 0; j < nW; j++) if (mask & 1 << j) { cnt++; sc += idf[j] * (pmask & 1 << j ? 0.7 : 1); }
+      return { sc: sc, cnt: cnt };
+    }
+    var per = {};
+    function consider(i, src, mask, pmask) {
+      var w = weigh(mask, pmask), whole = (mask & fullMask) === fullMask;
+      if (!whole && (strict || w.sc < total * 0.5)) return;
+      var len = W ? W.len[i] / (avg || 1) : 1, norm = (K1 + 1) / (1 + K1 * (1 - B + B * len));
+      var s = src >= 0 ? m.sources[src] : null, v = w.sc * norm * (whole ? 1 : 0.8 * w.sc / total);
+      if (s && s.kind === 'tafsir') v *= 0.5;
+      if (s && opts.prefer && opts.prefer.indexOf(s.id) >= 0) v += 0.5;
+      var e = per[i] || (per[i] = { best: 0, full: 0, hits: [] });
+      if (whole) e.full++;
+      if (v > e.best) e.best = v;
+      if (s) e.hits.push({ src: s.id, kind: s.kind, _n: src, v: v });
+    }
+    function each(fn) { if (cand) cand.forEach(function (v, c) { fn(c, v); }); else for (var c in candObj) fn(+c, candObj[c]); }
+    each(function (code, mask) {
+      var i = Math.floor(code / 65536);
+      consider(i, code % 65536, mask | (anyMask[i] | 0), (pre[code] | 0) | (anyPre[i] | 0));
+    });
+    for (var i = 0; i < m.ayahs; i++) if (anyMask[i] && !per[i]) consider(i, -1, anyMask[i], anyPre[i] | 0);
+    Object.keys(per).forEach(function (key) {
+      var i = +key, e = per[key];
+      if (!e.best) return;
+      e.hits.sort(function (x, y) { return y.v - x.v; });
+      var score = (e.best + 0.1 * Math.log(1 + e.full)) * p.v.w, r = results[i];
+      if (!r || score > r.score) {
+        results[i] = { i: i, score: score, all: e.full,
+                       hits: e.hits.slice(0, 8).map(function (h) { return { src: h.src, kind: h.kind, _n: h._n }; }) };
+      }
+    });
+  }
+
+  /* the phrase in the text of the best sources of the first results: +2, and the ranges to highlight */
+  Search.prototype._confirm = function (q, m, list, opts, warnings) {
+    var self = this, top = list.slice(0, opts.confirm != null ? opts.confirm : 10), maxBlocks = opts.maxBlocks || 2;
+    if (!m.text || !top.length) return Promise.resolve(list);
+    var want = {}, order = [];
+    top.forEach(function (r) {
+      // translations first: their blocks are small, a tafsir block can be large
+      var hs = (r.hits || []).filter(function (h) { return h.kind !== 'tafsir'; }).concat((r.hits || []).filter(function (h) { return h.kind === 'tafsir'; }));
+      hs.slice(0, 2).forEach(function (h) {
+        if (h._n == null || !m.sources[h._n] || !m.sources[h._n].text) return;
+        var b = textBlock(r._i, m.text.block), key = h._n + '/' + b;
+        if (!want[key]) { want[key] = { src: h._n, b: b }; order.push(key); }
+      });
+    });
+    order = order.slice(0, maxBlocks);
+    var blocks = {};
+    return Promise.all(order.map(function (k) {
+      return self.block(m, want[k].src, want[k].b).then(function (arr) { if (Array.isArray(arr)) blocks[k] = arr; },
+        function (e) { warnings.push('text ' + k + ': ' + (e && e.message || e)); });
+    })).then(function () {
+      var multi = T.tokenize(q).length > 1 || T.tokenize(q).some(function (t) { return t.pairs; });
+      list.forEach(function (r) {
+        var confirmed = false;
+        (r.hits || []).forEach(function (h) {
+          if (h._n == null) return;
+          var s = m.sources[h._n], b = textBlock(r._i, m.text.block), arr = blocks[h._n + '/' + b];
+          var text = arr && arr[r._i - b * m.text.block];
+          if (typeof text !== 'string') return;
+          h.ranges = highlight(text, q, s.stem ? 'ar' : s.script);
+          if (multi && !confirmed && phraseIn(text, q, !!s.stem)) confirmed = true;
+        });
+        if (confirmed) r.score = Math.round((r.score + 2) * 100) / 100;
+      });
+      list.sort(function (x, y) { return y.score - x.score || x.sura - y.sura || x.aya - y.aya; });
+      return list;
+    }).then(null, function (e) { warnings.push('confirm: ' + e.message); return list; });
+  };
+
+  return {
+    Search: Search, Builder: Builder, Loader: Loader,
+    encodeChunk: encodeChunk, decodeChunk: decodeChunk, scriptKey: scriptKey, chunkOf: chunkOf, pickGroups: pickGroups,
+    highlight: highlight, phraseIn: phraseIn, norm: T.norm, terms: T.terms, queryTerms: T.queryTerms, detectScript: T.detectScript,
+    DEFAULT_LANGS: DEFAULT_LANGS, BASES: BASES, AYAHS: AYAHS,
+    limits: { query: MAX_QUERY, words: MAX_WORDS, pairs: MAX_PAIRS, postings: MAX_POSTINGS }
+  };
+});

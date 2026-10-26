@@ -11,6 +11,9 @@
     ayahNums: true, hizb: true, sajda: true, waqf: true,
     arFont: '', arSize: 18, arBold: false, uzFont: '', uzSize: 14, arText: false,
     picBgOn: false, picBg: '#ffffff',                  // the Arabic as a picture: transparent unless a background is switched on
+    extInsert: 'ask',                                  // browser extension, editors on web pages: 'ask' | 'text' | 'picture'
+    votd: true,                                        // the "Ayah of the day" card at the top
+    searchScope: 'default',                            // search in every language: 'default' | 'selected' | 'all'
     auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0    // 0 / '': automatic
   };
   var QUOTES = { en: ['“', '”'], tr: ['“', '”'], id: ['“', '”'], ms: ['“', '”'], az: ['“', '”'], zh: ['“', '”'],
@@ -90,9 +93,9 @@
   function setUiLang(lang) {
     settings.uiLang = lang; i18n.set(lang); saveSettings();
     $('s-ui-lang').value = lang;
-    applyI18n(); fillSuraSelect(); fillScriptSelect(); fillThemes(); render(); footerLinks();
+    applyI18n(); fillSuraSelect(); fillScriptSelect(); fillThemes(); render(); footerLinks(); drawMarks(); drawVotd();
     if (quran) $('status').textContent = '';          // applyI18n put the "Loading…" text back
-    if (results.length) runSearch();
+    if (searchQ.trim()) runSearch();
     fmtEditor();                                     // Format tab: part names, font placeholder, preview
     if ($('settings').open) {                        // language names in the lists follow the interface
       insertTab();
@@ -249,7 +252,7 @@
       setUiLang(settings.uiLang);                      // saves the settings too
       el.classList.add('hide');
       setTimeout(function () { el.remove(); }, 400);
-      useScript(settings.script).then(ensureData).then(function () { render(); });
+      useScript(settings.script).then(ensureData).then(function () { render(); drawVotd(); });
     });
   }
 
@@ -359,12 +362,26 @@
       $('script-note').hidden = !sc.ayahByAyah;
     });
   }
+  /* Where a QPC page font comes from, in this order (the browser takes the next one by itself when one does not answer):
+     our own site, GitHub (jsDelivr, then raw), Hugging Face, archive.org (copies we upload), and only last the QUL CDN.
+     Same list: wordpress plugin, extension. Files are exactly the QUL ones (tools/mirror_qpc_fonts.py, manifest.json). */
+  var QPC_FONT_HOSTS = [
+    'fonts/qpc/',
+    'https://cdn.jsdelivr.net/gh/abdullohukr/quranuz@main/fonts/qpc/',
+    'https://raw.githubusercontent.com/abdullohukr/quranuz/main/fonts/qpc/',
+    'https://huggingface.co/datasets/abdullohukr/khatt-al-quran-fonts/resolve/main/qpc/',
+    'https://archive.org/download/khatt-al-quran-fonts/qpc/'
+  ];
+  function qpcSources(sc, page) {
+    var v = sc.id.replace('qpc_', ''), f = v + '/p' + page + '.woff2';
+    return QPC_FONT_HOSTS.map(function (h) { return h + f; }).concat([sc.pageFont.url.replace('{n}', page)]);
+  }
   /* QPC page fonts: one web font per Mushaf page, loaded when a page is shown */
   function pageFamily(page) {
     var sc = scriptById(settings.script), fam = 'MQ-' + sc.id + '-p' + page;
     if (!loadedFonts[fam]) {
       var st = document.createElement('style');
-      st.textContent = "@font-face{font-family:'" + fam + "';src:url('" + sc.pageFont.url.replace('{n}', page) + "');font-display:block}";
+      st.textContent = "@font-face{font-family:'" + fam + "';src:" + qpcSources(sc, page).map(function (u) { return "url('" + u + "') format('woff2')"; }).join(',') + ";font-display:block}";
       document.head.appendChild(st); loadedFonts[fam] = 1;
     }
     return "'" + sc.pageFont.families[page - 1] + "','" + fam + "'";
@@ -413,8 +430,8 @@
   /* Word on the web and on iPad cannot use fonts installed on the computer. The QPC page mushafs
      (604 fonts each) are offered there too: their Arabic paragraph is inserted as a picture drawn
      with the web fonts (see ayahPicture), with the Unicode text as its alternative text. */
-  function usableScripts() {                          // no page-font mushafs in the embedding hosts (no picture there); WordPress gets them as text (its plugin loads the page fonts)
-    return HOST && !ADOBE && HOST !== 'wp' ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
+  function usableScripts() {                          // no page-font mushafs in Google Docs (no picture there); WordPress and the browser extension get them as text (they load the page fonts)
+    return HOST === 'gdocs' ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
   }
   /* Word on the web / iPad: no locally installed fonts and no add-in fonts. Ordinary mushafs go in as text in
      a Microsoft cloud font that renders the Quran text correctly (checked: ayah signs ۝١, all marks);
@@ -430,43 +447,276 @@
       .filter(function (x, i, a) { return x && a.indexOf(x) === i; }).map(function (f) { return '<option value="' + esc(f) + '">'; }).join('');
   }
 
-  /* ---------- search ---------- */
-  function runSearch() {
+  /* ---------- search ----------
+     1. At once (synchronous, as before): the Quran and the translations already loaded (quran.search).
+     2. Right after it (a pause in typing, or at once for a search from the extension / a drop): every language, through
+        the static search index (web/search.js, docs/search-index-format.md). Its results stream in (local, index,
+        final) into the same list: an ayah already shown gets the fragment of the translation with the words marked and
+        the name of its source, new ayahs go below. Nothing that is shown moves or blinks, the chosen item stays chosen.
+        A newer text makes the older search stale (deepSeq): its answers are dropped. Search.run never rejects; nothing
+        reaches the screen as an error, only a quiet line when a part of the sources could not be loaded.
+     The list shows PAGE items, "Show more" the next ones. */
+  var PAGE = 30, shown = PAGE, byKey = {}, searchQ = '', deepSeq = 0, deepTimer, deepClient = null, deepState = null, srcIndex = null;
+  function runSearch(now) {
     var q = $('q').value;
+    searchQ = q; deepSeq++; clearTimeout(deepTimer); deepState = null;
     var ref = q.trim() && quran.parseRef(q);
     if (ref) setSel(ref.sura, ref.from, ref.to);
     var trs = activeTranslations().filter(function (x) { return x.data; }).map(function (x) { return x.data; });
-    results = quran.search(q, trs, 200);
-    var list = $('results'); list.innerHTML = '';
-    $('status').textContent = q.trim() ? (results.length ? t('results', { n: results.length }) : t('notFound')) : '';
-    var first = activeTranslations().filter(function (x) { return x.data; })[0];
-    results.forEach(function (r, i) {
-      var li = document.createElement('li');
-      li.dataset.i = i;
-      li.innerHTML = '<div class="ref">' + esc(uiSuraName(r.sura)) + ' <bdi>' + r.sura + ':' + r.aya + '</bdi> · <bdi>' +
-        esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar" dir="rtl">' + ayahHtml(r.sura, r.aya) + '</div>' +
-        (settings.withTr && first ? '<div class="small muted" dir="' + (first.dir || 'auto') + '">' +
-          esc(QuranCore.stripHtml(first.data[quran.index(r.sura, r.aya)]).slice(0, 160)) + '…</div>' : '');
-      list.appendChild(li);
-    });
+    results = quran.search(q, trs, 200).map(function (r) { return { sura: r.sura, aya: r.aya, hits: [] }; });
+    byKey = {};
+    results.forEach(function (r) { byKey[r.sura + ':' + r.aya] = r; });
+    shown = PAGE;
+    $('results').innerHTML = '';
+    deepNote('', false);
+    if (!ref && q.trim().length >= 2 && window.QuranSearch) {
+      deepState = { seq: deepSeq, q: q, done: false, blocks: 0 };
+      $('deep-note').dataset.state = 'run';
+      deepTimer = setTimeout(function () { deepSearch(q); }, now ? 0 : 50);
+    }
+    drawResults(); statusLine();
   }
-  /* an ayah in the chosen mushaf (page fonts, tajweed colours) */
-  function ayahHtml(s, a) {
+  function statusLine() {
+    var q = searchQ.trim();
+    $('status').textContent = !q ? '' : results.length ? t('results', { n: results.length }) : deepState && !deepState.done ? '' : t('notFound');
+  }
+  function deepNote(text, busy, state) {
+    var el = $('deep-note');
+    el.dataset.state = state || (busy ? 'run' : '');         // run | done (read by tools/test-embed/run.mjs)
+    if (el.textContent !== text) el.textContent = text;
+    el.classList.toggle('busy', !!busy && !!text);
+  }
+  /* the items up to `shown` that are not drawn yet are added; the drawn ones are only repainted when they change */
+  function drawResults() {
+    var list = $('results');
+    for (var i = list.children.length; i < Math.min(shown, results.length); i++) {
+      var li = document.createElement('li');
+      li.dataset.i = i; results[i].li = li; results[i].html = '';
+      list.appendChild(li);
+      paintResult(results[i]);
+    }
+    $('more').hidden = results.length <= shown;
+  }
+  function paintResult(r) {
+    if (!r.li) return;
+    var html = resultHtml(r);
+    if (html !== r.html) { r.html = html; r.li.innerHTML = html; }
+  }
+  function resultHtml(r) {
+    var first = activeTranslations().filter(function (x) { return x.data; })[0], ar = arHit(r);
+    var h = '<div class="ref">' + esc(uiSuraName(r.sura)) + ' <bdi>' + r.sura + ':' + r.aya + '</bdi> · <bdi>' +
+      esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar" dir="rtl">' + ayahHtml(r.sura, r.aya, ar) + '</div>';
+    if (r.frag) h += '<div class="hit" dir="' + r.frag.dir + '">' + r.frag.html + '</div>';
+    else if (settings.withTr && first) h += '<div class="small muted" dir="' + (first.dir || 'auto') + '">' +
+      esc(QuranCore.stripHtml(first.data[quran.index(r.sura, r.aya)]).slice(0, 160)) + '…</div>';
+    var names = sourceNames(r);
+    if (names) h += '<div class="src">' + esc(t('foundIn')) + ' ' + names + '</div>';
+    return h;
+  }
+  /* the hit in the Arabic of the Quran (its words are marked and selected on a click); the hit whose text is shown */
+  function arHit(r) {
+    var h = (r.hits || []).filter(function (x) { return x.src === 'quran' && x.wordFrom != null; })[0];
+    return h && sameWords(r.sura, r.aya) ? h : null;
+  }
+  function textHit(r) {
+    var hs = (r.hits || []).filter(function (x) { return x.src !== 'quran'; });
+    function has(x) { var c = trById(x.src), m = srcMeta(x.src); return !!(c && c.data) || !!(m && m.text); }
+    function rank(x) { return (has(x) ? 0 : 4) + (x.ranges && x.ranges.length ? 0 : 2) + (x.kind === 'tafsir' ? 1 : 0); }
+    return hs.slice().sort(function (a, b) { return rank(a) - rank(b); })[0] || null;
+  }
+  /* word numbers of the search are those of the Unicode text: the chosen mushaf must split the ayah the same way */
+  var baseQuran = null;
+  function sameWords(s, a) {
+    if (quran.ayahs === quran.baseAyahs) return true;
+    if (!baseQuran) { baseQuran = Object.create(quran); baseQuran.ayahs = quran.baseAyahs; baseQuran.pages = null; baseQuran.colors = null; }
+    return baseQuran.spans(s, a).words.length === quran.spans(s, a).words.length;
+  }
+  /* a source of the index or of the catalog: {name, lang, dir} */
+  function srcMeta(id) {
+    var m = deepClient && deepClient._manifest;            // read by Search.run before it gives index results
+    if (m && !srcIndex) { srcIndex = {}; m.sources.forEach(function (s, n) { srcIndex[s.id] = n; }); }
+    var c = trById(id) || tfById(id), s = m && srcIndex[id] != null ? m.sources[srcIndex[id]] : null;
+    if (!c && !s) return null;
+    var script = s ? s.script : '';
+    return { name: (c && c.name) || (s && s.name) || id, lang: (c && c.lang) || (s && s.lang) || '', n: s ? srcIndex[id] : null,
+             dir: c && c.dir || (/^(Arab|Hebr|Thaa|Syrc)$/.test(script) ? 'rtl' : 'auto'), script: s && s.stem ? 'ar' : script, text: !!(s && s.text) };
+  }
+  function langName(l) {
+    var ui = langNames.ui && langNames.ui[settings.uiLang] || {};
+    return ui[l] || (langNames.ui && langNames.ui.en || {})[l] || (langNames.native || {})[l] || l;
+  }
+  function sourceNames(r) {
+    var seen = {}, list = [];
+    (r.hits || []).forEach(function (h) { if (!seen[h.src]) { seen[h.src] = 1; list.push(h.src); } });
+    if (!list.length) return '';
+    var out = list.slice(0, 2).map(function (id) {
+      if (id === 'quran') return '<b>' + esc(t('arabicText')) + '</b>';
+      var x = srcMeta(id);
+      return x ? '<b>' + esc(x.name) + '</b>' + (x.lang ? ' (' + esc(langName(x.lang)) + ')' : '') : '<b>' + esc(id) + '</b>';
+    }).join(', ');
+    return out + (list.length > 2 ? ' +' + (list.length - 2) : '');
+  }
+  /* the text around the place with the most marked words; the text is escaped piece by piece, only <mark> is ours */
+  function fragmentHtml(text, ranges) {
+    var MAX = 220, best = 0, bestN = 0;
+    for (var i = 0; i < ranges.length; i++) {
+      var n = 0;
+      for (var j = i; j < ranges.length && ranges[j][1] <= ranges[i][0] + MAX - 60; j++) n += ranges[j][1] - ranges[j][0] > 2 ? 2 : 1;
+      if (n > bestN) { bestN = n; best = i; }
+    }
+    var first = ranges.length ? ranges[best][0] : 0, start = Math.max(0, first - 50);
+    if (start > 0) { var sp = text.lastIndexOf(' ', start); if (sp > 0 && first - sp < 110) start = sp + 1; }
+    var end = Math.min(text.length, start + MAX);
+    if (end < text.length) { var e2 = text.indexOf(' ', end); if (e2 > 0 && e2 - end < 30) end = e2; }
+    var h = start > 0 ? '…' : '', pos = start;
+    ranges.forEach(function (rg) {
+      var a = Math.max(rg[0], pos), b = Math.min(rg[1], end);
+      if (b <= a) return;
+      h += esc(text.slice(pos, a)) + '<mark>' + esc(text.slice(a, b)) + '</mark>';
+      pos = b;
+    });
+    return h + esc(text.slice(pos, end)) + (end < text.length ? '…' : '');
+  }
+  /* the texts of the shown items: a loaded translation, else a text block of the index (at most a few new blocks a time) */
+  function hitText(id, i) {
+    var c = trById(id);
+    if (c && c.data) return Promise.resolve({ text: QuranCore.stripHtml(c.data[i] || '').replace(/\s+/g, ' ').trim(), local: true });
+    var m = deepClient && deepClient._manifest, x = srcMeta(id);
+    if (!m || !m.text || !x || x.n == null || !x.text) return Promise.resolve(null);
+    var b = Math.floor(i / m.text.block);
+    return deepClient.block(m, x.n, b).then(function (arr) { var s = Array.isArray(arr) && arr[i - b * m.text.block]; return typeof s === 'string' ? { text: s } : null; });
+  }
+  /* Two at a time, in the order of the list; a newer query stops the queue of the older one, so its text blocks do not
+     stand in the way of the new search (the loader has only 4 requests at a time). */
+  function loadFragments() {
+    var st = deepState; if (!st) return;
+    st.active = st.active || 0;
+    function key(h) { return h.src + (h.ranges ? '+' : ''); }
+    function next() {
+      if (st !== deepState) return null;
+      for (var k = 0; k < Math.min(shown, results.length); k++) {
+        var r = results[k], h = textHit(r);
+        if (!h || (r.frag && r.frag.src === h.src && (r.frag.ranged || !h.ranges)) || r.loading === key(h)) continue;
+        return { r: r, h: h };
+      }
+      return null;
+    }
+    function pump() {
+      while (st === deepState && st.active < 2 && st.blocks < shown + 10) {
+        var job = next(); if (!job) return;
+        run(job.r, job.h);
+      }
+    }
+    function run(r, h) {
+      st.active++; st.blocks++; r.loading = key(h);
+      hitText(h.src, quran.index(r.sura, r.aya)).then(function (x) {
+        if (st !== deepState || !x || !x.text) return;
+        var meta = srcMeta(h.src) || {}, ranges = !x.local && h.ranges ? h.ranges : QuranSearch.highlight(x.text, st.q, meta.script);
+        r.frag = { src: h.src, ranged: !!h.ranges, dir: meta.dir || 'auto', html: fragmentHtml(x.text, ranges) };
+        paintResult(r);
+      }).catch(function () { /* no text: the source name is shown all the same */ }).then(function () { st.active--; pump(); });
+    }
+    pump();
+  }
+  function searcher() {
+    if (!deepClient && window.QuranSearch) try {
+      var own = /^https?:/.test(location.protocol) ? new URL('./', location.href).href : null;
+      deepClient = QuranSearch.Search({ bases: (own ? [own] : []).concat(QuranSearch.BASES.filter(function (b) { return b !== own; })) });
+    } catch (e) { deepClient = null; }
+    return deepClient;
+  }
+  function chosenSources() { return settings.translations.concat(settings.tafsirs); }
+  var DEFAULT_LANGS = ['en', 'ar', 'ru', 'tr', 'uz'];
+  function defaultLangs(ids) {
+    var l = {};
+    DEFAULT_LANGS.concat([i18n.code()]).forEach(function (x) { l[x] = 1; });
+    ids.forEach(function (id) { var x = srcMeta(id); if (x && x.lang) l[x.lang] = 1; });
+    return l;
+  }
+  function sourceCount(scope, ids) {
+    var m = deepClient && deepClient._manifest; if (!m) return 0;
+    var langs = defaultLangs(ids), want = {};
+    ids.forEach(function (id) { want[id] = 1; });
+    return m.sources.filter(function (s) { return scope === 'selected' ? want[s.id] : scope === 'all' || langs[s.lang] || want[s.id]; }).length;
+  }
+  /* Search.run found nothing in the main languages and looked in all of them */
+  function widened(list, scope, ids) {
+    if (scope !== 'default') return false;
+    var langs = defaultLangs(ids), any = false, other = true;
+    list.forEach(function (r) {
+      (r.hits || []).forEach(function (h) {
+        if (h.src === 'quran') return;
+        var x = srcMeta(h.src); if (!x) return;
+        any = true; if (langs[x.lang]) other = false;
+      });
+    });
+    return any && other;
+  }
+  function takeDeep(list) {
+    (list || []).forEach(function (x) {
+      var k = x.sura + ':' + x.aya, r = byKey[k];
+      if (!r) { r = byKey[k] = { sura: x.sura, aya: x.aya, hits: [] }; results.push(r); }
+      if (x.hits && x.hits.length) r.hits = x.hits;
+      paintResult(r);
+    });
+    drawResults(); statusLine(); loadFragments();
+  }
+  function deepSearch(q) {
+    var s = searcher(), st = deepState;
+    if (!s || !st || q !== searchQ) return;
+    var seq = st.seq, scope = settings.searchScope || 'default', ids = chosenSources();
+    var mine = activeTranslations().filter(function (x) { return x.data; });
+    try {
+      s.run(q, { quran: quran, scope: scope, uiLang: i18n.code(), langs: mine.map(function (x) { return x.lang; }), selected: ids, prefer: ids,
+                 limit: 100, localTranslations: mine.map(function (x) { return { id: x.id, data: x.data }; }),
+        onProgress: function (p) {
+          if (seq !== deepSeq || st.done || p.stage !== 'chunks' || p.done >= p.total) return;
+          var n = sourceCount(scope, ids);
+          if (n) deepNote(t('searchingIn', { n: n }), true);
+        },
+        onResults: function (list) { if (seq === deepSeq) takeDeep(list); }
+      }).then(function (list) {
+        if (seq !== deepSeq) return;
+        st.done = true;
+        deepNote(list && list.partial ? t('searchPartial') : list && widened(list, scope, ids) ? t('searchWidened') : '', false, 'done');
+        statusLine();
+      }).catch(function () { if (seq === deepSeq) { st.done = true; deepNote('', false, 'done'); statusLine(); } });
+    } catch (e) { st.done = true; deepNote('', false, 'done'); statusLine(); }
+  }
+  $('more').addEventListener('click', function () { shown += PAGE; drawResults(); loadFragments(); });
+  /* an ayah in the chosen mushaf (page fonts, tajweed colours); mark: {wordFrom, wordTo} words to mark */
+  function ayahHtml(s, a, mark) {
     var t = quran.text(s, a);
-    if (!quran.pages && !quran.colors) return esc(t);
-    return quran._runs(s, a, 0, t.length).map(function (r) {
-      var st = (r.color ? 'color:#' + r.color + ';' : '') + (r.page ? 'font-family:' + pageFamily(r.page) : '');
-      return st ? '<span style="' + st + '">' + esc(r.t) + '</span>' : esc(r.t);
-    }).join('');
+    function piece(from, to) {
+      if (!quran.pages && !quran.colors) return esc(t.slice(from, to));
+      return quran._runs(s, a, from, to).map(function (r) {
+        var st = (r.color ? 'color:#' + r.color + ';' : '') + (r.page ? 'font-family:' + pageFamily(r.page) : '');
+        return st ? '<span style="' + st + '">' + esc(r.t) + '</span>' : esc(r.t);
+      }).join('');
+    }
+    if (!mark) return piece(0, t.length);
+    var w = quran.spans(s, a).words, html = '', pos = 0;
+    if (!w.length) return piece(0, t.length);
+    var wf = Math.min(mark.wordFrom, w.length - 1), wt = Math.min(mark.wordTo == null ? wf : mark.wordTo, w.length - 1);
+    w.forEach(function (x, k) {
+      html += piece(pos, x.start);
+      html += k >= wf && k <= wt ? '<mark>' + piece(x.start, x.end) + '</mark>' : piece(x.start, x.end);
+      pos = x.end;
+    });
+    return html + piece(pos, t.length);
   }
   var searchTimer;
   $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250); });
-  $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(); } });
+  $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(true); } });
   $('results').addEventListener('click', function (e) {
     var li = e.target.closest('li'); if (!li) return;
-    var r = results[+li.dataset.i];
+    var r = results[+li.dataset.i]; if (!r) return;
     if (e.shiftKey && r.sura === sel.sura) setSel(r.sura, Math.min(sel.from, r.aya), Math.max(sel.to, r.aya));
-    else setSel(r.sura, r.aya, r.aya);
+    else {
+      setSel(r.sura, r.aya, r.aya);
+      var h = arHit(r);                                   // found in the Arabic: those words
+      if (h) { sel.wordFrom = Math.max(0, h.wordFrom | 0); sel.wordTo = h.wordTo == null ? null : h.wordTo | 0; render(); }
+    }
     [].forEach.call($('results').children, function (x) { x.classList.toggle('active', x === li); });
   });
 
@@ -498,14 +748,14 @@
     return '';
   }
 
-  function current() {
+  function current(src) {
     var sc = scriptById(settings.script);
-    return quran.format(sel, {
+    return (src || quran).format(sel, {
       brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref, trRef: settings.trRef,
       ayahNums: settings.ayahNums, hizb: settings.hizb, sajda: settings.sajda, waqf: settings.waqf,
       bold: false,                                     // weight etc. come from settings.fmt
       // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
-      basmalaText: settings.fmt.basmala.font && sc.glyph ? QuranCore.BASMALA : null,
+      basmalaText: settings.fmt.basmala.font && sc.glyph && !src ? QuranCore.BASMALA : null,
       translations: settings.withTr ? activeTranslations().filter(function (x) { return x.data; }).map(function (x) {
         return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'],
                  suraName: suraName(sel.sura, x.lang, x.data[quran.index(sel.sura, sel.from)]) };
@@ -578,6 +828,7 @@
     }
     $('preview-ar').innerHTML = html;
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
+    starState();
   }
 
   /* Word selection: click first word then last word, or drag across words with the mouse. */
@@ -779,13 +1030,14 @@
       ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>' + body +
       '</w:body></w:document></pkg:xmlData></pkg:part></pkg:package>';
   }
-  function buildHtml(out) {
+  function buildHtml(out, noArabic) {               // noArabic: the translation / tafsir paragraphs only
     var F = settings.fmt, css = function (f, rtl) {
       var al = f.align === 'both' ? 'justify' : f.align || 'justify';
       return 'text-align:' + al + (+f.line ? ';line-height:' + f.line : '');
     };
     var ar = '<p dir="rtl" style="' + css(F.ar, true) + ";font-family:'" + esc(arabicFont()) + "';font-size:" + (+F.ar.size || 18) + 'pt">' +
       runsHtml(out.arabic.runs, true) + '</p>';
+    if (noArabic) ar = '';
     out.paras.forEach(function (p) {
       var k = p.kind || 'tr', f = F[k];
       ar += '<p dir="' + p.dir + '" style="' + css(f) + ';' + (f.font ? "font-family:'" + esc(f.font) + "';" : '') +
@@ -836,13 +1088,15 @@
     ta.select(); document.execCommand('copy'); ta.remove();
     return Promise.resolve();
   }
-  $('insert').addEventListener('click', function () {
-    ensureData().then(function () {
+  function doInsert() {
+    return ensureData().then(function () {
       var out = current();
+      remember();
       if (HOST) return sendToHost(out);
       return (inWord ? insertWord(out) : copy(out)).then(function () { toast(inWord ? t('inserted') : t('copiedPaste')); });
     }).catch(function (e) { toast(t('error') + ': ' + e.message); });
-  });
+  }
+  $('insert').addEventListener('click', doInsert);
   /* Embedding hosts get the result as a message: html + text (web pages, editors) and doc, the paragraphs
      with resolved fonts and styles (Google Docs builds them itself). It is also put on the clipboard first,
      while the click still counts as the user's: where the host cannot insert, Ctrl+V does it. */
@@ -854,9 +1108,21 @@
       }) };
     });
   }
+  /* The QPC page mushafs are private-use glyphs: a plain text field (and the plain text on the clipboard) gets the same
+     selection in Unicode (quran.baseAyahs); editors and pictures keep the page fonts. */
+  function withUnicodeText(out) {
+    if (!scriptById(settings.script).glyph) return out;
+    var u = Object.create(quran);
+    u.ayahs = quran.baseAyahs; u.pages = null; u.colors = null; u.tajweed = false;
+    var x = {}; for (var k in out) x[k] = out[k];
+    try { x.text = current(u).text; } catch (e) { /* the glyph text stays */ }
+    return x;
+  }
   function sendToHost(out) {
+    if (HOST === 'ext') out = withUnicodeText(out);
     var copied = hostCopied = copy(out).then(function () { return true; }, function () { return false; });
     if (ADOBE) return sendToAdobe(out, copied);
+    if (HOST === 'ext') return sendToExt(out, copied);
     window.parent.postMessage({ type: 'khatt-insert', v: 1, html: buildHtml(out), text: out.text, doc: hostDoc(out),
                                 newPara: !!settings.newPara }, '*');
     clearTimeout(hostWait);
@@ -890,20 +1156,297 @@
     if (d && d.type === 'khatt-host' && fromAdobe(e)) { adobePicAlways = d.picture === 'always'; return; }
     if (!HOST || (e.source !== window.parent && !fromAdobe(e)) || !d || d.type !== 'khatt-result') return;
     clearTimeout(hostWait);
+    if (HOST === 'ext' && d.ask) { askExt(); return; }                            // an editor, the way is not chosen yet
+    if (HOST === 'ext' && d.ok && d.pic === 'none') { toast(t('extNoPicture')); return; }
     if (d.ok) toast(t('inserted'));
     else if (ADOBE && /^adobe[A-Z]\w*$/.test(d.error || '')) toast(t(d.error));   // "Open a document first", …
     else if (ADOBE && d.error) toast(t('error') + ': ' + d.error);    // other Adobe errors: the text itself, not "copied"
     else (hostCopied || Promise.resolve(false)).then(function (ok) { toast(ok ? t('copiedPaste') : t('error') + (d.error ? ': ' + d.error : '')); });
   });
+  /* Browser extension (extension/panel.js): plain text fields get the Unicode text; editors (contenteditable) get
+     the text with its font or a transparent picture (settings.extInsert; 'ask': the panel answers ask: true without
+     inserting and the choice is asked here once). The extension keeps the choice in storage.sync as well
+     (khatt-pref both ways) and sends searches from the context menu / shortcut (khatt-search). */
+  var extLast = null;
+  function sendToExt(out, copied, mode) {
+    mode = mode || settings.extInsert || 'ask'; extLast = out;
+    var msg = { type: 'khatt-insert', v: 1, html: buildHtml(out), text: out.text, doc: hostDoc(out),
+                newPara: !!settings.newPara, mode: mode };
+    clearTimeout(hostWait);
+    return (mode === 'picture' ? ayahPicture(out).catch(function () { return null; }) : Promise.resolve(null)).then(function (pic) {
+      if (pic) {
+        msg.pic = 'data:image/png;base64,' + pic.png;
+        msg.picHtml = '<p dir="rtl" style="text-align:center"><img src="' + msg.pic + '" alt="' + esc(pic.alt) + '" width="' +
+          Math.round(pic.wPt * 4 / 3) + '" style="max-width:100%;height:auto"></p>';      // shown at the size of the text
+        msg.restHtml = buildHtml(out, true);
+      }
+      window.parent.postMessage(msg, '*');
+      hostWait = setTimeout(function () { copied.then(function (ok) { toast(ok ? t('copiedPaste') : t('error')); }); }, 4000);
+    });
+  }
+  function extPref() { if (HOST === 'ext') window.parent.postMessage({ type: 'khatt-pref', extInsert: settings.extInsert }, '*'); }
+  var CLOSE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  if (HOST === 'ext') {
+    var askDlg = document.createElement('dialog');
+    askDlg.id = 'ext-ask'; askDlg.className = 'sheet';
+    askDlg.innerHTML = '<form method="dialog"><div class="sheet-head"><h2 data-i18n="browser"></h2>' +
+      '<button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close">' + CLOSE_SVG + '</button></div>' +
+      '<div class="sheet-body"><p data-i18n="extAskQ"></p>' +
+      '<p class="actions"><button value="text" class="btn primary" data-i18n="extAsText"></button>' +
+      '<button value="picture" class="btn" data-i18n="extAsPicture"></button></p>' +
+      '<label class="switch"><input type="checkbox" id="ext-remember" checked><i></i> <span data-i18n="extRemember"></span></label></div></form>';
+    document.body.appendChild(askDlg);
+    askDlg.addEventListener('close', function () {
+      var how = askDlg.returnValue;
+      if (how !== 'text' && how !== 'picture') { (hostCopied || Promise.resolve(false)).then(function (ok) { if (ok) toast(t('copiedPaste')); }); return; }
+      if ($('ext-remember').checked) { settings.extInsert = how; saveSettings(); extPref(); }
+      if (extLast) sendToExt(extLast, hostCopied || Promise.resolve(false), how);
+    });
+    // settings, Insert tab: the same choice
+    var extBox = document.createElement('div');
+    extBox.className = 'opt-group'; extBox.id = 's-ext';
+    extBox.innerHTML = '<h3 data-i18n="browser"></h3><label class="field"><span data-i18n="extInsertIn"></span> <select id="s-ext-insert">' +
+      '<option value="ask" data-i18n="extAsk"></option><option value="text" data-i18n="extAsText"></option>' +
+      '<option value="picture" data-i18n="extAsPicture"></option></select></label><p class="small muted" data-i18n="extInsertNote"></p>';
+    document.querySelector('#settings section.tab[data-tab="insert"]').appendChild(extBox);
+    $('s-ext-insert').addEventListener('change', function () { settings.extInsert = this.value; saveSettings(); extPref(); });
+  }
+  function askExt() { $('ext-remember').checked = true; askDlg.returnValue = ''; askDlg.showModal(); }
+  /* put a text into the search field and search (the data may still be loading: wait for it) */
+  function searchFor(q) {
+    q = String(q || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+    if (!q) return;
+    (function go(n) {
+      if (!quran) { if (n < 300) setTimeout(function () { go(n + 1); }, 200); return; }
+      var box = $('q'); box.value = q;
+      clearTimeout(searchTimer); runSearch(true);       // from the extension / a drop: the deep search starts at once
+    })(0);
+  }
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!HOST || ADOBE || e.source !== window.parent || !d) return;
+    if (d.type === 'khatt-search' && typeof d.q === 'string') searchFor(d.q);
+    else if (d.type === 'khatt-pref' && HOST === 'ext') {
+      if (/^(ask|text|picture)$/.test(d.extInsert || '')) {
+        if (settings.extInsert !== d.extInsert) { settings.extInsert = d.extInsert; saveSettings(); }
+        if ($('s-ext-insert')) $('s-ext-insert').value = settings.extInsert;
+      } else if (settings.extInsert !== 'ask') extPref();      // the extension has none yet: give it ours
+      if (typeof d.fav === 'string' || Array.isArray(d.hist)) takeExtMarks(d);
+      else if (marks.fav.length || marks.hist.length) marksPref();
+    }
+  });
+  if (HOST === 'ext') window.parent.postMessage({ type: 'khatt-ready' }, '*');
+  /* text dragged onto the panel (from a web page, another program) is searched */
+  var dropTimer;
+  function dropOff() { document.body.style.boxShadow = ''; }
+  function dropTarget(e) {
+    var dt = e.dataTransfer, el = e.target && e.target.closest ? e.target.closest('input, textarea, select, [contenteditable]') : null;
+    return dt && [].indexOf.call(dt.types || [], 'text/plain') >= 0 && (!el || el.id === 'q');
+  }
+  window.addEventListener('dragover', function (e) {
+    if (!dropTarget(e)) return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'copy';
+    document.body.style.boxShadow = 'inset 0 0 0 3px var(--accent)';
+    clearTimeout(dropTimer); dropTimer = setTimeout(dropOff, 250);
+  });
+  window.addEventListener('drop', function (e) {
+    if (!dropTarget(e)) return;
+    e.preventDefault(); dropOff();
+    searchFor(e.dataTransfer.getData('text/plain'));
+  });
   $('copy').addEventListener('click', function () {
-    ensureData().then(function () { return copy(current()); }).then(function () { toast(t('copied')); })
+    ensureData().then(function () { remember(); return copy(current()); }).then(function () { toast(t('copied')); })
       .catch(function (e) { toast(t('error') + ': ' + e.message); });
+  });
+
+  /* ---------- history, favourites, insert the last one again ----------
+     History: every insert and copy (newest first, up to 50); favourites: the star on the ayah card (up to 500).
+     Kept in localStorage. In the browser extension also in its storage.sync (khatt-pref {fav, hist}, like extInsert):
+     the extension's copy wins when the panel starts, every change here is sent to it at once. */
+  var MARK_KEY = { hist: 'myquran-history', fav: 'myquran-favorites' }, MARK_MAX = { hist: 50, fav: 500 }, marksOpen = '';
+  function okMark(x) { return !!x && x.sura >= 1 && x.sura <= 114 && x.from >= 1 && x.to >= x.from && x.to <= 286; }
+  function loadMarks(k) {
+    try { var x = JSON.parse(localStorage.getItem(MARK_KEY[k]) || '[]'); return Array.isArray(x) ? x.filter(okMark).slice(0, MARK_MAX[k]) : []; }
+    catch (e) { return []; }
+  }
+  var marks = { hist: loadMarks('hist'), fav: loadMarks('fav') };
+  function markId(x) { return x.sura + ':' + x.from + '-' + x.to; }
+  function storeMarks(k) { try { localStorage.setItem(MARK_KEY[k], JSON.stringify(marks[k])); } catch (e) {} }
+  function saveMarks(k) { storeMarks(k); marksPref(); drawMarks(); starState(); }
+  function addMark(k, x) {
+    var id = markId(x);
+    marks[k] = [x].concat(marks[k].filter(function (y) { return markId(y) !== id; })).slice(0, MARK_MAX[k]);
+    saveMarks(k);
+  }
+  function remember() {                              // the current selection goes on top of the history
+    var x = { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() };
+    if (sel.wordFrom > 0 || sel.wordTo != null) { x.wf = sel.wordFrom; x.wt = sel.wordTo; }
+    addMark('hist', x);
+  }
+  function isFav() { var id = markId(sel); return marks.fav.some(function (y) { return markId(y) === id; }); }
+  function starState() {
+    var on = isFav(), b = $('fav-toggle');
+    b.setAttribute('aria-pressed', on); b.title = t(on ? 'favRemove' : 'favAdd'); b.setAttribute('aria-label', b.title);
+  }
+  $('fav-toggle').addEventListener('click', function () {
+    if (!quran) return;
+    var id = markId(sel);
+    if (isFav()) { marks.fav = marks.fav.filter(function (y) { return markId(y) !== id; }); saveMarks('fav'); }
+    else addMark('fav', { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() });
+  });
+  function markRef(x) { return uiSuraName(x.sura) + ' ' + x.sura + ':' + (x.to > x.from ? x.from + '-' + x.to : x.from); }
+  function markTime(ms) {
+    if (!ms) return '';
+    var d = new Date(ms), today = d.toDateString() === new Date().toDateString();
+    var o = today ? { hour: '2-digit', minute: '2-digit' } : { day: 'numeric', month: 'short' };
+    try { return d.toLocaleString(i18n.code(), o); } catch (e) { return d.toLocaleString(undefined, o); }
+  }
+  function drawMarks() {
+    if (!quran) return;
+    $('hist-n').textContent = marks.hist.length || ''; $('fav-n').textContent = marks.fav.length || '';
+    $('again').disabled = !marks.hist.length;
+    ['hist', 'fav'].forEach(function (k) { $(k + '-btn').setAttribute('aria-expanded', marksOpen === k); });
+    $('marks-panel').hidden = !marksOpen;
+    if (!marksOpen) return;
+    var list = marks[marksOpen];
+    $('marks-list').innerHTML = list.map(function (x, i) {
+      var ar = String(quran.baseAyahs[quran.index(x.sura, x.from)] || '').replace(/\s*۝[٠-٩]+\s*$/, '');
+      return '<li data-i="' + i + '"><button type="button" class="mk-go"><span class="mk-ref">' + esc(uiSuraName(x.sura)) + ' <bdi>' + x.sura + ':' +
+        (x.to > x.from ? x.from + '-' + x.to : x.from) + '</bdi>' + (marksOpen === 'hist' ? ' <span class="mk-time">' + esc(markTime(x.time)) + '</span>' : '') +
+        '</span><span class="mk-ar" dir="rtl">' + esc(ar) + '</span></button>' +
+        '<button type="button" class="icon-btn mk-del" title="' + esc(t('remove')) + '" aria-label="' + esc(t('remove') + ': ' + markRef(x)) + '">' + CLOSE_SVG + '</button></li>';
+    }).join('');
+    $('marks-empty').textContent = list.length ? '' : t(marksOpen === 'hist' ? 'histEmpty' : 'favEmpty');
+    $('marks-clear').hidden = !list.length;
+  }
+  ['hist', 'fav'].forEach(function (k) {
+    $(k + '-btn').addEventListener('click', function () { marksOpen = marksOpen === k ? '' : k; drawMarks(); });
+  });
+  function pickMark(x) {
+    setSel(x.sura, x.from, x.to);
+    if (x.wf > 0 || x.wt != null) {                 // a part of the ayahs: the same words again
+      sel.wordFrom = Math.max(0, x.wf | 0); sel.wordTo = x.wt == null ? null : x.wt | 0; render();
+    }
+  }
+  $('marks-list').addEventListener('click', function (e) {
+    var li = e.target.closest('li'), k = marksOpen; if (!li || !k) return;
+    var i = +li.dataset.i, x = marks[k][i]; if (!x) return;
+    if (!e.target.closest('.mk-del')) { pickMark(x); return; }
+    marks[k].splice(i, 1); saveMarks(k);
+    var next = $('marks-list').querySelectorAll('.mk-del')[Math.min(i, marks[k].length - 1)];   // keep the keyboard focus in the list
+    (next || $(k + '-btn')).focus();
+  });
+  $('marks-clear').addEventListener('click', function () {
+    if (!marksOpen) return;
+    marks[marksOpen] = []; saveMarks(marksOpen); $(marksOpen + '-btn').focus();
+  });
+  /* the last insert / copy again: the same ayahs (and words) with the settings of now */
+  $('again').addEventListener('click', function () { var x = marks.hist[0]; if (!x || !quran) return; pickMark(x); doInsert(); });
+  function marksPref() {
+    if (HOST !== 'ext') return;
+    window.parent.postMessage({ type: 'khatt-pref', fav: marks.fav.map(markId).join(','), hist: marks.hist.map(function (x) {
+      return [x.sura, x.from, x.to, Math.round((x.time || 0) / 1000)].concat(x.wf != null ? [x.wf, x.wt] : []);
+    }) }, '*');
+  }
+  function takeExtMarks(d) {
+    if (typeof d.fav === 'string') {
+      marks.fav = d.fav.split(',').map(function (s) {
+        var m = /^(\d+):(\d+)-(\d+)$/.exec(s); return m && { sura: +m[1], from: +m[2], to: +m[3], time: 0 };
+      }).filter(okMark).slice(0, MARK_MAX.fav);
+      storeMarks('fav');
+    }
+    if (Array.isArray(d.hist)) {
+      marks.hist = d.hist.map(function (a) {
+        if (!Array.isArray(a)) return null;
+        var x = { sura: +a[0], from: +a[1], to: +a[2], time: (+a[3] || 0) * 1000 };
+        if (a.length > 4) { x.wf = +a[4] || 0; x.wt = a[5] == null ? null : +a[5]; }
+        return x;
+      }).filter(okMark).slice(0, MARK_MAX.hist);
+      storeMarks('hist');
+    }
+    if (typeof d.fav !== 'string' || !Array.isArray(d.hist)) marksPref();   // the extension lacks one of them: give it ours
+    drawMarks(); if (quran) starState();
+  }
+
+  /* ---------- copy as a picture: the Arabic as a PNG (ayahPicture: transparent unless a background is set) ---------- */
+  function pictureBlob(out) {
+    return ayahPicture(out).then(function (pic) {
+      var bin = atob(pic.png), buf = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+      return new Blob([buf], { type: 'image/png' });
+    });
+  }
+  function savePicture(blob) {                       // no image clipboard here: the picture is downloaded
+    var a = document.createElement('a'), url = URL.createObjectURL(blob);
+    a.href = url; a.download = 'ayah-' + sel.sura + '-' + sel.from + (sel.to > sel.from ? '-' + sel.to : '') + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+    toast(t('pictureSaved'));
+  }
+  $('copy-pic').addEventListener('click', function () {
+    if (!quran) return;
+    var blob = ensureData().then(function () { remember(); return pictureBlob(current()); }), write;
+    // the clipboard item gets the promise: it is written while the click still counts (Safari needs that)
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.write || !window.ClipboardItem ||
+          (ClipboardItem.supports && !ClipboardItem.supports('image/png'))) throw new Error('no image clipboard');
+      write = navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    } catch (e) { write = Promise.reject(e); }
+    write.then(function () { toast(t('pictureCopied')); }, function () { return blob.then(savePicture); })
+      .catch(function (e) { toast(t('error') + (e && e.message ? ': ' + e.message : '')); });
+  });
+
+  /* ---------- ayah of the day: the same for everyone on a calendar day; drawn after the panel ---------- */
+  var votdList = null, VOTD_CLOSED = 'myquran-votd-closed';
+  function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function dayAyah(d) {
+    if (!votdList) {        // ayahs of a readable length (up to ~250 characters) that do not go on with the one before
+      var cont = /^(إلا|ثم|أو|حتى)\s/;
+      votdList = [];
+      quran.baseAyahs.forEach(function (x, i) {
+        var n = Array.from(x).length;
+        if (n >= 60 && n <= 250 && !cont.test(x.replace(/[ـً-ٰٟۖ-ۭ]/g, ''))) votdList.push(i);
+      });
+    }
+    var day = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5);
+    return quran.locate(votdList[(day * 7919) % votdList.length]);     // a prime step: neighbouring days are far apart
+  }
+  function drawVotd() {
+    var card = $('votd'), now = new Date(), closed = '';
+    try { closed = localStorage.getItem(VOTD_CLOSED) || ''; } catch (e) {}
+    card.dataset.day = dayKey(now);
+    if (!quran || !settings.votd || closed === dayKey(now)) { card.hidden = true; return; }
+    var x = dayAyah(now);
+    card.dataset.ref = x.sura + ':' + x.aya;
+    $('votd-ref').textContent = uiSuraName(x.sura) + ' ' + x.sura + ':' + x.aya;
+    $('votd-ar').innerHTML = ayahHtml(x.sura, x.aya);
+    $('votd-tr').innerHTML = (settings.withTr ? activeTranslations().filter(function (tr) { return tr.data; }) : []).map(function (tr) {
+      var s = QuranCore.stripHtml(tr.data[quran.index(x.sura, x.aya)] || '').replace(/^\s*\d+[.)]\s*/, '').trim();
+      return s ? '<p dir="' + (tr.dir || 'auto') + '">' + esc(s) + '</p>' : '';
+    }).join('');
+    card.hidden = false;
+  }
+  function votdSel() {
+    var p = ($('votd').dataset.ref || '').split(':');
+    if (p.length !== 2) return false;
+    setSel(+p[0], +p[1], +p[1]); return true;
+  }
+  $('votd-pick').addEventListener('click', function () { if (votdSel()) $('preview-ar').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+  $('votd-insert').addEventListener('click', function () { if (votdSel()) doInsert(); });
+  $('votd-close').addEventListener('click', function () {       // until tomorrow
+    try { localStorage.setItem(VOTD_CLOSED, dayKey(new Date())); } catch (e) {}
+    $('votd').hidden = true;
+  });
+  document.addEventListener('visibilitychange', function () {   // the panel stayed open past midnight
+    if (!document.hidden && quran && $('votd').dataset.day !== dayKey(new Date())) drawVotd();
   });
 
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
             ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', picBgOn: 's-picbg-on', picBg: 's-picbg',
-            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf' };
+            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd',
+            searchScope: 's-search-scope' };
+  if (HOST === 'ext') B.extInsert = 's-ext-insert';
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
   function langLabel(x) {
     var ui = langNames.ui && langNames.ui[settings.uiLang] || {};
@@ -1030,7 +1573,7 @@
     fixFont(settings);
     if (settings.script !== before) scriptChanged = true;
     saveSettings();
-    (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); if (results.length) runSearch(); });
+    (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); if (searchQ.trim()) runSearch(); drawVotd(); });
   }
 
   /* ---------- surah info ---------- */
@@ -1087,7 +1630,18 @@
     }).then(function () {
       setSel(1, 1, 1);
       if (firstRun) showWelcome(); else fromHash();
-      setTimeout(function () { quran._buildIndex(); }, 50);
+      /* the word tables of the search: from web/data/quran.search.json (made by the builder, read after the panel is
+         drawn) they take ~40 ms of the main thread instead of ~250 ms when they are built here; without the file they
+         are built as before */
+      setTimeout(function () {
+        optional('quran.search.json', null).then(function (sd) {
+          var ok = sd && sd.v === 1 && sd.ayahs && sd.ayahs.length === quran.baseAyahs.length && !quran._idx && !quran._w;
+          if (ok) quran._sd = sd;
+          setTimeout(function () { quran._buildIndex(); if (ok) setTimeout(function () { quran._words().tables(); }, 0); }, 0);
+        });
+      }, 50);
+      drawMarks();
+      setTimeout(function () { ensureData().then(drawVotd); }, 300);   // after the panel is drawn: it must not slow the start down
     }).catch(function (e) { $('status').textContent = t('error') + ': ' + e.message; });
   }
 
@@ -1182,7 +1736,8 @@
   })();
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
-    setOnline: function (v) { online = !!v; } };   // tests only
+    setOnline: function (v) { online = !!v; }, pictureBlob: function () { return pictureBlob(current()); },
+    dayAyah: function (d) { return dayAyah(d || new Date()); }, marks: function () { return marks; } };   // tests only
 
   if (window.Office && Office.onReady) {
     Office.onReady(function (info) {
