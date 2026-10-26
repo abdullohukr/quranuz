@@ -603,7 +603,7 @@ else
     ok "already installed for all users ($CEP_SYS, $(cep_ver "$CEP_SYS")), left as it is"
   elif [ -L "$CEP_DIR" ]; then
     warn "$CEP_DIR is a link (a developer copy), left as it is"
-  elif [ -d "$CEP_DIR" ] && [ -n "$mine" ] && [ "$iv" = "$nv" ]; then
+  elif [ -d "$CEP_DIR" ] && [ -n "$mine" ] && ver_ge "$iv" "${nv:-0}"; then
     ok "Khatt al-Quran $nv already installed"
   elif [ -d "$CEP_DIR" ] && [ -z "$mine" ] && [ -n "$iv" ] && ver_ge "$iv" "${nv:-0}"; then
     ok "Khatt al-Quran $iv is already there (not from this installer), left as it is"
