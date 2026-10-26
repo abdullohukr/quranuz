@@ -227,7 +227,7 @@
     var el = document.createElement('div');
     el.id = 'welcome';
     el.innerHTML = '<div class="welcome-card">' +
-      '<img class="welcome-logo" src="assets/brand/word-office/square-300.png" width="112" height="112" alt="">' +
+      '<img class="welcome-logo" src="assets/brand/word-office/clear-300.png" width="112" height="112" alt="">' +
       '<h1>Khatt al-Quran</h1><p class="welcome-ar" dir="rtl">خط القرآن</p>' +
       '<p class="welcome-sub">Choose your language · Тилни танланг · Выберите язык<br><span dir="rtl">اختر اللغة · زبان منتخب کریں</span></p>' +
       '<div class="welcome-langs">' + MAIN.map(function (id) {
