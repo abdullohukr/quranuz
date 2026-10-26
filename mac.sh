@@ -14,10 +14,16 @@
 #   KHATT_ONLY=fonts,word  install only these parts (default: all)
 #   KHATT_UI=1             no colours; progress lines for the program: "@@step <n> <total> <id>",
 #                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@error <text>", "@@done"
+#   KHATT_ADOBE=1          (testing, the packages are not published yet) also the Adobe panels: components
+#                          adobe-uxp (InDesign, InCopy, Photoshop, Premiere Pro) and adobe-cep (Illustrator, After
+#                          Effects), in the default list too; without KHATT_ADOBE=1 they are ignored even in KHATT_ONLY
+#   KHATT_ADOBE_DRY=1      with KHATT_ADOBE=1: the Adobe parts only look and tell what they would do
 set -e
-SRC="${KHATT_SRC:-}" UI="" ONLY=",${KHATT_ONLY:-fonts,word},"
+ADOBE=""; if [ "${KHATT_ADOBE:-}" = 1 ]; then ADOBE=1; fi
+SRC="${KHATT_SRC:-}" UI="" ONLY=",${KHATT_ONLY:-fonts,word${ADOBE:+,adobe-uxp,adobe-cep}},"
 if [ "${KHATT_UI:-}" = 1 ]; then UI=1; fi
 want() { case "$ONLY" in *",$1,"*) return 0 ;; esac; return 1; }
+want_adobe() { [ -n "$ADOBE" ] && want "$1"; }
 SITE="https://quran.abdulloh.org"
 MIRROR="https://abdullohukr.github.io/quranuz"   # the same site on GitHub Pages
 REL="https://github.com/abdullohukr/quranuz/releases/download/fonts"   # QPC packages (GitHub Releases: no traffic limit); our site is the fallback
@@ -40,6 +46,8 @@ if [ -n "$UI" ]; then B="" DIM="" CY="" GR="" YE="" RE="" N=""; fi
 STEP=0 STEPS=0
 if want fonts; then STEPS=$((STEPS + 5)); fi
 if want word; then STEPS=$((STEPS + 1)); fi
+if want_adobe adobe-uxp; then STEPS=$((STEPS + 1)); fi
+if want_adobe adobe-cep; then STEPS=$((STEPS + 1)); fi
 clock() { printf '%02d:%02d' $((SECONDS / 60)) $((SECONDS % 60)); }
 step() {   # id, English, Uzbek, Russian, Arabic
   STEP=$((STEP + 1))
@@ -474,11 +482,163 @@ case "$ok" in
      echo "    curl -fsSL $SITE/mac-check.sh | bash" ;;
 esac
 fi   # ---- fonts ----
+
+ADOBE_DONE=""   # an Adobe panel was installed now
+if want_adobe adobe-uxp || want_adobe adobe-cep; then   # ---- Adobe panels (KHATT_ADOBE=1 only) ----
+# The packages come from KHATT_SRC or quran.abdulloh.org/download/ (one .ccx per program, one .zxp for
+# Illustrator + After Effects). adobe.txt keeps what this installer put there ("uxp <package> <version>",
+# "cep user <version>"): mac-uninstall.sh removes only that.
+ADOBE_STATE="$APP/adobe.txt"
+UPIA="/Library/Application Support/Adobe/Adobe Desktop Common/RemoteComponents/UPI/UnifiedPluginInstallerAgent/UnifiedPluginInstallerAgent.app/Contents/MacOS/UnifiedPluginInstallerAgent"
+CEP_ID="com.abdulloh.khatt-al-quran.cep"
+CEP_DIR="$HOME/Library/Application Support/Adobe/CEP/extensions/$CEP_ID"
+CEP_SYS="/Library/Application Support/Adobe/CEP/extensions/$CEP_ID"
+DRY=""; if [ "${KHATT_ADOBE_DRY:-}" = 1 ]; then DRY=1; fi
+ver_ge() {   # $1 >= $2, dotted numbers
+  awk -v a="$1" -v b="$2" 'BEGIN { n = split(a, x, "."); m = split(b, y, "."); if (m > n) n = m
+    for (i = 1; i <= n; i++) { if (x[i] + 0 > y[i] + 0) exit 0; if (x[i] + 0 < y[i] + 0) exit 1 } exit 0 }'
+}
+adobe_min() { case "$1" in indesign | incopy) echo 20.0 ;; photoshop) echo 26.0 ;; premiere) echo 25.6 ;; illustrator) echo 28.0 ;; aftereffects) echo 24.0 ;; esac; }
+adobe_name() { case "$1" in indesign) echo InDesign ;; incopy) echo InCopy ;; photoshop) echo Photoshop ;; premiere) echo "Premiere Pro" ;; illustrator) echo Illustrator ;; aftereffects) echo "After Effects" ;; esac; }
+# every Adobe program of /Applications/Adobe */: "kind<TAB>version<TAB>path"
+: > "$TMP/adobe-apps"
+for a in /Applications/Adobe\ */*.app; do
+  [ -d "$a" ] || continue
+  name="$(basename "$a" .app)" kind=""
+  case "$name" in
+    *Elements* | *"Render Engine"* | *Rush*) ;;
+    "Adobe InDesign"*) kind=indesign ;;
+    "Adobe InCopy"*) kind=incopy ;;
+    "Adobe Photoshop"*) kind=photoshop ;;
+    "Adobe Premiere Pro"*) kind=premiere ;;
+    "Adobe Illustrator"*) kind=illustrator ;;
+    "Adobe After Effects"*) kind=aftereffects ;;
+  esac
+  if [ -n "$kind" ]; then
+    v="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$a/Contents/Info.plist" 2>/dev/null || true)"
+    printf '%s\t%s\t%s\n' "$kind" "${v:-0}" "$a" >> "$TMP/adobe-apps"
+  fi
+done
+adobe_found() {   # $1 kinds: tells each program found; prints the kinds new enough
+  local kind v path min
+  while IFS=$'\t' read -r kind v path; do
+    case " $1 " in *" $kind "*) ;; *) continue ;; esac
+    min="$(adobe_min "$kind")"
+    if ver_ge "$v" "$min"; then echo "$kind"; ok "$(adobe_name "$kind") $v" >&2
+    else warn "$(adobe_name "$kind") $v: skipped, version $min or newer needed" >&2; fi
+  done < "$TMP/adobe-apps"
+  return 0
+}
+adobe_pkg() {   # $1 file name: from KHATT_SRC or the site, checked as a zip; prints its path
+  local out="$TMP/adobe-$1"
+  if [ -n "$SRC" ]; then
+    if [ -f "$SRC/$1" ]; then cp -f "$SRC/$1" "$out" 2>/dev/null || true; fi
+  else
+    curl -fsSL --retry 2 --retry-delay 2 "$SITE/download/$1" -o "$out" 2>/dev/null || rm -f "$out"
+  fi
+  if [ -f "$out" ] && unzip -tq "$out" >/dev/null 2>&1; then echo "$out"; return 0; fi
+  rm -f "$out"; return 1
+}
+adobe_record() {   # $1 kind, $2 key, $3 version: one line per key in adobe.txt
+  mkdir -p "$APP"
+  { grep -v "^$1 $2 " "$ADOBE_STATE" 2>/dev/null || true; echo "$1 $2 $3"; } > "$TMP/adobe-state"
+  mv -f "$TMP/adobe-state" "$ADOBE_STATE"
+}
+cep_ver() { sed -n 's/.*ExtensionBundleVersion="\([^"]*\)".*/\1/p' "$1/CSXS/manifest.xml" 2>/dev/null | head -1; }
+fi
+
+if want_adobe adobe-uxp; then
+step adobe-uxp "Adobe panels: InDesign, InCopy, Photoshop, Premiere Pro" "Adobe панеллари: InDesign, InCopy, Photoshop, Premiere Pro" \
+  "Панели Adobe: InDesign, InCopy, Photoshop, Premiere Pro" "لوحات Adobe: InDesign وInCopy وPhotoshop وPremiere Pro"
+NEED=""   # packages: InCopy takes the InDesign one (its UXP plugins declare app "ID")
+for k in $(adobe_found "indesign incopy photoshop premiere"); do
+  [ "$k" = incopy ] && k=indesign
+  case " $NEED " in *" $k "*) ;; *) NEED="$NEED $k" ;; esac
+done
+if [ -z "$NEED" ]; then
+  warn "no supported program found (InDesign / InCopy 2025+, Photoshop 2025+, Premiere Pro 25.6+): skipped"
+elif [ ! -x "$UPIA" ]; then
+  warn "Adobe Creative Cloud (its Unified Plugin Installer Agent) was not found: the Adobe panels were not installed. Install Creative Cloud Desktop and run the installer again."
+else
+  # what UPIA already has: "<product><TAB><version>" of every Khatt al-Quran (no duplicates)
+  "$UPIA" --list all 2>/dev/null | awk '/ installed for / { p = $0; sub(/.* installed for /, "", p); sub(/ \(ver .*/, "", p); next }
+    /Khatt al-Quran/ { print p "\t" $NF }' > "$TMP/upia-list" || true
+  for k in $NEED; do
+    file="khatt-al-quran-adobe-uxp-$k.ccx"
+    if ! ccx="$(adobe_pkg "$file")"; then warn "$(adobe_name "$k"): $file is not published yet, skipped"; continue; fi
+    nv="$(unzip -p "$ccx" manifest.json 2>/dev/null | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+    iv="$(awk -F'\t' -v k="$k" '{ p = $1; sub(/ .*/, "", p) }
+      (k == "indesign" && (p == "InDesign" || p == "InCopy")) || (k == "photoshop" && p == "Photoshop") || (k == "premiere" && p == "Premiere") { print $2; exit }' "$TMP/upia-list")"
+    if [ -n "$iv" ] && ver_ge "$iv" "${nv:-0}"; then
+      if grep -q "^uxp $k " "$ADOBE_STATE" 2>/dev/null; then ok "$(adobe_name "$k"): Khatt al-Quran $iv already installed"
+      else ok "$(adobe_name "$k"): Khatt al-Quran $iv is already there (not from this installer), left as it is"; fi
+      continue
+    fi
+    if [ -n "$DRY" ]; then ok "$(adobe_name "$k"): would install $file ${nv:-?}${iv:+ over $iv}"; continue; fi
+    if "$UPIA" --install "$ccx" > "$TMP/upia-out" 2>&1 && ! grep -qiE 'fail|error' "$TMP/upia-out"; then
+      adobe_record uxp "$k" "${nv:-0}"; ADOBE_DONE=1
+      ok "$(adobe_name "$k"): Khatt al-Quran ${nv:-} installed"
+    else
+      warn "$(adobe_name "$k"): $file was not installed: $(tr -s '\n' ' ' < "$TMP/upia-out" | cut -c1-200)"
+    fi
+  done
+fi
+fi
+
+if want_adobe adobe-cep; then
+step adobe-cep "Adobe panel: Illustrator, After Effects" "Adobe панели: Illustrator, After Effects" \
+  "Панель Adobe: Illustrator, After Effects" "لوحة Adobe: Illustrator وAfter Effects"
+FOUND="$(adobe_found "illustrator aftereffects")"
+if [ -z "$FOUND" ]; then
+  warn "no supported program found (Illustrator 2024+, After Effects 2024+): skipped"
+elif ! zxp="$(adobe_pkg khatt-al-quran-adobe-cep.zxp)"; then
+  warn "khatt-al-quran-adobe-cep.zxp is not published yet, skipped"
+elif ! unzip -p "$zxp" CSXS/manifest.xml 2>/dev/null | grep -q "ExtensionBundleId=\"$CEP_ID\""; then
+  warn "khatt-al-quran-adobe-cep.zxp is not the Khatt al-Quran panel, skipped"
+else
+  nv="$(unzip -p "$zxp" CSXS/manifest.xml 2>/dev/null | sed -n 's/.*ExtensionBundleVersion="\([^"]*\)".*/\1/p' | head -1)"
+  mine=""; if grep -q "^cep user " "$ADOBE_STATE" 2>/dev/null; then mine=1; fi
+  iv="$(cep_ver "$CEP_DIR")"
+  if [ -d "$CEP_SYS" ]; then
+    ok "already installed for all users ($CEP_SYS, $(cep_ver "$CEP_SYS")), left as it is"
+  elif [ -L "$CEP_DIR" ]; then
+    warn "$CEP_DIR is a link (a developer copy), left as it is"
+  elif [ -d "$CEP_DIR" ] && [ -n "$mine" ] && [ "$iv" = "$nv" ]; then
+    ok "Khatt al-Quran $nv already installed"
+  elif [ -d "$CEP_DIR" ] && [ -z "$mine" ] && [ -n "$iv" ] && ver_ge "$iv" "${nv:-0}"; then
+    ok "Khatt al-Quran $iv is already there (not from this installer), left as it is"
+  elif [ -n "$DRY" ]; then
+    ok "would install khatt-al-quran-adobe-cep.zxp ${nv:-?} into $CEP_DIR${iv:+ over $iv}"
+  else
+    # unpacked next to its place first, then swapped in; a copy not put there by this installer is moved away
+    NEW="$CEP_DIR.khatt-new"
+    rm -rf "$NEW"; mkdir -p "$NEW"
+    if unzip -q -o "$zxp" -d "$NEW" && [ -f "$NEW/CSXS/manifest.xml" ]; then
+      if [ -d "$CEP_DIR" ]; then
+        if [ -n "$mine" ]; then rm -rf "$CEP_DIR"
+        else mkdir -p "$OLD" && mv -f "$CEP_DIR" "$OLD/old-adobe-cep-$(date +%Y%m%d-%H%M%S)" && warn "older copy of the panel moved to ~/MyQuran-old-fonts"; fi
+      fi
+      mv -f "$NEW" "$CEP_DIR"
+      adobe_record cep user "${nv:-0}"; ADOBE_DONE=1
+      ok "Window -> Extensions -> Khatt al-Quran (${nv:-})"
+    else
+      rm -rf "$NEW"; warn "khatt-al-quran-adobe-cep.zxp could not be unpacked, nothing was changed"
+    fi
+  fi
+fi
+fi   # ---- Adobe ----
+
 printf '\n%s%s━━━ Done in %d min %02d s ━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$GR" "$B" $((SECONDS / 60)) $((SECONDS % 60)) "$N"
 printf '  %sOpen Word: Home → Khatt al-Quran.%s If the Arabic text is in a plain font, quit Word (Cmd+Q) and open it again.\n' "$B" "$N"
 printf '  Тайёр. Word\x27ни очинг: Главная → Khatt al-Quran. Араб матни оддий шрифтда бўлса, Word\x27ни ёпиб (Cmd+Q) қайта очинг.\n'
 printf '  Готово. Откройте Word: Главная → Khatt al-Quran. Если арабский текст обычным шрифтом — закройте Word (Cmd+Q) и откройте снова.\n'
 printf '  تمّ التثبيت. افتح Word: الصفحة الرئيسية ← Khatt al-Quran. إذا ظهر النص العربي بخط عادي فأغلق Word (Cmd+Q) وافتحه من جديد.\n'
+if [ -n "$ADOBE_DONE" ]; then
+  printf '  %sAdobe: restart the program, then Window → Extensions (Plugins) → Khatt al-Quran.%s\n' "$B" "$N"
+  printf '  Adobe: дастурни қайта ишга туширинг, сўнг Window → Extensions (Plugins) → Khatt al-Quran.\n'
+  printf '  Adobe: перезапустите программу, затем Window → Extensions (Plugins) → Khatt al-Quran.\n'
+  printf '  Adobe: أعد تشغيل البرنامج ثم Window ← Extensions (Plugins) ← Khatt al-Quran.\n'
+fi
 [ -d "$OLD" ] && printf '  %sOld font copies: %s%s\n' "$DIM" "$OLD" "$N"
 if [ -n "$UI" ]; then echo "@@done"; fi
 true

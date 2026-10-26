@@ -24,6 +24,14 @@ var urls = $.NSMutableArray.array;
 (list.isNil() ? [] : list.js).forEach(function (f) { urls.addObject($.NSURL.fileURLWithPath(dir + '/' + f.js)); });
 $.CTFontManagerUnregisterFontsForURLs(urls, 3, null);
 JS
+# Adobe panels (installations with KHATT_ADOBE=1): only what the installer put there, listed in adobe.txt
+if [ -f "$APP/adobe.txt" ]; then
+  UPIA="/Library/Application Support/Adobe/Adobe Desktop Common/RemoteComponents/UPI/UnifiedPluginInstallerAgent/UnifiedPluginInstallerAgent.app/Contents/MacOS/UnifiedPluginInstallerAgent"
+  if grep -q '^uxp ' "$APP/adobe.txt" && [ -x "$UPIA" ]; then "$UPIA" --remove "Khatt al-Quran" >/dev/null 2>&1 || true; fi
+  CEP="$HOME/Library/Application Support/Adobe/CEP/extensions/com.abdulloh.khatt-al-quran.cep"
+  if grep -q '^cep user ' "$APP/adobe.txt" && [ -d "$CEP" ] && [ ! -L "$CEP" ] &&
+     grep -q 'ExtensionBundleId="com.abdulloh.khatt-al-quran.cep"' "$CEP/CSXS/manifest.xml" 2>/dev/null; then rm -rf "$CEP"; fi
+fi
 rm -rf "$HOME/Library/Fonts/MyQuran" "$APP"
 rm -f "$HOME/Library/Containers/com.microsoft.Word/Data/Documents/wef/MyQuran.xml"
 # forget registrations of the deleted font files (otherwise Word: "We weren't able to load all of your fonts")

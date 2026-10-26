@@ -892,6 +892,7 @@
     clearTimeout(hostWait);
     if (d.ok) toast(t('inserted'));
     else if (ADOBE && /^adobe[A-Z]\w*$/.test(d.error || '')) toast(t(d.error));   // "Open a document first", …
+    else if (ADOBE && d.error) toast(t('error') + ': ' + d.error);    // other Adobe errors: the text itself, not "copied"
     else (hostCopied || Promise.resolve(false)).then(function (ok) { toast(ok ? t('copiedPaste') : t('error') + (d.error ? ': ' + d.error : '')); });
   });
   $('copy').addEventListener('click', function () {
