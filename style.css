@@ -241,7 +241,7 @@ footer.author .app-version { white-space: nowrap; }
 #welcome.show { opacity: 1; }
 #welcome.hide { opacity: 0; pointer-events: none; }
 .welcome-card { width: min(440px, 100%); text-align: center; }
-.welcome-logo { animation: welcome-pop .9s cubic-bezier(.2, .9, .3, 1.3) both, welcome-glow 3s ease-in-out .9s infinite; border-radius: 50%; }
+.welcome-logo { animation: welcome-pop .9s cubic-bezier(.2, .9, .3, 1.3) both, welcome-glow 3s ease-in-out .9s infinite; border-radius: 14%; }
 .welcome-card h1 { margin: 14px 0 4px; font-size: 28px; letter-spacing: -.02em; animation: welcome-up .6s .25s both; }
 .welcome-ar { font-family: var(--ar-font); font-size: 26px; margin: -2px 0 6px; color: var(--accent); animation: welcome-up .6s .3s both; }
 .welcome-sub { color: var(--muted); margin: 0 0 18px; line-height: 1.6; animation: welcome-up .6s .35s both; }

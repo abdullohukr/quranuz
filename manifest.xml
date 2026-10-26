@@ -40,8 +40,8 @@
     <Override Locale="ko-KR" Value="쿠란 구절을 찾아 문서에 삽입: 여러 무스하프의 아랍어 원문, 90개 이상 언어의 번역, 타프시르, 이스티아자, 바스말라와 출처."/>
     <Override Locale="ja-JP" Value="クルアーンの節を探して文書に挿入：複数のムスハフのアラビア語本文、90 以上の言語の訳文、タフスィール、イスティアーザ、バスマラと出典。"/>
   </Description>
-  <IconUrl DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/white-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/white-64.png"/>
+  <IconUrl DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-64.png"/>
   <SupportUrl DefaultValue="https://quran.abdulloh.org/help.html"/>
   <AppDomains>
     <AppDomain>https://quran.abdulloh.org</AppDomain>

@@ -326,7 +326,21 @@
       es: 'desactivado', kk: 'өшірулі', ky: 'өчүрүлгөн', tg: 'хомӯш', az: 'söndürülüb', fa: 'خاموش', ur: 'بند', id: 'nonaktif',
       ms: 'dimatikan', bn: 'বন্ধ', hi: 'बंद', zh: '已关闭', ko: '꺼짐', ja: 'オフ' },
     picBg: { uz: 'Расм фони (қўшилмаса — шаффоф)', uz_latn: 'Rasm foni (qoʻshilmasa — shaffof)', ar: 'خلفية الصورة (شفافة إن لم تُفعَّل)', en: 'Picture background (transparent unless on)', ru: 'Фон картинки (без включения — прозрачный)', tr: 'Resim arka planı (kapalıysa şeffaf)', fr: 'Fond de l’image (transparent si désactivé)', de: 'Bildhintergrund (ohne Haken transparent)', es: 'Fondo de la imagen (transparente si está apagado)', kk: 'Сурет фоны (қосылмаса — мөлдір)', ky: 'Сүрөттүн фону (күйгүзүлбөсө — тунук)', tg: 'Заминаи расм (агар фаъол нест — шаффоф)', az: 'Şəkil fonu (söndürülübsə şəffaf)', fa: 'پس‌زمینه تصویر (بدون فعال‌سازی شفاف)', ur: 'تصویر کا پس منظر (بند ہو تو شفاف)', id: 'Latar gambar (transparan jika mati)', ms: 'Latar gambar (lutsinar jika mati)', bn: 'ছবির পটভূমি (বন্ধ থাকলে স্বচ্ছ)', hi: 'चित्र की पृष्ठभूमि (बंद हो तो पारदर्शी)', zh: '图片背景（关闭时为透明）', ko: '그림 배경 (꺼 두면 투명)', ja: '画像の背景（オフなら透明）' },
-    'script.quranLibrary': { uz_latn: 'Quran Library' }
+    'script.quranLibrary': { uz_latn: 'Quran Library' },
+    /* Adobe panel (adobe/uxp): the plugin answers with these codes, the panel shows them in the interface language */
+    adobeNoDoc: { uz: 'Аввал ҳужжатни очинг', uz_latn: 'Avval hujjatni oching', ar: 'افتح مستندًا أولًا', en: 'Open a document first',
+      ru: 'Сначала откройте документ', tr: 'Önce bir belge açın', fr: 'Ouvrez d’abord un document', de: 'Öffnen Sie zuerst ein Dokument',
+      es: 'Abra primero un documento', kk: 'Алдымен құжатты ашыңыз', ky: 'Алгач документти ачыңыз', tg: 'Аввал ҳуҷҷатро кушоед',
+      az: 'Əvvəlcə sənədi açın', fa: 'ابتدا یک سند باز کنید', ur: 'پہلے کوئی دستاویز کھولیں', id: 'Buka dokumen terlebih dahulu',
+      ms: 'Buka dokumen dahulu', bn: 'আগে একটি ডকুমেন্ট খুলুন', hi: 'पहले कोई दस्तावेज़ खोलें', zh: '请先打开文档', ko: '먼저 문서를 여세요',
+      ja: '先に文書を開いてください' },
+    adobeNoText: { uz: 'Аввал матн рамкаси ичига босинг', uz_latn: 'Avval matn ramkasi ichiga bosing', ar: 'انقر داخل إطار نصي أولًا',
+      en: 'Click in a text frame first', ru: 'Сначала щёлкните в текстовом фрейме', tr: 'Önce bir metin çerçevesinin içine tıklayın',
+      fr: 'Cliquez d’abord dans un bloc de texte', de: 'Klicken Sie zuerst in einen Textrahmen', es: 'Haga clic primero en un marco de texto',
+      kk: 'Алдымен мәтін жақтауының ішін басыңыз', ky: 'Алгач текст алкагынын ичин басыңыз', tg: 'Аввал дар чорчӯбаи матн клик кунед',
+      az: 'Əvvəlcə mətn çərçivəsinin içinə klikləyin', fa: 'ابتدا داخل یک کادر متن کلیک کنید', ur: 'پہلے کسی ٹیکسٹ فریم میں کلک کریں',
+      id: 'Klik dulu di dalam bingkai teks', ms: 'Klik dahulu di dalam bingkai teks', bn: 'আগে একটি টেক্সট ফ্রেমের ভেতরে ক্লিক করুন',
+      hi: 'पहले किसी टेक्स्ट फ़्रेम में क्लिक करें', zh: '请先在文本框中单击', ko: '먼저 텍스트 프레임 안을 클릭하세요', ja: '先にテキストフレーム内をクリックしてください' }
   };
   Object.keys(ALL).forEach(function (k) { for (var l in ALL[k]) if (L[l][k] == null) L[l][k] = ALL[k][l]; });
   /* 3.7: the Updates window */

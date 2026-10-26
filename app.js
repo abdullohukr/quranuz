@@ -18,10 +18,14 @@
   var fontWas = '', firstRun = false, settings = loadSettings(), i18n = new I18n(settings.uiLang);
   var quran, catalog = { translations: [], tafsirs: [], scripts: [] }, suraNames = {}, nativeNames = {}, surahInfo = {}, langNames = {};
   var cache = {}, sel = { sura: 1, from: 1, to: 1, wordFrom: 0, wordTo: null };
-  /* ?host=gdocs | wp | ext: the panel inside Google Docs, WordPress or the browser extension (see sendToHost) */
-  var HOST = (location.search.match(/[?&]host=(gdocs|wp|ext)\b/) || [])[1] || '';
-  if (window.parent === window) HOST = '';
-  var clickStart = null, inWord = false, online = !!HOST, windows = /Win/.test(navigator.platform || ''), results = [];
+  /* ?host=gdocs | wp | ext: the panel inside Google Docs, WordPress or the browser extension (see sendToHost).
+     ?host=adobe: InDesign / InCopy / Photoshop / Premiere (adobe/uxp: a <webview>, not a frame, so window.parent is
+     the page itself and the way out is window.uxpHost) or a CEP panel (an iframe). Fonts installed on the computer
+     work there, so the QPC page mushafs stay and online is false. */
+  var HOST = (location.search.match(/[?&]host=(gdocs|wp|ext|adobe)\b/) || [])[1] || '';
+  if (window.parent === window && HOST !== 'adobe') HOST = '';
+  var ADOBE = HOST === 'adobe';
+  var clickStart = null, inWord = false, online = !!HOST && !ADOBE, windows = /Win/.test(navigator.platform || ''), results = [];
   var t = function (k, v) { return i18n.t(k, v); };
 
   /* ---------- settings (kept in localStorage, so they survive restarts) ---------- */
@@ -223,7 +227,7 @@
     var el = document.createElement('div');
     el.id = 'welcome';
     el.innerHTML = '<div class="welcome-card">' +
-      '<img class="welcome-logo" src="assets/icon-300.png" width="112" height="112" alt="">' +
+      '<img class="welcome-logo" src="assets/brand/word-office/square-300.png" width="112" height="112" alt="">' +
       '<h1>Khatt al-Quran</h1><p class="welcome-ar" dir="rtl">خط القرآن</p>' +
       '<p class="welcome-sub">Choose your language · Тилни танланг · Выберите язык<br><span dir="rtl">اختر اللغة · زبان منتخب کریں</span></p>' +
       '<div class="welcome-langs">' + MAIN.map(function (id) {
@@ -410,7 +414,7 @@
      (604 fonts each) are offered there too: their Arabic paragraph is inserted as a picture drawn
      with the web fonts (see ayahPicture), with the Unicode text as its alternative text. */
   function usableScripts() {                          // no page-font mushafs in the embedding hosts (no picture there)
-    return HOST ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
+    return HOST && !ADOBE ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
   }
   /* Word on the web / iPad: no locally installed fonts and no add-in fonts. Ordinary mushafs go in as text in
      a Microsoft cloud font that renders the Quran text correctly (checked: ayah signs ۝١, all marks);
@@ -852,16 +856,42 @@
   }
   function sendToHost(out) {
     var copied = hostCopied = copy(out).then(function () { return true; }, function () { return false; });
+    if (ADOBE) return sendToAdobe(out, copied);
     window.parent.postMessage({ type: 'khatt-insert', v: 1, html: buildHtml(out), text: out.text, doc: hostDoc(out),
                                 newPara: !!settings.newPara }, '*');
     clearTimeout(hostWait);
     hostWait = setTimeout(function () { copied.then(function (ok) { toast(ok ? t('copiedPaste') : t('error')); }); }, 4000);
   }
+  /* Adobe: the same message, plus for a QPC page mushaf the Arabic paragraph as a picture (pic: transparent PNG
+     unless a background is set, see ayahPicture). The program uses the text when it can (InDesign with the page
+     fonts installed) and the picture where it cannot (Photoshop, Premiere, missing fonts). */
+  function adobePost(msg) {
+    if (window.uxpHost && window.uxpHost.postMessage) window.uxpHost.postMessage(msg);   // UXP webview
+    else window.parent.postMessage(msg, '*');                                              // CEP iframe
+  }
+  var adobePicAlways = false;      // Premiere: no text API, a picture for every mushaf (khatt-host from bridge.js)
+  function sendToAdobe(out, copied) {
+    var qpc = !!scriptById(settings.script).glyph;
+    var msg = { type: 'khatt-insert', v: 1, html: buildHtml(out), text: out.text, doc: hostDoc(out),
+                newPara: !!settings.newPara, qpc: qpc };
+    clearTimeout(hostWait);
+    hostWait = setTimeout(function () { copied.then(function (ok) { toast(ok ? t('copiedPaste') : t('error')); }); }, 30000);
+    return (qpc || adobePicAlways ? ayahPicture(out).catch(function () { return null; }) : Promise.resolve(null)).then(function (pic) {
+      if (pic) msg.pic = pic;
+      adobePost(msg);
+    });
+  }
+  function fromAdobe(e) {          // UXP: the plugin's messages come from window.uxpHost (origin = the plugin id)
+    return ADOBE && !!window.uxpHost && (e.source === window.uxpHost || !/^https?:/.test(e.origin || ''));
+  }
   window.addEventListener('message', function (e) {
     var d = e.data;
-    if (!HOST || e.source !== window.parent || !d || d.type !== 'khatt-result') return;
+    if (typeof d === 'string' && fromAdobe(e)) try { d = JSON.parse(d); } catch (x) { return; }
+    if (d && d.type === 'khatt-host' && fromAdobe(e)) { adobePicAlways = d.picture === 'always'; return; }
+    if (!HOST || (e.source !== window.parent && !fromAdobe(e)) || !d || d.type !== 'khatt-result') return;
     clearTimeout(hostWait);
     if (d.ok) toast(t('inserted'));
+    else if (ADOBE && /^adobe[A-Z]\w*$/.test(d.error || '')) toast(t(d.error));   // "Open a document first", …
     else (hostCopied || Promise.resolve(false)).then(function (ok) { toast(ok ? t('copiedPaste') : t('error') + (d.error ? ': ' + d.error : '')); });
   });
   $('copy').addEventListener('click', function () {
@@ -1157,14 +1187,14 @@
     Office.onReady(function (info) {
       inWord = info && info.host === Office.HostType.Word;
       // fonts installed on the computer exist only in Word for Windows and Mac (not on the web, iPad, …)
-      online = !!HOST || inWord && info.platform !== Office.PlatformType.PC && info.platform !== Office.PlatformType.Mac;
+      online = !!HOST && !ADOBE || inWord && info.platform !== Office.PlatformType.PC && info.platform !== Office.PlatformType.Mac;
       if (inWord) windows = info.platform === Office.PlatformType.PC;
       if (inWord) { document.body.classList.add('office'); $('host-badge').hidden = false; }
       if (online && quran) render();
     });
   }
   if (HOST) {
-    $('host-badge').textContent = { gdocs: 'Google Docs', wp: 'WordPress', ext: t('browser') }[HOST];
+    $('host-badge').textContent = { gdocs: 'Google Docs', wp: 'WordPress', ext: t('browser'), adobe: 'Adobe' }[HOST];
     if (HOST === 'ext') $('host-badge').dataset.i18n = 'browser';     // follows the interface language
     $('host-badge').hidden = false;
     document.body.classList.add('embedded');
