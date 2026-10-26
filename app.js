@@ -413,8 +413,8 @@
   /* Word on the web and on iPad cannot use fonts installed on the computer. The QPC page mushafs
      (604 fonts each) are offered there too: their Arabic paragraph is inserted as a picture drawn
      with the web fonts (see ayahPicture), with the Unicode text as its alternative text. */
-  function usableScripts() {                          // no page-font mushafs in the embedding hosts (no picture there)
-    return HOST && !ADOBE ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
+  function usableScripts() {                          // no page-font mushafs in the embedding hosts (no picture there); WordPress gets them as text (its plugin loads the page fonts)
+    return HOST && !ADOBE && HOST !== 'wp' ? catalog.scripts.filter(function (sc) { return !sc.glyph; }) : catalog.scripts;
   }
   /* Word on the web / iPad: no locally installed fonts and no add-in fonts. Ordinary mushafs go in as text in
      a Microsoft cloud font that renders the Quran text correctly (checked: ayah signs ۝١, all marks);

@@ -1,6 +1,11 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.9.0', '2026-10-26', { uz: 'WordPress: ён панел', ru: 'WordPress: боковая панель', en: 'WordPress: a side panel', ar: 'ووردبريس: لوحة جانبية' }, {
+    uz: ['WordPress плагини энди Word’даги каби ишлайди: муҳаррирда ёнидаги «Khatt al-Quran» панели очилади, оятни топиб «Қўйиш» тугмасини босасиз: оят ва таржима курсор турган жойга оддий абзацлар сифатида тушади ва уларни одатдаги матндек таҳрирлаш мумкин. Саҳифа шрифтли мусҳафлар (QPC) ҳам матн сифатида қўйилади: керакли шрифтлар ўзи уланади.'],
+    ru: ['Плагин WordPress теперь работает как в Word: в редакторе открывается боковая панель «Khatt al-Quran», вы находите аят и нажимаете «Вставить»: аят и перевод встают туда, где курсор, обычными абзацами, и их можно править как обычный текст. Мусхафы QPC (шрифт на каждую страницу) тоже вставляются текстом: нужные шрифты подключаются сами.'],
+    en: ['The WordPress plugin now works like Word: a “Khatt al-Quran” side panel opens in the editor; find the ayah and press Insert, and the ayah and translation go in at the cursor as ordinary paragraphs you can edit like any other text. The page-font mushafs (QPC) go in as text too: the fonts they need are loaded automatically.'],
+    ar: ['يعمل إضافة ووردبريس الآن مثل Word: تُفتح لوحة جانبية «Khatt al-Quran» في المحرر، تجد الآية وتضغط «إدراج» فتدخل الآية والترجمة عند المؤشر في فقرات عادية يمكن تحريرها كأي نص. وتُدرَج مصاحف خطوط الصفحات (QPC) نصًّا أيضًا، وتُحمَّل خطوطها تلقائيًا.'] }],
   ['3.8.9', '2026-10-26', { uz: 'Қидирув тезроқ ва ишончлироқ', ru: 'Поиск надёжнее', en: 'More reliable search', ar: 'بحث أكثر موثوقية' }, {
     uz: ['Қидирув сатрига жуда узун матн қўйилганда панел энди қотиб қолмайди.'],
     ru: ['Когда в строку поиска вставляют очень длинный текст, панель больше не зависает.'],
