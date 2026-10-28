@@ -82,7 +82,7 @@
     ['arSize', 'uzSize', 'auzaSize', 'basmalaSize', 'refSize'].forEach(function (k) { if (typeof st[k] === 'string' && +st[k]) st[k] = +st[k]; if (typeof st[k] !== 'number' || !isFinite(st[k])) st[k] = DEFAULTS[k]; });
     ['withTr', 'withTafsir', 'brackets', 'auza', 'basmala', 'ref', 'trRef', 'newPara', 'ayahNums', 'hizb', 'sajda', 'waqf', 'arBold', 'arText', 'picBgOn', 'votd', 'markAyahs', 'liveSearch']
       .forEach(function (k) { st[k] = typeof st[k] === 'boolean' ? st[k] : DEFAULTS[k]; });
-    st.searchScope = oneOf(st.searchScope, ['default', 'selected', 'all'], 'default');
+    st.searchScope = oneOf(st.searchScope, ['default', 'selected', 'all', 'tafsir'], 'default');
     st.votdClose = oneOf(st.votdClose, ['ask', 'day', 'off'], 'ask');
     st.picAction = oneOf(st.picAction, ['ask', 'insert', 'copy'], 'ask');
     st.extInsert = oneOf(st.extInsert, ['ask', 'text', 'picture'], 'ask');
@@ -567,7 +567,10 @@
     var first = activeTranslations().filter(function (x) { return x.data; })[0], ar = arHit(r);
     var h = '<div class="ref">' + esc(uiSuraName(r.sura)) + ' <bdi>' + r.sura + ':' + r.aya + '</bdi> · <bdi>' +
       esc(quran.suras[r.sura - 1][0]) + '</bdi></div><div class="ar" dir="rtl">' + ayahHtml(r.sura, r.aya, ar) + '</div>';
-    if (r.frag) h += '<div class="hit" dir="' + r.frag.dir + '">' + r.frag.html + '</div>';
+    if (r.frag) {
+      h += '<div class="hit" dir="' + r.frag.dir + '">' + r.frag.html + '</div>';
+      if (r.frag.tf) h += '<button type="button" class="link small open-tf" data-id="' + esc(r.frag.src) + '">' + esc(t('openTafsir')) + (r.frag.ayaTo > r.aya ? ' (' + r.aya + '–' + r.frag.ayaTo + ')' : '') + '</button>';
+    }
     else if (settings.withTr && first) h += '<div class="small muted" dir="' + (first.dir || 'auto') + '">' +
       esc(QuranCore.stripHtml(first.data[quran.index(r.sura, r.aya)]).slice(0, 160)) + '…</div>';
     var names = sourceNames(r);
@@ -581,7 +584,7 @@
   }
   function textHit(r) {
     var hs = (r.hits || []).filter(function (x) { return x.src !== 'quran'; });
-    function has(x) { var c = trById(x.src), m = srcMeta(x.src); return !!(c && c.data) || !!(m && m.text); }
+    function has(x) { var c = trById(x.src), m = srcMeta(x.src); return !!(c && c.data) || !!(m && m.text) || !!x.snippet || x.layer === 'tafsir'; }
     function rank(x) { return (has(x) ? 0 : 4) + (x.ranges && x.ranges.length ? 0 : 2) + (x.kind === 'tafsir' ? 1 : 0); }
     return hs.slice().sort(function (a, b) { return rank(a) - rank(b); })[0] || null;
   }
@@ -597,6 +600,12 @@
     var m = deepClient && deepClient._manifest;            // read by Search.run before it gives index results
     if (m && !srcIndex) { srcIndex = {}; m.sources.forEach(function (s, n) { srcIndex[s.id] = n; }); }
     var c = trById(id) || tfById(id), s = m && srcIndex[id] != null ? m.sources[srcIndex[id]] : null;
+    var lm = deepClient && deepClient._layers && deepClient._layers.tafsir && deepClient._layers.tafsir.m;      // the tafsir index (read only when asked for)
+    if (lm && lm._ids[id] != null) {                  // a tafsir of the tafsir index: it has the text (the main index may know it without)
+      var ls = lm.sources[lm._ids[id]];
+      return { name: (c && c.name) || ls.name || id, lang: (c && c.lang) || ls.lang || '', n: null, dir: c && c.dir || (/^(Arab|Hebr|Thaa|Syrc)$/.test(ls.script) ? 'rtl' : 'auto'),
+               script: ls.stem ? 'ar' : ls.script, text: true, layer: true };
+    }
     if (!c && !s) return null;
     var script = s ? s.script : '';
     return { name: (c && c.name) || (s && s.name) || id, lang: (c && c.lang) || (s && s.lang) || '', n: s ? srcIndex[id] : null,
@@ -643,6 +652,7 @@
     var c = trById(id);
     if (c && c.data) return Promise.resolve({ text: QuranCore.stripHtml(c.data[i] || '').replace(/\s+/g, ' ').trim(), local: true });
     var m = deepClient && deepClient._manifest, x = srcMeta(id);
+    if (x && x.layer && deepClient) return deepClient.tafsirText(id, i, signal).then(function (e) { return e && e.text ? { text: e.text, to: e.to } : null; });
     if (!m || !m.text || !x || x.n == null || !x.text) return Promise.resolve(null);
     var b = Math.floor(i / m.text.block);
     return deepClient.block(m, x.n, b, signal).then(function (arr) { var s = Array.isArray(arr) && arr[i - b * m.text.block]; return typeof s === 'string' ? { text: s } : null; });
@@ -652,6 +662,14 @@
   function loadFragments() {
     var st = deepState; if (!st) return;
     st.active = st.active || 0;
+    for (var q = 0; q < Math.min(shown, results.length); q++) {       // a tafsir hit comes with its fragment (the first 10): no block to load
+      var rq = results[q], hq = textHit(rq);
+      if (hq && hq.snippet && !(rq.frag && rq.frag.src === hq.src)) {
+        var mq = srcMeta(hq.src) || {};
+        rq.frag = { src: hq.src, ranged: true, dir: mq.dir || 'auto', html: fragmentHtml(hq.snippet, hq.ranges || []), tf: !!mq.layer, ayaTo: hq.ayaTo || 0 };
+        paintResult(rq);
+      }
+    }
     function key(h) { return h.src + (h.ranges ? '+' : ''); }
     function next() {
       if (st !== deepState) return null;
@@ -673,7 +691,7 @@
       hitText(h.src, quran.index(r.sura, r.aya), st.ctl && st.ctl.signal).then(function (x) {
         if (st !== deepState || !x || !x.text) return;
         var meta = srcMeta(h.src) || {}, ranges = !x.local && h.ranges ? h.ranges : QuranSearch.highlight(x.text, st.q, meta.script);
-        r.frag = { src: h.src, ranged: !!h.ranges, dir: meta.dir || 'auto', html: fragmentHtml(x.text, ranges) };
+        r.frag = { src: h.src, ranged: !!h.ranges, dir: meta.dir || 'auto', html: fragmentHtml(x.text, ranges), tf: !!meta.layer, ayaTo: h.ayaTo || 0 };
         paintResult(r);
       }).catch(function () { /* no text: the source name is shown all the same */ }).then(function () { st.active--; pump(); });
     }
@@ -695,7 +713,9 @@
     return l;
   }
   function sourceCount(scope, ids) {
-    var m = deepClient && deepClient._manifest; if (!m) return 0;
+    var m = deepClient && deepClient._manifest, lm = deepClient && deepClient._layers && deepClient._layers.tafsir && deepClient._layers.tafsir.m;
+    if (scope === 'tafsir') return lm ? lm.sources.length : 13;
+    if (!m) return 0;
     var langs = defaultLangs(ids), want = {};
     ids.forEach(function (id) { want[id] = 1; });
     return m.sources.filter(function (s) { return scope === 'selected' ? want[s.id] : scope === 'all' || langs[s.lang] || want[s.id]; }).length;
@@ -791,7 +811,23 @@
     clearTimeout(searchTimer); runSearch(true); addRecent($('q').value);
     if (results.length && !quran.parseRef($('q').value)) setSel(results[0].sura, results[0].aya, results[0].aya);     // Enter: the first one found
   });
+  /* the whole tafsir of the ayah (from the tafsir index) in the information window */
   $('results').addEventListener('click', function (e) {
+    var b = e.target.closest('.open-tf'); if (!b) return;
+    e.stopPropagation();
+    var li = b.closest('li'), r = li && results[+li.dataset.i]; if (!r || !deepClient) return;
+    var id = b.dataset.id, meta = srcMeta(id) || {};
+    deepClient.tafsirText(id, quran.index(r.sura, r.aya)).then(function (x) {
+      if (!x || !x.text) { toast(t('error')); return; }
+      $('info-title').innerHTML = esc(meta.name || id) + ' <bdi>' + r.sura + ':' + r.aya + (x.to > x.from ? '–' + (r.aya + x.to - x.from) : '') + '</bdi>';
+      $('info-note').hidden = true;
+      $('info-body').innerHTML = x.text.split(/\n+/).filter(function (p) { return p.trim(); }).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+      $('info-body').dir = meta.dir || 'auto';
+      $('info').showModal();
+    }, function () { toast(t('error')); });
+  });
+  $('results').addEventListener('click', function (e) {
+    if (e.target.closest('.open-tf')) return;
     var li = e.target.closest('li'); if (!li) return;
     var r = results[+li.dataset.i]; if (!r) return;
     if (e.shiftKey && r.sura === sel.sura) setSel(r.sura, Math.min(sel.from, r.aya), Math.max(sel.to, r.aya));

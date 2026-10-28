@@ -723,6 +723,32 @@
     ja: { oneShotNone: '文書で何も選択されていません', shareLink: 'この節へのリンクを共有' }
   };
   Object.keys(PANEL6).forEach(function (l) { for (var k in PANEL6[l]) L[l][k] = PANEL6[l][k]; });
+  /* 3.14: search in tafsirs */
+  var PANEL7 = {
+    en: { scopeTafsir: 'Tafsirs only', openTafsir: 'Open the tafsir' },
+    ru: { scopeTafsir: 'Только в тафсирах', openTafsir: 'Открыть тафсир' },
+    uz: { scopeTafsir: 'Фақат тафсирларда', openTafsir: 'Тафсирни очиш' },
+    uz_latn: { scopeTafsir: 'Faqat tafsirlarda', openTafsir: 'Tafsirni ochish' },
+    ar: { scopeTafsir: 'في التفاسير فقط', openTafsir: 'افتح التفسير' },
+    tr: { scopeTafsir: 'Yalnızca tefsirlerde', openTafsir: 'Tefsiri aç' },
+    fr: { scopeTafsir: 'Seulement dans les tafsirs', openTafsir: 'Ouvrir le tafsir' },
+    de: { scopeTafsir: 'Nur in Tafsiren', openTafsir: 'Tafsir öffnen' },
+    es: { scopeTafsir: 'Solo en tafsires', openTafsir: 'Abrir el tafsir' },
+    kk: { scopeTafsir: 'Тек тафсирлерде', openTafsir: 'Тафсирді ашу' },
+    ky: { scopeTafsir: 'Тафсирлерде гана', openTafsir: 'Тафсирди ачуу' },
+    tg: { scopeTafsir: 'Танҳо дар тафсирҳо', openTafsir: 'Кушодани тафсир' },
+    az: { scopeTafsir: 'Yalnız təfsirlərdə', openTafsir: 'Təfsiri aç' },
+    fa: { scopeTafsir: 'فقط در تفسیرها', openTafsir: 'باز کردن تفسیر' },
+    ur: { scopeTafsir: 'صرف تفاسیر میں', openTafsir: 'تفسیر کھولیں' },
+    id: { scopeTafsir: 'Hanya di tafsir', openTafsir: 'Buka tafsir' },
+    ms: { scopeTafsir: 'Tafsir sahaja', openTafsir: 'Buka tafsir' },
+    bn: { scopeTafsir: 'শুধু তাফসিরে', openTafsir: 'তাফসির খুলুন' },
+    hi: { scopeTafsir: 'सिर्फ़ तफ़सीर में', openTafsir: 'तफ़सीर खोलें' },
+    zh: { scopeTafsir: '仅在注释（塔夫西尔）中', openTafsir: '打开注释' },
+    ko: { scopeTafsir: '타프시르에서만', openTafsir: '타프시르 열기' },
+    ja: { scopeTafsir: 'タフスィールのみ', openTafsir: 'タフスィールを開く' }
+  };
+  Object.keys(PANEL7).forEach(function (l) { for (var k in PANEL7[l]) L[l][k] = PANEL7[l][k]; });
   /* search in every language (translations and tafsirs of the search index) */
   var SEARCH = {
     uz: { searchGroup: 'Қидирув', searchScope: 'Қаерда қидириш', scopeDefault: 'Асосий тилларда (en, ar, ru, tr, uz + интерфейс тили + танланганлар)',
