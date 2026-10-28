@@ -1,6 +1,11 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.15.1', '2026-10-29', { uz: 'Барча қўшимчаларда ягона версия', ru: 'Единая версия у всех дополнений', en: 'One version for every add-on', ar: 'إصدار واحد لكل الإضافات' }, {
+    uz: ['Браузер кенгайтмалари (Chrome, Edge, Firefox), WordPress плагини, Word, Adobe InDesign/Photoshop/Premiere ва CEP панелларининг версияси энди дастур нашри билан бир хил (3.15.1) ва у билан бирга ошади.'],
+    ru: ['Версия расширений браузеров (Chrome, Edge, Firefox), плагина WordPress, надстройки Word, плагинов Adobe (InDesign, Photoshop, Premiere) и панели CEP теперь совпадает с версией выпуска (3.15.1) и растёт вместе с ним.'],
+    en: ['The browser extensions (Chrome, Edge, Firefox), the WordPress plugin, the Word add-in, the Adobe plugins (InDesign, Photoshop, Premiere) and the CEP panel now carry the version of the release (3.15.1) and rise with it.'],
+    ar: ['صار إصدار إضافات المتصفح (Chrome وEdge وFirefox) وملحق WordPress وإضافة Word وإضافات Adobe (InDesign وPhotoshop وPremiere) ولوحة CEP مطابقًا لإصدار البرنامج (3.15.1) ويرتفع معه.'] }],
   ['3.15.0', '2026-10-29', { uz: 'Word лентаси янгиланди, ягона белги, барқарор жонли қидирув', ru: 'Новая лента Word, единый значок, устойчивый живой поиск', en: 'A new Word ribbon, one icon everywhere, a steadier live search', ar: 'شريط Word جديد وأيقونة موحدة وبحث حي أكثر ثباتًا' }, {
     uz: ['Word лентаси тўлиқ янгиланди: «Khatt al-Quran» ичида гуруҳлар — Оятлар (панел, белгиланганни қидириш, жонли қидирув), Оятларим (тарих, сараланганлар, сават), Асбоблар (иқтибосни текшириш, созламалар), Маълумот. Ҳар бир тугма панелни керакли жойда очади.',
          'Ягона белги: лентадаги асосий тугма, «Қўшимчалар» рўйхати ва панелдаги белги энди бир хил (логотип); қолган тугмалар ҳам бир услубда. Браузер, WordPress ва Adobe CEP белгилари ҳам бирхиллаштирилди.',
