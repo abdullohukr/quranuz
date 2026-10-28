@@ -1387,7 +1387,7 @@
   window.addEventListener('message', function (e) {
     var d = e.data;
     if (!HOST || ADOBE || e.source !== window.parent || !d || !fromExt(e)) return;
-    if (d.type === 'khatt-search' && typeof d.q === 'string') { if (d.live) liveSelect(d.q); else searchFor(d.q); }
+    if (d.type === 'khatt-search' && typeof d.q === 'string') { if (d.live) liveSelect(d.q); else if (!d.q.trim()) toast(t('oneShotNone')); else searchFor(d.q); }
     else if (d.type === 'khatt-pref' && HOST === 'ext') {
       if (settings.liveSearch) hostLive(true);                         // the extension is known now: tell it to follow the selection
       if (/^(ask|text|picture)$/.test(d.extInsert || '')) {
@@ -1553,6 +1553,7 @@
   }
   $('again').addEventListener('click', doUndo);
   function marksPref() {
+    if (HOST === 'tg') { tgSyncSoon(); return; }
     if (HOST !== 'ext') return;
     toParent({ type: 'khatt-pref', fav: marks.fav.map(markId).join(','), hist: marks.hist.map(function (x) {
       return [x.sura, x.from, x.to, Math.round((x.time || 0) / 1000)].concat(x.wf != null ? [x.wf, x.wt] : []);
@@ -1687,6 +1688,7 @@
     var m = $('more-menu'); m.hidden = !on; $('more-btn').setAttribute('aria-expanded', !!on);
     if (on) {
       $('m-foot').hidden = !(inWord && window.Office && Office.context && Office.context.requirements && Office.context.requirements.isSetSupported('WordApi', '1.5'));
+      $('m-share').hidden = HOST !== 'tg';
       $('m-update').hidden = !(inWord && settings.markAyahs); delete $('m-update').dataset.sure; $('m-update').textContent = t('updateAyahs');
     }
   }
@@ -1696,6 +1698,13 @@
   function withOut(fn) { if (!quran) return; ensureData().then(function () { remember(); fn(current()); }); }
   $('m-text').addEventListener('click', function () { menuOpen(false); withOut(function (out) { clipText(out.text); }); });
   $('m-md').addEventListener('click', function () { menuOpen(false); withOut(function (out) { clipText(mdOf(out)); }); });
+  /* Telegram Mini App: share the link to the ayah through Telegram's own chooser */
+  $('m-share').addEventListener('click', function () {
+    menuOpen(false);
+    var tg = window.Telegram && Telegram.WebApp, link = refLink();
+    if (tg && tg.openTelegramLink) tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(markRef(sel)));
+    else clipText(link);
+  });
   $('m-link').addEventListener('click', function () { menuOpen(false); clipText(refLink()); });
   /* "Check a quote": the pasted Arabic is compared with the selected ayah(s), word by word, without vowel marks and with the
      different spellings of alef / ya / ta marbuta treated as the same (the Uthmani and the ordinary spelling both match) */
@@ -1815,7 +1824,7 @@
   }
 
   /* ---------- live search: follows the selected ARABIC text of the document (off by default) ----------
-     Light on everybody: only Arabic text of 2–160 characters, only when it changed, 500 ms after the selection stopped moving,
+     Light on everybody: only Arabic text of 2–160 characters, only when it changed,
      only while the panel is visible, and only the instant LOCAL search (nothing is fetched from the server for it). The host
      sends the selection: Word (selection-changed event), the browser extension (the selected text of the page), the WordPress
      editor, Google Docs (every 2 s while it is on). */
@@ -1830,22 +1839,36 @@
     if (!settings.liveSearch || !quran || document.hidden) return;
     var q = liveArabic(text);
     if (!q || q === liveLast) return;
-    clearTimeout(liveTimer);
-    liveTimer = setTimeout(function () {
-      liveLast = q; $('q').value = q;
-      clearTimeout(searchTimer); runSearch(true, true);
-      if (results.length && !quran.parseRef(q)) { setSel(results[0].sura, results[0].aya, results[0].aya); }
-    }, 500);
+    liveLast = q;                                      // at once (the local search takes milliseconds); polling and events do the rest
+    $('q').value = q;
+    clearTimeout(searchTimer); runSearch(true, true);
+    if (results.length && !quran.parseRef(q)) setSel(results[0].sura, results[0].aya, results[0].aya);
   }
   function hostLive(on) { if (HOST && !ADOBE && HOST !== 'tg') toParent({ type: 'khatt-live', on: !!on }); }
-  function wordSelection() {                           // Word: the selection changed
-    clearTimeout(liveWordTimer);
-    liveWordTimer = setTimeout(function () {
-      if (!settings.liveSearch || !window.Word || document.hidden) return;
-      Word.run(function (ctx) { var r = ctx.document.getSelection(); r.load('text'); return ctx.sync().then(function () { return r.text; }); })
-        .then(liveSelect, function () {});
-    }, 300);
+  /* Word: the selected text is read with getSelectedDataAsync (a few ms; Word.run took seconds). The selection-changed event reads it at
+     once, and while live search is on it is also read every 300 ms, because Word sends the event late. One read at a time. */
+  var wordBusy = false, wordPoll = null;
+  function readWordSelection(cb) {
+    if (wordBusy) return; wordBusy = true;
+    var done = function (txt) { wordBusy = false; if (txt != null) cb(String(txt)); };
+    try {
+      Office.context.document.getSelectedDataAsync(Office.CoercionType.Text, function (r) { done(r && r.status === Office.AsyncResultStatus.Succeeded ? r.value : null); });
+    } catch (e) { wordBusy = false; }
+    setTimeout(function () { wordBusy = false; }, 1500);       // a read that never answers must not block the next ones
   }
+  function wordSelection() { if (settings.liveSearch && !document.hidden) readWordSelection(liveSelect); }
+  /* one search of the selection without switching live search on: the key Alt+F (Alt+Shift+F), asked of the host */
+  function oneShot() {
+    if (!quran) return;
+    var found = function (txt) { txt = String(txt || '').replace(/\s+/g, ' ').trim(); if (txt) searchFor(txt.slice(0, 500)); else toast(t('oneShotNone')); };
+    if (inWord && window.Office && Office.context && Office.context.document && Office.context.document.getSelectedDataAsync) { wordBusy = false; readWordSelection(found); }
+    else if (HOST === 'tg' || ADOBE) toast(t('oneShotNone'));
+    else if (HOST) toParent({ type: 'khatt-selection-now' });
+    else found(String(window.getSelection ? window.getSelection() : ''));
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyF')) { e.preventDefault(); oneShot(); }
+  });
   function setLive(on) {
     if (settings.liveSearch !== !!on) { settings.liveSearch = !!on; saveSettings(); }      // (the start-up call changes nothing)
     $('live-btn').setAttribute('aria-pressed', !!on); $('s-live').checked = !!on; liveLast = '';
@@ -1853,14 +1876,48 @@
     hostLive(on);
     if (inWord && window.Office && Office.context && Office.context.document && Office.context.document.addHandlerAsync) {
       try {
-        if (on && !liveWordOn) { liveWordOn = true; Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, wordSelection); }
-        else if (!on && liveWordOn) { liveWordOn = false; Office.context.document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler: wordSelection }); }
+        if (on && !liveWordOn) { liveWordOn = true; Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, wordSelection); clearInterval(wordPoll); wordPoll = setInterval(wordSelection, 300); }
+        else if (!on && liveWordOn) { liveWordOn = false; clearInterval(wordPoll); Office.context.document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler: wordSelection }); }
       } catch (e) { liveWordOn = false; }
     }
   }
   $('live-btn').addEventListener('click', function () { setLive(!settings.liveSearch); toast(t(settings.liveSearch ? 'liveOn' : 'liveOff')); });
   $('s-live').addEventListener('change', function () { setLive(this.checked); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && settings.liveSearch) hostLive(true); });
+
+  /* ---------- Telegram Mini App: favourites kept with the bot ----------
+     The bot's Worker (the `api` address in the link of /app, only https://bot.abdulloh.org is accepted) keeps the favourites of the
+     Telegram user: GET /api/favs → {fav: ["2:255-255", …]}, PUT /api/favs {fav: [...]}; the user is proved by Telegram's initData
+     (Authorization: tma <initData>). At start the two lists are merged (the bot's first), later every change is sent after 1.5 s. */
+  var TG_API = '', tgSyncTimer, tgSynced = false;
+  (function () {
+    var m = location.search.match(/[?&]api=([^&]+)/), a = m ? decodeURIComponent(m[1]) : '';
+    if (a === 'https://bot.abdulloh.org') TG_API = a;
+  })();
+  function tgAuth() { var tg = window.Telegram && Telegram.WebApp; return tg && tg.initData ? 'tma ' + tg.initData : ''; }
+  function tgFavs(method, body) {
+    var auth = tgAuth(); if (!TG_API || !auth || !window.fetch) return Promise.reject(new Error('no api'));
+    return fetch(TG_API + '/api/favs', { method: method, headers: Object.assign({ Authorization: auth }, body ? { 'Content-Type': 'application/json' } : {}),
+      body: body ? JSON.stringify(body) : undefined, credentials: 'omit' }).then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); });
+  }
+  function favId(x) { return x.sura + ':' + x.from + '-' + x.to; }
+  function tgSyncSoon() {
+    if (HOST !== 'tg' || !TG_API || !tgSynced) return;
+    clearTimeout(tgSyncTimer);
+    tgSyncTimer = setTimeout(function () { tgFavs('PUT', { fav: marks.fav.map(favId).slice(0, 500) }).catch(function () {}); }, 1500);
+  }
+  function tgSyncStart() {
+    if (HOST !== 'tg' || !TG_API || tgSynced || !quran || !tgAuth()) return;
+    tgFavs('GET').then(function (d) {
+      var server = (d && Array.isArray(d.fav) ? d.fav : []).map(function (s) { var m = /^(\d+):(\d+)-(\d+)$/.exec(String(s)); return m && { sura: +m[1], from: +m[2], to: +m[3], time: 0 }; }).filter(okMark);
+      var seen = {}, merged = [];
+      server.concat(marks.fav).forEach(function (x) { var id = favId(x); if (!seen[id]) { seen[id] = 1; merged.push(x); } });
+      marks.fav = merged.slice(0, MARK_MAX.fav); storeMarks('fav'); drawMarks(); starState();
+      tgSynced = true;
+      if (merged.map(favId).join() !== server.map(favId).join()) tgSyncSoon();
+    }).catch(function () { /* offline or not set up: the favourites stay on this device */ });
+  }
+  if (HOST === 'tg') { var tgTry = setInterval(function () { if (tgSynced || !quran) { if (tgSynced) clearInterval(tgTry); return; } if (tgAuth()) tgSyncStart(); }, 1500); setTimeout(function () { clearInterval(tgTry); }, 60000); }
 
   /* ---------- ayah of the day: the same for everyone on a calendar day; drawn after the panel ---------- */
   var votdList = null, VOTD_CLOSED = 'myquran-votd-closed';

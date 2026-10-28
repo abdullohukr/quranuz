@@ -1,6 +1,19 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.13.1', '2026-10-29', { uz: 'Жонли қидирув тезлашди, Alt+F, ҳавола улашиш', ru: 'Живой поиск быстрее, Alt+F, поделиться ссылкой', en: 'Faster live search, Alt+F, share a link', ar: 'بحث حي أسرع وAlt+F ومشاركة الرابط' }, {
+    uz: ['Word’да жонли қидирув жуда тезлашди: белгиланган арабча матн секунднинг улушида қидирилади (олдин 4–5 секунд кетарди).',
+         'Alt+F (ёки Alt+Shift+F): жонли қидирув ўчиқ бўлса ҳам, ҳужжатда белгиланган матнни бир марта қидиради.',
+         'Telegram Mini App: оятга ҳаволани Telegram орқали улашиш тугмаси. Сараланганлар бот билан синхронланади (бот жойлаштирилгандан кейин).'],
+    ru: ['Живой поиск в Word стал заметно быстрее: выделенный арабский текст ищется за доли секунды (раньше уходило 4–5 секунд).',
+         'Alt+F (или Alt+Shift+F): один раз ищет выделенный в документе текст, даже когда живой поиск выключен.',
+         'Telegram Mini App: кнопка «Поделиться ссылкой на аят» через Telegram. Избранное синхронизируется с ботом (после развёртывания бота).'],
+    en: ['Live search in Word is much faster: selected Arabic text is searched in a fraction of a second (it used to take 4–5 seconds).',
+         'Alt+F (or Alt+Shift+F): searches the text selected in the document once, even with live search switched off.',
+         'Telegram Mini App: a “Share a link to the ayah” button through Telegram. Favourites sync with the bot (once the bot is deployed).'],
+    ar: ['صار البحث الحي في Word أسرع بكثير: يُبحث عن النص العربي المحدد في جزء من الثانية (كان يستغرق 4–5 ثوانٍ).',
+         'Alt+F (أو Alt+Shift+F): يبحث مرة واحدة عن النص المحدد في المستند حتى مع إيقاف البحث الحي.',
+         'تطبيق Telegram المصغّر: زر «شارك رابط الآية» عبر Telegram. وتتزامن المفضلة مع البوت (بعد نشر البوت).'] }],
   ['3.13.0', '2026-10-29', { uz: 'Жонли қидирув, Telegram Mini App', ru: 'Живой поиск, Telegram Mini App', en: 'Live search, Telegram Mini App', ar: 'البحث الحي وتطبيق Telegram المصغّر' }, {
     uz: ['Жонли қидирув: қидирув майдонининг ўнг томонидаги тугма (ёки Созламалар). Ёқилса, ҳужжатда белгиланган АРАБЧА матн бу ерга нусхаланмасдан дарров қидирилади (Word, браузер кенгайтмаси, WordPress, Google Docs). Одатда ўчиқ. Фақат арабча матн, қурилмангизда ишлайди, серверни юкламайди.',
          'Telegram Mini App: ботда /app — сайтдаги панелнинг ўзи Telegram ичида; оятни чатга юбориш мумкин.',

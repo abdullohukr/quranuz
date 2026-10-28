@@ -6,7 +6,11 @@
      var s = QuranSearch.Search({ fetch, bases?, version?, cache?, timeout? });
      s.run(query, { quran, scope, langs, uiLang, selected, prefer, kinds, limit, onProgress, onResults })
        -> Promise<[{sura, aya, score, hits: [{src, kind, ranges? | wordFrom, wordTo}]}]> (never rejects;
-          the array has .warnings [] and .partial when a part of the data could not be loaded)            */
+          the array has .warnings [] and .partial when a part of the data could not be loaded)
+     Tafsirs (the layer search/tafsir/, read only then): scope 'tafsir' (only tafsirs), scope 'selected' (the chosen
+     tafsirs among `selected`), or opts.tafsir: true | [ids] with any scope. Their hits: {src, kind: 'tafsir',
+     layer: 'tafsir', ayaTo? (the last ayah of the range), snippet?, ranges? (in the snippet)}.
+     s.tafsirs() -> [{id, lang, script, name}], s.tafsirText(id, ayahIndex) -> {text, from, to} | null      */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./core.js'));
   else root.QuranSearch = factory(root.QuranCore);
@@ -269,6 +273,78 @@
     out['search/current.json'] = JSON.stringify({ version: version });
     return { version: version, manifest: manifest, files: out };
   };
+  /* a layer (the tafsirs: search/<name>/, docs/search-index-format.md "The tafsir layer"):
+       buildLayer('tafsir', [{id, lang, name, script?, entries: [[fromAyah, toAyah, text], ...]}], {chunkBytes?, textBytes?, version?})
+       -> {version, manifest, files: {'search/<name>/v<v>/...', 'search/<name>/current.json'}}
+     Entries: ayah indexes 0..ayahs-1; HTML removed, spaces collapsed, sorted, the same first ayah joined, overlaps cut.
+     The terms of an entry are on its first ayah. No bitmaps: every hit keeps its source. */
+  function cleanEntries(list, ayahs) {
+    var out = [];
+    (list || []).forEach(function (e) {
+      var from = Math.floor(+e[0]), to = Math.floor(+e[1]), text = core.stripHtml(String(e[2] == null ? '' : e[2])).replace(/\s+/g, ' ').trim();
+      if (!text || !(from >= 0) || from >= ayahs) return;
+      out.push([from, Math.max(from, Math.min(to >= 0 ? to : from, ayahs - 1)), text]);
+    });
+    out.sort(function (a, b) { return a[0] - b[0]; });
+    var clean = [];
+    out.forEach(function (e) {
+      var l = clean[clean.length - 1];
+      if (l && l[0] === e[0]) { l[1] = Math.max(l[1], e[1]); l[2] += ' ' + e[2]; return; }
+      if (l && l[1] >= e[0]) l[1] = e[0] - 1;
+      clean.push(e);
+    });
+    return clean;
+  }
+  function buildLayer(name, list, o) {
+    o = o || {};
+    var ayahs = o.ayahs || AYAHS, textBytes = o.textBytes || 49152;
+    var b = new Builder({ ayahs: ayahs }), files = {}, lens = new Uint8Array(list.length * ayahs), meta = [], docs = 0, langs = {};
+    list.forEach(function (s, n) {
+      var entries = cleanEntries(s.entries, ayahs), texts = new Array(ayahs), stem = s.lang === 'ar';
+      entries.forEach(function (e) { texts[e[0]] = e[2]; lens[n * ayahs + e[0]] = lengthQ(T.terms(e[2], { stem: stem }).length); });
+      b.addSource({ id: s.id, lang: s.lang, kind: 'tafsir', name: s.name, script: s.script }, texts);
+      b.texts[n] = [];                               // not needed any more (memory)
+      // text blocks: whole entries, about textBytes each (a larger entry is a block of its own)
+      var blocks = [], spans = [], cur = [], size = 0;
+      function flush() {
+        if (!cur.length) return;
+        files['text/' + n + '/' + blocks.length + '.json'] = JSON.stringify(cur);
+        blocks.push(cur[0][0]); cur = []; size = 0;
+      }
+      entries.forEach(function (e) {
+        var bytes = utf8(e[2]).length + 16;
+        if (size && size + bytes > textBytes) flush();
+        cur.push(e); size += bytes;
+        if (e[1] > e[0]) spans.push(e[0], e[1] - e[0]);
+      });
+      flush();
+      meta.push({ blocks: blocks, spans: spans, entries: entries.length });
+      docs += entries.length; langs[s.lang] = 1;
+      if (o.onSource) o.onSource(n, s, entries);
+    });
+    var built = b.finish({ groups: [{ name: name, langs: Object.keys(langs).sort() }], chunkBytes: o.chunkBytes || 65536, bitmapPairs: 1e9,
+                           text: false, version: 'x' });
+    Object.keys(built.files).forEach(function (p) {
+      var mm = p.match(/^search\/vx\/(.+)$/);
+      if (mm && mm[1] !== 'manifest.json') files[mm[1]] = built.files[p];
+    });
+    files['lens.bin'] = lens;
+    var manifest = {
+      format: 1, layer: name, lens: 1, ayahs: ayahs, docs: docs, defaultLangs: DEFAULT_LANGS,
+      sources: built.manifest.sources.map(function (s, n) {
+        return { id: s.id, lang: s.lang, script: s.script, kind: 'tafsir', stem: s.stem, name: s.name, text: 1,
+                 blocks: meta[n].blocks, spans: meta[n].spans };
+      }),
+      groups: built.manifest.groups, text: { ranges: 1 }
+    };
+    var version = o.version || hashFiles(files, JSON.stringify(manifest));
+    manifest.version = version;
+    var out = {};
+    Object.keys(files).forEach(function (p) { out['search/' + name + '/v' + version + '/' + p] = files[p]; });
+    out['search/' + name + '/v' + version + '/manifest.json'] = JSON.stringify(manifest);
+    out['search/' + name + '/current.json'] = JSON.stringify({ version: version });
+    return { version: version, manifest: manifest, files: out, entries: meta.map(function (x) { return x.entries; }) };
+  }
   function hashFiles(files, extra) {                // FNV-1a over the paths and bytes: the version of the index
     var h = 0x811C9DC5;
     function mix(c) { h ^= c; h = Math.imul ? Math.imul(h, 0x01000193) >>> 0 : (h * 0x01000193) >>> 0; }
@@ -592,10 +668,116 @@
       });
     });
   };
+  /* the tafsir layer (and any other one): search/<name>/current.json -> search/<name>/v<v>/manifest.json, read only
+     when a run asks for it; m._base is its folder, m._layer its name. A failure is not kept: the next run tries again. */
+  Search.prototype.layer = function (name) {
+    var self = this, L = this._layers || (this._layers = {}), dir = this.root + name + '/';
+    if (L[name]) return L[name].m ? Promise.resolve(L[name].m) : L[name].p;
+    var e = L[name] = {};
+    e.p = this.loader.get(dir + 'current.json', 'json', false).then(function (c) {
+      if (!c || !c.version || !/^[\w.-]{1,64}$/.test(c.version)) throw new Error('bad ' + name + '/current.json');
+      return self.loader.get(dir + 'v' + c.version + '/manifest.json', 'json', true).then(function (m) {
+        if (!m || m.format !== 1 || !m.sources || !m.groups || m.layer !== name) throw new Error('bad ' + name + ' manifest');
+        m.version = c.version; m._base = dir + 'v' + c.version + '/'; m._layer = name; m._ids = {};
+        m.sources.forEach(function (s, n) { m._ids[s.id] = n; });
+        if (!m.lens) { e.m = m; return m; }
+        // the length of every entry (one byte per source and ayah): without it the ranking only loses the length
+        return self.loader.get(m._base + 'lens.bin', 'bin', true).then(function (u8) {
+          m._dl = lengths(u8, m.sources.length, m.ayahs);
+        }, function () { /* without lengths */ }).then(function () { e.m = m; return m; });
+      });
+    });
+    e.p.then(null, function () { if (L[name] === e) delete L[name]; });
+    return e.p;
+  };
+  /* the tafsirs that can be searched: [{id, lang, script, name}] ([] when the layer cannot be read) */
+  Search.prototype.tafsirs = function () {
+    return this.layer('tafsir').then(function (m) {
+      return m.sources.map(function (s) { return { id: s.id, lang: s.lang, script: s.script, name: s.name }; });
+    }, function () { return []; });
+  };
+  /* the text of a tafsir of the layer at an ayah (0-based index i; the entry that starts there or covers it):
+     {text, from, to} (ayah indexes) or null. For the fragments of the results the run did not give one. */
+  Search.prototype.tafsirText = function (id, i, signal) {
+    var self = this;
+    return this.layer('tafsir').then(function (m) {
+      var n = m._ids[id];
+      if (n == null) return null;
+      var b = blockOf(m.sources[n], i);
+      if (b < 0) return null;
+      return self.layerBlock(m, n, b, signal).then(function (arr) {
+        var e = entryAt(arr, i);
+        return e ? { text: e[2], from: e[0], to: e[1] } : null;
+      });
+    });
+  };
+  Search.prototype.layerBlock = function (m, n, b, signal) {
+    return this.loader.get(m._base + 'text/' + n + '/' + b + '.json', 'json', true, signal);
+  };
+  /* lens.bin: byte q of (source n, ayah i) at n * ayahs + i, q = round(8 * log2(1 + words)) (0: no entry) ->
+     dl(i, n): the length of the entry against the average of its source (1 when unknown) */
+  function lengths(u8, sources, ayahs) {
+    if (!u8 || u8.length !== sources * ayahs) return null;
+    var avg = [];
+    for (var n = 0; n < sources; n++) {
+      var sum = 0, cnt = 0;
+      for (var i = 0; i < ayahs; i++) { var q = u8[n * ayahs + i]; if (q) { sum += Math.pow(2, q / 8) - 1; cnt++; } }
+      avg.push(cnt ? sum / cnt : 1);
+    }
+    return function (i, n) {
+      var q = n < sources ? u8[n * ayahs + i] : 0;
+      return q ? (Math.pow(2, q / 8) - 1) / (avg[n] || 1) : 1;
+    };
+  }
+  function lengthQ(words) { return Math.min(255, Math.max(1, Math.round(8 * Math.log(1 + words) / Math.LN2))); }   // (the builder)
+  function blockOf(s, i) {                          // the last text block whose first entry is <= ayah i
+    var f = s && s.blocks;
+    if (!f || !f.length || i < f[0]) return -1;
+    var lo = 0, hi = f.length - 1;
+    while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (f[mid] <= i) lo = mid; else hi = mid - 1; }
+    return lo;
+  }
+  function entryAt(arr, i) {                        // [from, to, text] of a block that starts at / covers ayah i
+    if (!Array.isArray(arr)) return null;
+    for (var k = 0; k < arr.length; k++) {
+      var e = arr[k];
+      if (Array.isArray(e) && e[0] <= i && i <= e[1] && typeof e[2] === 'string') return e;
+    }
+    return null;
+  }
+  function spanEnd(s, i) {                          // the last ayah of the entry that starts at ayah i
+    if (!s._span) {
+      s._span = {};
+      for (var k = 0; s.spans && k + 1 < s.spans.length; k += 2) s._span[s.spans[k]] = s.spans[k] + s.spans[k + 1];
+    }
+    return s._span[i] != null ? s._span[i] : i;
+  }
+  /* about `max` characters of text around the place with the most marked words; ranges moved into it.
+     -> {text, ranges} ("…" where the text was cut) */
+  function snippet(text, ranges, max) {
+    text = String(text || ''); ranges = ranges || []; max = max || 200;
+    var best = 0, bestN = 0;
+    for (var i = 0; i < ranges.length; i++) {
+      var n = 0;
+      for (var j = i; j < ranges.length && ranges[j][1] <= ranges[i][0] + max - 60; j++) n += ranges[j][1] - ranges[j][0] > 2 ? 2 : 1;
+      if (n > bestN) { bestN = n; best = i; }
+    }
+    var first = ranges.length ? ranges[best][0] : 0, start = Math.max(0, first - 60);
+    if (start > 0) { var sp = text.lastIndexOf(' ', start); if (sp >= 0 && first - sp < 120) start = sp + 1; }
+    var end = Math.min(text.length, start + max);
+    if (end < text.length) { var e2 = text.indexOf(' ', end); if (e2 > 0 && e2 - end < 30) end = e2; }
+    var pre = start > 0 ? '…' : '', out = [];
+    ranges.forEach(function (r) {
+      var a = Math.max(r[0], start), b = Math.min(r[1], end);
+      if (b > a) out.push([a - start + pre.length, b - start + pre.length]);
+    });
+    return { text: pre + text.slice(start, end) + (end < text.length ? '…' : ''), ranges: out };
+  }
+
   Search.prototype.chunk = function (m, group, n, signal) {
-    var self = this, key = 'dec:' + group + '/' + n, have = this.loader.recall(key);
+    var self = this, key = 'dec:' + (m._base || '') + group + '/' + n, have = this.loader.recall(key);
     if (have) return Promise.resolve(have);
-    return this.loader.get(this.root + 'v' + m.version + '/' + group + '/' + n + '.bin', 'bin', true, signal).then(function (u8) {
+    return this.loader.get((m._base || this.root + 'v' + m.version + '/') + group + '/' + n + '.bin', 'bin', true, signal).then(function (u8) {
       var d = decodeChunk(u8, m.ayahs);
       self.loader.remember(key, d, 64 + d.terms.length * 48);
       return d;
@@ -640,7 +822,8 @@
     function emit(list, stage) { if (opts.onResults && !cancelled()) try { opts.onResults(list, { stage: stage }); } catch (e) { /* the caller's problem */ } }
     if (!q) return Promise.resolve(finish([], false));
     // 1. at once: the Quran itself (reference, Arabic, transliteration) and the translations already in memory
-    try {
+    // (not for scope 'tafsir': the Quran's own hits would stand above every tafsir)
+    if (opts.scope !== 'tafsir') try {
       if (quran && quran.searchSmart) local = quran.searchSmart(q, { limit: limit, translations: opts.localTranslations }).map(fromLocal);
       else if (quran) local = quran.search(q, opts.localTranslations || [], limit).map(function (r, k) { return { sura: r.sura, aya: r.aya, score: 20 - k / 100, hits: [{ src: 'quran', kind: 'ar' }] }; });
     } catch (e) { warnings.push('local: ' + e.message); }
@@ -666,15 +849,30 @@
     }
     var ctx = { signal: signal, within: within, cancelled: cancelled };
 
-    var m, prefixLast = !/\s$/.test(String(query == null ? '' : query));
-    var work = within(this.manifest()).then(function (man) {
+    var m, lm = null, prefixLast = !/\s$/.test(String(query == null ? '' : query)), scope = opts.scope || 'default';
+    // scope 'tafsir': only the tafsir layer (the main manifest is not needed)
+    var work = (scope === 'tafsir' ? Promise.resolve(null) : within(this.manifest())).then(function (man) {
       check(); m = man;
-      return self._index(q, m, opts, warnings, progress, prefixLast, ctx);
+      // the main index and the layer at the same time: a slow layer never holds the translations
+      var pm = m ? self._index(q, m, opts, warnings, progress, prefixLast, ctx) : Promise.resolve([]);
+      var pl = !wantsLayer(m, opts, scope) ? Promise.resolve([]) : within(self.layer('tafsir')).then(function (layer) {
+        check();
+        var lo = layerOpts(layer, opts, scope);
+        if (!lo) return [];
+        lm = layer;
+        return self._index(q, lm, lo, warnings, function (p) { p.layer = 'tafsir'; progress(p); }, prefixLast, ctx)
+          .then(function (l) { return tagLayer(lm, l); });
+      }, function (e) {
+        if (isAbort(e)) throw e;
+        warnings.push('tafsir: ' + (e && e.message || e));
+        return [];
+      });
+      return Promise.all([pm, pl]).then(function (r) { return combine(r[0], r[1]); });
     }).then(function (found) {
       check();
       // nothing in the default languages: search everywhere (not when parts of the data are missing)
       // (not for Arabic-script words the Quran itself has found: that would read every Urdu / Persian / … group)
-      var widen = !found.length && !warnings.length && (opts.scope || 'default') === 'default' && opts.widen !== false &&
+      var widen = m && !found.length && !warnings.length && (opts.scope || 'default') === 'default' && opts.widen !== false &&
                   !(local.length && scriptOfQuery(q) === 'Arab');
       if (!widen) return found;
       var o2 = {};
@@ -685,7 +883,12 @@
       check();
       var list = merge(local, found, limit);
       emit(clean(list.slice(0, limit), true), 'index');
-      return self._confirm(q, m, list, opts, warnings, ctx);
+      // the phrase check of the translations and the fragments of the tafsirs load their texts at the same time
+      return Promise.all([m ? self._confirm(q, m, list, opts, warnings, ctx) : list,
+                          lm ? self._snippets(q, lm, list, opts, warnings, ctx) : null]).then(function () {
+        list.sort(function (x, y) { return y.score - x.score || x.sura - y.sura || x.aya - y.aya; });
+        return list;
+      });
     }).then(function (list) {
       check();
       list = clean(list.slice(0, limit), false);
@@ -714,6 +917,59 @@
     var s = r.score, t = core.SEARCH_TIERS;
     var score = s >= t.ref ? 100 + (s - t.ref) / 10 : s >= t.part ? 30 + (s - 500) / 20 : s >= t.trAll ? 12 + (s - t.trAll) / 10 : 3 + (s - t.translit) / 8;
     return { sura: r.sura, aya: r.aya, score: Math.round(score * 100) / 100, hits: r.hits, match: r.match };
+  }
+  /* the tafsir layer takes part: scope 'tafsir', opts.tafsir (true | [ids]), or scope 'selected' with a chosen id that
+     is not a translation of the main index. Never in the scopes 'default' / 'all' by themselves. */
+  function wantsLayer(m, opts, scope) {
+    if (opts.tafsir === false || opts.kinds && [].concat(opts.kinds).indexOf('tafsir') < 0) return false;
+    if (scope === 'tafsir' || opts.tafsir === true || Array.isArray(opts.tafsir) && opts.tafsir.length) return true;
+    if (scope !== 'selected') return false;
+    var kind = {};
+    if (m) m.sources.forEach(function (s) { kind[s.id] = s.kind; });
+    return (opts.selected || []).some(function (id) { return kind[id] == null || kind[id] === 'tafsir'; });
+  }
+  /* the options of the run over the layer (scope 'selected' with its tafsirs), or null when none of them is wanted */
+  function layerOpts(lm, opts, scope) {
+    var ids = {}, list = [], t = opts.tafsir;
+    function add(id) { if (lm._ids[id] != null && !ids[id]) { ids[id] = 1; list.push(id); } }
+    if (Array.isArray(t)) t.forEach(add);
+    else if (t === true || scope === 'tafsir') lm.sources.forEach(function (s) { add(s.id); });
+    if (scope === 'selected') (opts.selected || []).forEach(add);
+    if (!list.length) return null;
+    var o = {};
+    for (var k in opts) o[k] = opts[k];
+    o.scope = 'selected'; o.selected = list; o.kinds = null;
+    return o;
+  }
+  /* the hits of the layer: marked (their _n is a source of the layer), with the last ayah of a range */
+  function tagLayer(lm, list) {
+    list.forEach(function (r) {
+      (r.hits || []).forEach(function (h) {
+        h._lm = 1; h.layer = lm._layer;
+        var s = lm.sources[h._n], to = s ? spanEnd(s, r._i) : r._i;
+        if (to > r._i) h.ayaTo = r.aya + (to - r._i);
+      });
+    });
+    return list;
+  }
+  /* the results of the main index and of the layer, one per ayah (the main index first among the hits; a tafsir
+     that is in both, like the Uzbek ones: the hit of the layer, which has the text) */
+  function combine(a, b) {
+    if (!b.length) return a;
+    if (!a.length) return b;
+    var by = {}, out = [];
+    a.concat(b).forEach(function (r) {
+      var e = by[r._i];
+      if (!e) { by[r._i] = e = { sura: r.sura, aya: r.aya, score: r.score, hits: r.hits.slice(), _i: r._i, _all: r._all }; out.push(e); return; }
+      var same = r.hits.length && e.hits.length && r.hits.every(function (h) { return e.hits.some(function (x) { return x.src === h.src; }); });
+      e.score = Math.round((same ? Math.max(e.score, r.score) : Math.max(e.score, r.score) + 0.1) * 100) / 100;
+      r.hits.forEach(function (h) {
+        for (var k = 0; k < e.hits.length; k++) if (e.hits[k].src === h.src) { e.hits[k] = h; return; }
+        e.hits.push(h);
+      });
+    });
+    out.sort(function (x, y) { return y.score - x.score || x._i - y._i; });
+    return out.slice(0, 200);
   }
   function merge(local, found, limit) {
     var by = {}, out = [];
@@ -877,7 +1133,8 @@
     function consider(i, src, mask, pmask) {
       var w = weigh(mask, pmask), whole = (mask & fullMask) === fullMask;
       if (!whole && (strict || w.sc < total * 0.5)) return;
-      var len = W ? W.len[i] / (avg || 1) : 1, norm = (K1 + 1) / (1 + K1 * (1 - B + B * len));
+      // the length: of the entry (the tafsir layer: lens.bin), else of the Arabic ayah
+      var len = m._dl && src >= 0 ? m._dl(i, src) : W ? W.len[i] / (avg || 1) : 1, norm = (K1 + 1) / (1 + K1 * (1 - B + B * len));
       var s = src >= 0 ? m.sources[src] : null, v = w.sc * norm * (whole ? 1 : 0.8 * w.sc / total);
       if (s && s.kind === 'tafsir') v *= 0.5;
       if (s && opts.prefer && opts.prefer.indexOf(s.id) >= 0) v += 0.5;
@@ -912,7 +1169,9 @@
     var want = {}, order = [];
     top.forEach(function (r) {
       // translations first: their blocks are small, a tafsir block can be large
-      var hs = (r.hits || []).filter(function (h) { return h.kind !== 'tafsir'; }).concat((r.hits || []).filter(function (h) { return h.kind === 'tafsir'; }));
+      // (the hits of the tafsir layer are not of this manifest: _snippets)
+      var own = (r.hits || []).filter(function (h) { return !h._lm; });
+      var hs = own.filter(function (h) { return h.kind !== 'tafsir'; }).concat(own.filter(function (h) { return h.kind === 'tafsir'; }));
       hs.slice(0, 2).forEach(function (h) {
         if (h._n == null || !m.sources[h._n] || !m.sources[h._n].text) return;
         var b = textBlock(r._i, m.text.block), key = h._n + '/' + b;
@@ -929,7 +1188,7 @@
       list.forEach(function (r) {
         var confirmed = false;
         (r.hits || []).forEach(function (h) {
-          if (h._n == null) return;
+          if (h._n == null || h._lm) return;
           var s = m.sources[h._n], b = textBlock(r._i, m.text.block), arr = blocks[h._n + '/' + b];
           var text = arr && arr[r._i - b * m.text.block];
           if (typeof text !== 'string') return;
@@ -943,10 +1202,52 @@
     }).then(null, function (e) { warnings.push('confirm: ' + e.message); return list; });
   };
 
+  /* the tafsir hits of the first results: the text of their entry (blocks of the layer, at most opts.maxTafsirBlocks,
+     4) -> h.snippet (about opts.snippet characters, 200, around the most marked words) and h.ranges in it; the phrase
+     in the tafsir: +1 */
+  Search.prototype._snippets = function (q, lm, list, opts, warnings, ctx) {
+    var within = ctx ? ctx.within : function (p) { return p; }, signal = ctx ? ctx.signal : null;
+    var self = this, top = list.slice(0, opts.confirm != null ? opts.confirm : 10), maxBlocks = opts.maxTafsirBlocks || 4;
+    var want = {}, order = [];
+    top.forEach(function (r) {
+      (r.hits || []).filter(function (h) { return h._lm && h._n != null; }).slice(0, 2).forEach(function (h) {
+        var b = blockOf(lm.sources[h._n], r._i), key = h._n + '/' + b;
+        if (b >= 0 && !want[key]) { want[key] = { n: h._n, b: b }; order.push(key); }
+      });
+    });
+    order = order.slice(0, maxBlocks);
+    if (!order.length) return Promise.resolve(list);
+    var blocks = {};
+    return Promise.all(order.map(function (k) {
+      return within(self.layerBlock(lm, want[k].n, want[k].b, signal)).then(function (arr) {
+        if (Array.isArray(arr)) blocks[k] = arr; else warnings.push('tafsir text ' + k + ': not a list');
+      }, function (e) { if (!isAbort(e)) warnings.push('tafsir text ' + k + ': ' + (e && e.message || e)); });
+    })).then(function () {
+      var multi = T.tokenize(q).length > 1 || T.tokenize(q).some(function (t) { return t.pairs; });
+      var sq = scriptOfQuery(q), other = sq === 'Latn' && /[a-z]/i.test(q) ? T.latToCyr(q) : sq === 'Cyrl' ? T.cyrToLat(q) : null;
+      top.forEach(function (r) {
+        var confirmed = false;
+        (r.hits || []).forEach(function (h) {
+          if (!h._lm || h._n == null || h.snippet != null) return;
+          var s = lm.sources[h._n], e = entryAt(blocks[h._n + '/' + blockOf(s, r._i)], r._i);
+          if (!e) return;
+          var sc = s.stem ? 'ar' : s.script, rg = highlight(e[2], q, sc);
+          if (!rg.length && other) rg = highlight(e[2], other, sc);      // found with the other alphabet
+          var sn = snippet(e[2], rg, opts.snippet || 200);
+          h.snippet = sn.text; h.ranges = sn.ranges;
+          if (e[1] > e[0]) h.ayaTo = r.aya + (e[1] - r._i);
+          if (multi && !confirmed && (phraseIn(e[2], q, !!s.stem) || other && phraseIn(e[2], other, !!s.stem))) confirmed = true;
+        });
+        if (confirmed) r.score = Math.round((r.score + 1) * 100) / 100;
+      });
+      return list;
+    }).then(null, function (e) { warnings.push('tafsir texts: ' + e.message); return list; });
+  };
+
   return {
-    Search: Search, Builder: Builder, Loader: Loader,
+    Search: Search, Builder: Builder, Loader: Loader, buildLayer: buildLayer,
     encodeChunk: encodeChunk, decodeChunk: decodeChunk, scriptKey: scriptKey, chunkOf: chunkOf, pickGroups: pickGroups,
-    highlight: highlight, phraseIn: phraseIn, norm: T.norm, terms: T.terms, queryTerms: T.queryTerms, detectScript: T.detectScript,
+    highlight: highlight, phraseIn: phraseIn, snippet: snippet, lengthQ: lengthQ, norm: T.norm, terms: T.terms, queryTerms: T.queryTerms, detectScript: T.detectScript,
     DEFAULT_LANGS: DEFAULT_LANGS, BASES: BASES, AYAHS: AYAHS,
     limits: { query: MAX_QUERY, words: MAX_WORDS, pairs: MAX_PAIRS, postings: MAX_POSTINGS }
   };

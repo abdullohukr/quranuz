@@ -697,6 +697,32 @@
     ja: { liveSearch: 'ライブ検索（選択中のアラビア語テキストを追う）', liveOn: 'ライブ検索オン：文書でアラビア語テキストを選択してください', liveOff: 'ライブ検索オフ', liveNote: '文書で選択したアラビア語テキストを、ここにコピーせずにすぐ検索します。アラビア語のみ。初期設定はオフ。お使いの端末で動作し、サーバーに負荷をかけません。' }
   };
   Object.keys(PANEL5).forEach(function (l) { for (var k in PANEL5[l]) L[l][k] = PANEL5[l][k]; });
+  /* 3.14: one search of the selection, share a link */
+  var PANEL6 = {
+    en: { oneShotNone: 'Nothing is selected in the document', shareLink: 'Share a link to this ayah' },
+    ru: { oneShotNone: 'В документе ничего не выделено', shareLink: 'Поделиться ссылкой на аят' },
+    uz: { oneShotNone: 'Ҳужжатда ҳеч нарса белгиланмаган', shareLink: 'Оятга ҳаволани улашиш' },
+    uz_latn: { oneShotNone: 'Hujjatda hech narsa belgilanmagan', shareLink: 'Oyatga havolani ulashish' },
+    ar: { oneShotNone: 'لا شيء محدد في المستند', shareLink: 'شارك رابط هذه الآية' },
+    tr: { oneShotNone: 'Belgede hiçbir şey seçili değil', shareLink: 'Bu ayetin bağlantısını paylaş' },
+    fr: { oneShotNone: 'Rien n’est sélectionné dans le document', shareLink: 'Partager un lien vers ce verset' },
+    de: { oneShotNone: 'Im Dokument ist nichts markiert', shareLink: 'Link zu diesem Vers teilen' },
+    es: { oneShotNone: 'No hay nada seleccionado en el documento', shareLink: 'Compartir un enlace a esta aleya' },
+    kk: { oneShotNone: 'Құжатта ештеңе белгіленбеген', shareLink: 'Осы аятқа сілтемені бөлісу' },
+    ky: { oneShotNone: 'Документте эч нерсе белгиленген эмес', shareLink: 'Бул аятка шилтемени бөлүшүү' },
+    tg: { oneShotNone: 'Дар ҳуҷҷат чизе интихоб нашудааст', shareLink: 'Пайванд ба ин оятро мубодила кардан' },
+    az: { oneShotNone: 'Sənəddə heç nə seçilməyib', shareLink: 'Bu ayəyə keçidi paylaş' },
+    fa: { oneShotNone: 'در سند چیزی انتخاب نشده است', shareLink: 'اشتراک‌گذاری پیوند این آیه' },
+    ur: { oneShotNone: 'دستاویز میں کچھ منتخب نہیں', shareLink: 'اس آیت کا لنک شیئر کریں' },
+    id: { oneShotNone: 'Tidak ada yang dipilih di dokumen', shareLink: 'Bagikan tautan ke ayat ini' },
+    ms: { oneShotNone: 'Tiada yang dipilih dalam dokumen', shareLink: 'Kongsi pautan ke ayat ini' },
+    bn: { oneShotNone: 'নথিতে কিছু নির্বাচিত নেই', shareLink: 'এই আয়াতের লিংক শেয়ার করুন' },
+    hi: { oneShotNone: 'दस्तावेज़ में कुछ चुना नहीं गया है', shareLink: 'इस आयत का लिंक साझा करें' },
+    zh: { oneShotNone: '文档中没有选中任何内容', shareLink: '分享此节的链接' },
+    ko: { oneShotNone: '문서에서 선택한 것이 없습니다', shareLink: '이 아야의 링크 공유' },
+    ja: { oneShotNone: '文書で何も選択されていません', shareLink: 'この節へのリンクを共有' }
+  };
+  Object.keys(PANEL6).forEach(function (l) { for (var k in PANEL6[l]) L[l][k] = PANEL6[l][k]; });
   /* search in every language (translations and tafsirs of the search index) */
   var SEARCH = {
     uz: { searchGroup: 'Қидирув', searchScope: 'Қаерда қидириш', scopeDefault: 'Асосий тилларда (en, ar, ru, tr, uz + интерфейс тили + танланганлар)',

@@ -534,7 +534,9 @@ adobe_pkg() {   # $1 file name: from KHATT_SRC or the site, checked as a zip; pr
   if [ -n "$SRC" ]; then
     if [ -f "$SRC/$1" ]; then cp -f "$SRC/$1" "$out" 2>/dev/null || true; fi
   else
-    curl -fsSL --retry 2 --retry-delay 2 "$SITE/download/$1" -o "$out" 2>/dev/null || rm -f "$out"
+    # the release "installer" first: /download/ of the site is a page that redirects (web/404.html), not for curl
+    curl -fsSL --retry 2 --retry-delay 2 "https://github.com/abdullohukr/quranuz/releases/download/installer/$1" -o "$out" 2>/dev/null ||
+      curl -fsSL --retry 2 --retry-delay 2 "$SITE/download/$1" -o "$out" 2>/dev/null || rm -f "$out"
   fi
   if [ -f "$out" ] && unzip -tq "$out" >/dev/null 2>&1; then echo "$out"; return 0; fi
   rm -f "$out"; return 1
