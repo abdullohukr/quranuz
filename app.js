@@ -713,10 +713,8 @@
     var r = results[+li.dataset.i]; if (!r) return;
     if (e.shiftKey && r.sura === sel.sura) setSel(r.sura, Math.min(sel.from, r.aya), Math.max(sel.to, r.aya));
     else {
-      setSel(r.sura, r.aya, r.aya);
-      var h = arHit(r);                                   // found in the Arabic: those words
-      if (h) { sel.wordFrom = Math.max(0, h.wordFrom | 0); sel.wordTo = h.wordTo == null ? null : h.wordTo | 0; render(); }
-    }
+      setSel(r.sura, r.aya, r.aya);                       // the whole ayah is what gets inserted; the found words stay marked in the list,
+    }                                                     // a part is chosen by tapping the words (as before)
     [].forEach.call($('results').children, function (x) { x.classList.toggle('active', x === li); });
   });
 
@@ -738,7 +736,17 @@
   }
   $('sura').addEventListener('change', function () { setSel(+this.value, 1, 1); });
   $('from').addEventListener('change', function () { if (+this.value !== sel.from) setSel(sel.sura, +this.value, Math.max(+this.value, sel.to)); });
-  $('to').addEventListener('change', function () { if (+this.value !== sel.to) setSel(sel.sura, sel.from, +this.value); });
+  /* the right number below the left one: the LEFT one follows it (5–9, then 2 on the right → 2–2) */
+  $('to').addEventListener('change', function () {
+    var v = +this.value; if (!(v >= 1)) v = sel.to;
+    if (v !== sel.to || v < sel.from) setSel(sel.sura, Math.min(sel.from, v), v);
+  });
+  /* a tap on a number selects all its digits: typing replaces it at once */
+  ['from', 'to'].forEach(function (id) {
+    var el = $(id);
+    var all = function () { var x = this; x.select(); setTimeout(function () { if (document.activeElement === x) x.select(); }, 0); };   // now, and after the browser has put its caret
+    el.addEventListener('focus', all); el.addEventListener('click', all); el.addEventListener('mouseup', function (e) { e.preventDefault(); });
+  });
   $('reset-words').addEventListener('click', function () { setSel(sel.sura, sel.from, sel.to); });
 
   function wordState(a, w) {
