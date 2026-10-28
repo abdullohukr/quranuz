@@ -523,8 +523,8 @@
     stopDeep(); searchQ = q;
     var ref = q.trim() && quran.parseRef(q);
     if (ref) setSel(ref.sura, ref.from, ref.to);
-    var trs = activeTranslations().filter(function (x) { return x.data; }).map(function (x) { return x.data; });
-    results = quran.search(q, trs, 200).map(function (r) { return { sura: r.sura, aya: r.aya, hits: [] }; });
+    var trs = localOnly ? [] : activeTranslations().filter(function (x) { return x.data; }).map(function (x) { return x.data; });      // live search: the Arabic only (cheap)
+    results = quran.search(q, trs, localOnly ? 60 : 200).map(function (r) { return { sura: r.sura, aya: r.aya, hits: [] }; });
     byKey = {};
     results.forEach(function (r) { byKey[r.sura + ':' + r.aya] = r; });
     shown = PAGE;
@@ -1423,7 +1423,7 @@
   window.addEventListener('message', function (e) {
     var d = e.data;
     if (!HOST || ADOBE || e.source !== window.parent || !d || !fromExt(e)) return;
-    if (d.type === 'khatt-search' && typeof d.q === 'string') { if (d.live) liveSelect(d.q); else if (!d.q.trim()) toast(t('oneShotNone')); else searchFor(d.q); }
+    if (d.type === 'khatt-search' && typeof d.q === 'string') { if (d.live) liveSelect(d.q, true); else if (!d.q.trim()) toast(t('oneShotNone')); else searchFor(d.q); }
     else if (d.type === 'khatt-pref' && HOST === 'ext') {
       if (settings.liveSearch) hostLive(true);                         // the extension is known now: tell it to follow the selection
       if (/^(ask|text|picture)$/.test(d.extInsert || '')) {
@@ -1871,28 +1871,51 @@
     var bare = text.replace(/\s/g, ''), ar = (bare.match(/[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/g) || []).length;
     return ar >= 2 && ar / bare.length >= 0.6 ? text : '';
   }
-  function liveSelect(text) {
-    if (!settings.liveSearch || !quran || document.hidden) return;
-    var q = liveArabic(text);
-    if (!q || q === liveLast) return;
-    liveLast = q;                                      // at once (the local search takes milliseconds); polling and events do the rest
-    $('q').value = q;
-    clearTimeout(searchTimer); runSearch(true, true);
-    if (results.length && !quran.parseRef(q)) setSel(results[0].sura, results[0].aya, results[0].aya);
+  /* Safe for the Word task pane (a heavy or failing script closes the pane): only a text that stayed the same for two reads (the person
+     stopped selecting), at most one search a second, never while one is running, any error is swallowed, and only the Arabic text itself
+     is searched (no translations). */
+  var liveSeen = '', liveAt = 0, liveRunning = false;
+  function liveSelect(text, confirmed) {                 // confirmed: the host already sends only changed text (the browser extension, WordPress, Google Docs)
+    try {
+      if (!settings.liveSearch || !quran || document.hidden || liveRunning) return;
+      var q = liveArabic(text);
+      if (!q) { liveSeen = ''; return; }
+      if (q === liveLast) return;
+      if (!confirmed && q !== liveSeen) { liveSeen = q; return; }   // first time seen: wait for the next read (still selecting?)
+      if (Date.now() - liveAt < 900) return;
+      liveRunning = true; liveAt = Date.now();
+      try {
+        liveLast = q; $('q').value = q;
+        clearTimeout(searchTimer); runSearch(true, true);
+        if (results.length && !quran.parseRef(q)) setSel(results[0].sura, results[0].aya, results[0].aya);
+      } finally { liveRunning = false; }
+    } catch (e) { liveRunning = false; }
   }
   function hostLive(on) { if (HOST && !ADOBE && HOST !== 'tg') toParent({ type: 'khatt-live', on: !!on }); }
   /* Word: the selected text is read with getSelectedDataAsync (a few ms; Word.run took seconds). The selection-changed event reads it at
      once, and while live search is on it is also read every 300 ms, because Word sends the event late. One read at a time. */
-  var wordBusy = false, wordPoll = null;
+  var wordBusy = false, wordPoll = null, wordBackoff = 0;
   function readWordSelection(cb) {
-    if (wordBusy) return; wordBusy = true;
-    var done = function (txt) { wordBusy = false; if (txt != null) cb(String(txt)); };
+    if (wordBusy || Date.now() < wordBackoff) return; wordBusy = true;
+    var done = function (txt) {
+      wordBusy = false;
+      try {
+        if (txt == null) return;
+        txt = String(txt);
+        if (txt.length > 2000) { wordBackoff = Date.now() + 5000; return; }     // a big selection (a page, Ctrl+A): not Arabic ayah text, do not read it again and again
+        cb(txt);
+      } catch (e) { /* never let the add-in fail */ }
+    };
     try {
       Office.context.document.getSelectedDataAsync(Office.CoercionType.Text, function (r) { done(r && r.status === Office.AsyncResultStatus.Succeeded ? r.value : null); });
     } catch (e) { wordBusy = false; }
     setTimeout(function () { wordBusy = false; }, 1500);       // a read that never answers must not block the next ones
   }
   function wordSelection() { if (settings.liveSearch && !document.hidden) readWordSelection(liveSelect); }
+  function wordEvent() {                              // the event: read now and once more 150 ms later (the second read confirms that the selection stopped)
+    wordSelection();
+    setTimeout(function () { wordBusy = false; wordSelection(); }, 150);
+  }
   /* one search of the selection without switching live search on: the key Alt+F (Alt+Shift+F), asked of the host */
   function oneShot() {
     if (!quran) return;
@@ -1912,8 +1935,8 @@
     hostLive(on);
     if (inWord && window.Office && Office.context && Office.context.document && Office.context.document.addHandlerAsync) {
       try {
-        if (on && !liveWordOn) { liveWordOn = true; Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, wordSelection); clearInterval(wordPoll); wordPoll = setInterval(wordSelection, 300); }
-        else if (!on && liveWordOn) { liveWordOn = false; clearInterval(wordPoll); Office.context.document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler: wordSelection }); }
+        if (on && !liveWordOn) { liveWordOn = true; Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, wordEvent); clearInterval(wordPoll); wordPoll = setInterval(wordSelection, 350); }
+        else if (!on && liveWordOn) { liveWordOn = false; clearInterval(wordPoll); Office.context.document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler: wordEvent }); }
       } catch (e) { liveWordOn = false; }
     }
   }
@@ -2258,11 +2281,24 @@
   }
   checkVersion();
   /* The ribbon's "Settings" button opens the panel at index.html#settings */
+  /* Office.js sets history.replaceState to null (so the page cannot be navigated), so the address is cleaned the other way then */
+  function cleanHash() {
+    try { if (typeof history.replaceState === 'function') { history.replaceState(null, '', location.pathname + location.search); return; } } catch (e) {}
+    try { location.hash = ''; } catch (e) {}
+  }
   function fromHash() {
     var m = quran && /^#(\d{1,3}):(\d{1,3})(?:-(\d{1,3}))?$/.exec(location.hash);       // a link to an ayah: #2:255 or #2:255-257
     if (m && +m[1] >= 1 && +m[1] <= 114) { setSel(+m[1], +m[2], +(m[3] || m[2])); return; }
+    /* the buttons of the Word ribbon open the panel with such an address: #search (the selected text, once), #live (switch), #history,
+       #favorites, #basket, #quote; #settings opens the settings */
+    var act = quran && { '#search': oneShot, '#live': function () { setLive(!settings.liveSearch); toast(t(settings.liveSearch ? 'liveOn' : 'liveOff')); },
+      '#history': function () { marksOpen = 'hist'; drawMarks(); $('marks-panel').scrollIntoView({ block: 'start' }); },
+      '#favorites': function () { marksOpen = 'fav'; drawMarks(); $('marks-panel').scrollIntoView({ block: 'start' }); },
+      '#basket': function () { marksOpen = 'bask'; drawMarks(); $('marks-panel').scrollIntoView({ block: 'start' }); },
+      '#quote': function () { $('m-quote').click(); } }[location.hash];
+    if (act) { cleanHash(); act(); return; }
     if (location.hash !== '#settings' || !quran) return;
-    history.replaceState(null, '', location.pathname + location.search);
+    cleanHash();
     $('settings-btn').click();
   }
   window.addEventListener('hashchange', fromHash);

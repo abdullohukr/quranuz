@@ -7,7 +7,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>5392de1f-c12d-4292-8fb5-64c79333149e</Id>
-  <Version>1.3.1.0</Version>
+  <Version>1.4.0.0</Version>
   <ProviderName>Abdulloh Hamidulloh al-Madiyniy</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Khatt al-Quran">
@@ -141,6 +141,158 @@
                       <SourceLocation resid="Taskpane.Url"/>
                     </Action>
                   </Control>
+                  <Control xsi:type="Button" id="QuranUz.TabSearch">
+                    <Label resid="Tab.Search"/>
+                    <Supertip>
+                      <Title resid="Tab.Search"/>
+                      <Description resid="Tab.Search.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Search.16"/>
+                      <bt:Image size="20" resid="Search.20"/>
+                      <bt:Image size="24" resid="Search.24"/>
+                      <bt:Image size="32" resid="Search.32"/>
+                      <bt:Image size="40" resid="Search.40"/>
+                      <bt:Image size="48" resid="Search.48"/>
+                      <bt:Image size="64" resid="Search.64"/>
+                      <bt:Image size="80" resid="Search.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Search.Url"/>
+                    </Action>
+                  </Control>
+                  <Control xsi:type="Button" id="QuranUz.TabLive">
+                    <Label resid="Tab.Live"/>
+                    <Supertip>
+                      <Title resid="Tab.Live"/>
+                      <Description resid="Tab.Live.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Live.16"/>
+                      <bt:Image size="20" resid="Live.20"/>
+                      <bt:Image size="24" resid="Live.24"/>
+                      <bt:Image size="32" resid="Live.32"/>
+                      <bt:Image size="40" resid="Live.40"/>
+                      <bt:Image size="48" resid="Live.48"/>
+                      <bt:Image size="64" resid="Live.64"/>
+                      <bt:Image size="80" resid="Live.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Live.Url"/>
+                    </Action>
+                  </Control>
+              </Group>
+              <Group id="QuranUz.TabMine">
+                <Label resid="Group.Mine"/>
+                <Icon>
+                  <bt:Image size="16" resid="History.16"/>
+                  <bt:Image size="20" resid="History.20"/>
+                  <bt:Image size="24" resid="History.24"/>
+                  <bt:Image size="32" resid="History.32"/>
+                  <bt:Image size="40" resid="History.40"/>
+                  <bt:Image size="48" resid="History.48"/>
+                  <bt:Image size="64" resid="History.64"/>
+                  <bt:Image size="80" resid="History.80"/>
+                </Icon>
+                  <Control xsi:type="Button" id="QuranUz.TabHistory">
+                    <Label resid="Tab.History"/>
+                    <Supertip>
+                      <Title resid="Tab.History"/>
+                      <Description resid="Tab.History.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="History.16"/>
+                      <bt:Image size="20" resid="History.20"/>
+                      <bt:Image size="24" resid="History.24"/>
+                      <bt:Image size="32" resid="History.32"/>
+                      <bt:Image size="40" resid="History.40"/>
+                      <bt:Image size="48" resid="History.48"/>
+                      <bt:Image size="64" resid="History.64"/>
+                      <bt:Image size="80" resid="History.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="History.Url"/>
+                    </Action>
+                  </Control>
+                  <Control xsi:type="Button" id="QuranUz.TabFavs">
+                    <Label resid="Tab.Favs"/>
+                    <Supertip>
+                      <Title resid="Tab.Favs"/>
+                      <Description resid="Tab.Favs.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Favorites.16"/>
+                      <bt:Image size="20" resid="Favorites.20"/>
+                      <bt:Image size="24" resid="Favorites.24"/>
+                      <bt:Image size="32" resid="Favorites.32"/>
+                      <bt:Image size="40" resid="Favorites.40"/>
+                      <bt:Image size="48" resid="Favorites.48"/>
+                      <bt:Image size="64" resid="Favorites.64"/>
+                      <bt:Image size="80" resid="Favorites.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Favs.Url"/>
+                    </Action>
+                  </Control>
+                  <Control xsi:type="Button" id="QuranUz.TabBasket">
+                    <Label resid="Tab.Basket"/>
+                    <Supertip>
+                      <Title resid="Tab.Basket"/>
+                      <Description resid="Tab.Basket.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Basket.16"/>
+                      <bt:Image size="20" resid="Basket.20"/>
+                      <bt:Image size="24" resid="Basket.24"/>
+                      <bt:Image size="32" resid="Basket.32"/>
+                      <bt:Image size="40" resid="Basket.40"/>
+                      <bt:Image size="48" resid="Basket.48"/>
+                      <bt:Image size="64" resid="Basket.64"/>
+                      <bt:Image size="80" resid="Basket.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Basket.Url"/>
+                    </Action>
+                  </Control>
+              </Group>
+              <Group id="QuranUz.TabTools">
+                <Label resid="Group.Tools"/>
+                <Icon>
+                  <bt:Image size="16" resid="Settings.16"/>
+                  <bt:Image size="20" resid="Settings.20"/>
+                  <bt:Image size="24" resid="Settings.24"/>
+                  <bt:Image size="32" resid="Settings.32"/>
+                  <bt:Image size="40" resid="Settings.40"/>
+                  <bt:Image size="48" resid="Settings.48"/>
+                  <bt:Image size="64" resid="Settings.64"/>
+                  <bt:Image size="80" resid="Settings.80"/>
+                </Icon>
+                  <Control xsi:type="Button" id="QuranUz.TabQuote">
+                    <Label resid="Tab.Quote"/>
+                    <Supertip>
+                      <Title resid="Tab.Quote"/>
+                      <Description resid="Tab.Quote.Tip"/>
+                    </Supertip>
+                    <Icon>
+                      <bt:Image size="16" resid="Check.16"/>
+                      <bt:Image size="20" resid="Check.20"/>
+                      <bt:Image size="24" resid="Check.24"/>
+                      <bt:Image size="32" resid="Check.32"/>
+                      <bt:Image size="40" resid="Check.40"/>
+                      <bt:Image size="48" resid="Check.48"/>
+                      <bt:Image size="64" resid="Check.64"/>
+                      <bt:Image size="80" resid="Check.80"/>
+                    </Icon>
+                    <Action xsi:type="ShowTaskpane">
+                      <TaskpaneId>QuranUzPane</TaskpaneId>
+                      <SourceLocation resid="Quote.Url"/>
+                    </Action>
+                  </Control>
                   <Control xsi:type="Button" id="QuranUz.TabSettings">
                     <Label resid="Tab.Settings"/>
                     <Supertip>
@@ -224,14 +376,62 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Panel.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-16.png"/>
-        <bt:Image id="Panel.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-20.png"/>
-        <bt:Image id="Panel.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-24.png"/>
-        <bt:Image id="Panel.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-32.png"/>
-        <bt:Image id="Panel.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-40.png"/>
-        <bt:Image id="Panel.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-48.png"/>
-        <bt:Image id="Panel.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-64.png"/>
-        <bt:Image id="Panel.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/panel-80.png"/>
+        <bt:Image id="Panel.16" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-16.png"/>
+        <bt:Image id="Panel.20" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-20.png"/>
+        <bt:Image id="Panel.24" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-24.png"/>
+        <bt:Image id="Panel.32" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-32.png"/>
+        <bt:Image id="Panel.40" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-40.png"/>
+        <bt:Image id="Panel.48" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-48.png"/>
+        <bt:Image id="Panel.64" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-64.png"/>
+        <bt:Image id="Panel.80" DefaultValue="https://quran.abdulloh.org/assets/brand/word-office/square-80.png"/>
+        <bt:Image id="Search.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-16.png"/>
+        <bt:Image id="Search.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-20.png"/>
+        <bt:Image id="Search.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-24.png"/>
+        <bt:Image id="Search.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-32.png"/>
+        <bt:Image id="Search.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-40.png"/>
+        <bt:Image id="Search.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-48.png"/>
+        <bt:Image id="Search.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-64.png"/>
+        <bt:Image id="Search.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/search-80.png"/>
+        <bt:Image id="Live.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-16.png"/>
+        <bt:Image id="Live.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-20.png"/>
+        <bt:Image id="Live.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-24.png"/>
+        <bt:Image id="Live.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-32.png"/>
+        <bt:Image id="Live.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-40.png"/>
+        <bt:Image id="Live.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-48.png"/>
+        <bt:Image id="Live.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-64.png"/>
+        <bt:Image id="Live.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/live-80.png"/>
+        <bt:Image id="History.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-16.png"/>
+        <bt:Image id="History.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-20.png"/>
+        <bt:Image id="History.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-24.png"/>
+        <bt:Image id="History.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-32.png"/>
+        <bt:Image id="History.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-40.png"/>
+        <bt:Image id="History.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-48.png"/>
+        <bt:Image id="History.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-64.png"/>
+        <bt:Image id="History.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/history-80.png"/>
+        <bt:Image id="Favorites.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-16.png"/>
+        <bt:Image id="Favorites.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-20.png"/>
+        <bt:Image id="Favorites.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-24.png"/>
+        <bt:Image id="Favorites.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-32.png"/>
+        <bt:Image id="Favorites.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-40.png"/>
+        <bt:Image id="Favorites.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-48.png"/>
+        <bt:Image id="Favorites.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-64.png"/>
+        <bt:Image id="Favorites.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/favorites-80.png"/>
+        <bt:Image id="Basket.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-16.png"/>
+        <bt:Image id="Basket.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-20.png"/>
+        <bt:Image id="Basket.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-24.png"/>
+        <bt:Image id="Basket.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-32.png"/>
+        <bt:Image id="Basket.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-40.png"/>
+        <bt:Image id="Basket.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-48.png"/>
+        <bt:Image id="Basket.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-64.png"/>
+        <bt:Image id="Basket.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/basket-80.png"/>
+        <bt:Image id="Check.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-16.png"/>
+        <bt:Image id="Check.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-20.png"/>
+        <bt:Image id="Check.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-24.png"/>
+        <bt:Image id="Check.32" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-32.png"/>
+        <bt:Image id="Check.40" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-40.png"/>
+        <bt:Image id="Check.48" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-48.png"/>
+        <bt:Image id="Check.64" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-64.png"/>
+        <bt:Image id="Check.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/check-80.png"/>
         <bt:Image id="Settings.16" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-16.png"/>
         <bt:Image id="Settings.20" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-20.png"/>
         <bt:Image id="Settings.24" DefaultValue="https://quran.abdulloh.org/assets/ribbon/settings-24.png"/>
@@ -259,6 +459,12 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://quran.abdulloh.org/index.html"/>
+        <bt:Url id="Search.Url" DefaultValue="https://quran.abdulloh.org/index.html#search"/>
+        <bt:Url id="Live.Url" DefaultValue="https://quran.abdulloh.org/index.html#live"/>
+        <bt:Url id="History.Url" DefaultValue="https://quran.abdulloh.org/index.html#history"/>
+        <bt:Url id="Favs.Url" DefaultValue="https://quran.abdulloh.org/index.html#favorites"/>
+        <bt:Url id="Basket.Url" DefaultValue="https://quran.abdulloh.org/index.html#basket"/>
+        <bt:Url id="Quote.Url" DefaultValue="https://quran.abdulloh.org/index.html#quote"/>
         <bt:Url id="Settings.Url" DefaultValue="https://quran.abdulloh.org/index.html#settings"/>
         <bt:Url id="Commands.Url" DefaultValue="https://quran.abdulloh.org/commands.html"/>
         <bt:Url id="Repo.Url" DefaultValue="https://quran.abdulloh.org/help.html"/>
@@ -424,6 +630,206 @@
           <bt:Override Locale="ko-KR" Value="정보"/>
           <bt:Override Locale="ja-JP" Value="情報"/>
         </bt:String>
+        <bt:String id="Tab.Search" DefaultValue="Search selection">
+          <bt:Override Locale="uz-UZ" Value="Белгиланганни қидириш"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Белгиланганни қидириш"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Belgilanganni qidirish"/>
+          <bt:Override Locale="ru-RU" Value="Найти выделенное"/>
+          <bt:Override Locale="ar-SA" Value="ابحث عن المحدد"/>
+          <bt:Override Locale="tr-TR" Value="Seçileni ara"/>
+          <bt:Override Locale="fr-FR" Value="Chercher la sélection"/>
+          <bt:Override Locale="de-DE" Value="Auswahl suchen"/>
+          <bt:Override Locale="es-ES" Value="Buscar selección"/>
+          <bt:Override Locale="kk-KZ" Value="Белгіленгенді іздеу"/>
+          <bt:Override Locale="ky-KG" Value="Белгиленгенди издөө"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Ҷустуҷӯи интихоб"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Seçilmişi axtar"/>
+          <bt:Override Locale="fa-IR" Value="جستجوی انتخاب"/>
+          <bt:Override Locale="ur-PK" Value="منتخب تلاش کریں"/>
+          <bt:Override Locale="id-ID" Value="Cari pilihan"/>
+          <bt:Override Locale="ms-MY" Value="Cari pilihan"/>
+          <bt:Override Locale="bn-BD" Value="নির্বাচিত খুঁজুন"/>
+          <bt:Override Locale="bn-IN" Value="নির্বাচিত খুঁজুন"/>
+          <bt:Override Locale="hi-IN" Value="चयन खोजें"/>
+          <bt:Override Locale="zh-CN" Value="搜索所选"/>
+          <bt:Override Locale="ko-KR" Value="선택 항목 검색"/>
+          <bt:Override Locale="ja-JP" Value="選択範囲を検索"/>
+        </bt:String>
+        <bt:String id="Tab.Live" DefaultValue="Live search">
+          <bt:Override Locale="uz-UZ" Value="Жонли қидирув"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Жонли қидирув"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Jonli qidiruv"/>
+          <bt:Override Locale="ru-RU" Value="Живой поиск"/>
+          <bt:Override Locale="ar-SA" Value="البحث الحي"/>
+          <bt:Override Locale="tr-TR" Value="Canlı arama"/>
+          <bt:Override Locale="fr-FR" Value="Recherche en direct"/>
+          <bt:Override Locale="de-DE" Value="Live-Suche"/>
+          <bt:Override Locale="es-ES" Value="Búsqueda en vivo"/>
+          <bt:Override Locale="kk-KZ" Value="Тікелей іздеу"/>
+          <bt:Override Locale="ky-KG" Value="Түз издөө"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Ҷустуҷӯи зинда"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Canlı axtarış"/>
+          <bt:Override Locale="fa-IR" Value="جستجوی زنده"/>
+          <bt:Override Locale="ur-PK" Value="فوری تلاش"/>
+          <bt:Override Locale="id-ID" Value="Pencarian langsung"/>
+          <bt:Override Locale="ms-MY" Value="Carian langsung"/>
+          <bt:Override Locale="bn-BD" Value="লাইভ অনুসন্ধান"/>
+          <bt:Override Locale="bn-IN" Value="লাইভ অনুসন্ধান"/>
+          <bt:Override Locale="hi-IN" Value="लाइव खोज"/>
+          <bt:Override Locale="zh-CN" Value="实时搜索"/>
+          <bt:Override Locale="ko-KR" Value="실시간 검색"/>
+          <bt:Override Locale="ja-JP" Value="ライブ検索"/>
+        </bt:String>
+        <bt:String id="Group.Mine" DefaultValue="My ayahs">
+          <bt:Override Locale="uz-UZ" Value="Оятларим"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Оятларим"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Oyatlarim"/>
+          <bt:Override Locale="ru-RU" Value="Мои аяты"/>
+          <bt:Override Locale="ar-SA" Value="آياتي"/>
+          <bt:Override Locale="tr-TR" Value="Ayetlerim"/>
+          <bt:Override Locale="fr-FR" Value="Mes versets"/>
+          <bt:Override Locale="de-DE" Value="Meine Verse"/>
+          <bt:Override Locale="es-ES" Value="Mis aleyas"/>
+          <bt:Override Locale="kk-KZ" Value="Менің аяттарым"/>
+          <bt:Override Locale="ky-KG" Value="Менин аяттарым"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Оятҳои ман"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Ayələrim"/>
+          <bt:Override Locale="fa-IR" Value="آیه‌های من"/>
+          <bt:Override Locale="ur-PK" Value="میری آیات"/>
+          <bt:Override Locale="id-ID" Value="Ayat saya"/>
+          <bt:Override Locale="ms-MY" Value="Ayat saya"/>
+          <bt:Override Locale="bn-BD" Value="আমার আয়াত"/>
+          <bt:Override Locale="bn-IN" Value="আমার আয়াত"/>
+          <bt:Override Locale="hi-IN" Value="मेरी आयतें"/>
+          <bt:Override Locale="zh-CN" Value="我的经文"/>
+          <bt:Override Locale="ko-KR" Value="내 구절"/>
+          <bt:Override Locale="ja-JP" Value="マイ節"/>
+        </bt:String>
+        <bt:String id="Group.Tools" DefaultValue="Tools">
+          <bt:Override Locale="uz-UZ" Value="Асбоблар"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Асбоблар"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Asboblar"/>
+          <bt:Override Locale="ru-RU" Value="Инструменты"/>
+          <bt:Override Locale="ar-SA" Value="أدوات"/>
+          <bt:Override Locale="tr-TR" Value="Araçlar"/>
+          <bt:Override Locale="fr-FR" Value="Outils"/>
+          <bt:Override Locale="de-DE" Value="Werkzeuge"/>
+          <bt:Override Locale="es-ES" Value="Herramientas"/>
+          <bt:Override Locale="kk-KZ" Value="Құралдар"/>
+          <bt:Override Locale="ky-KG" Value="Куралдар"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Абзорҳо"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Alətlər"/>
+          <bt:Override Locale="fa-IR" Value="ابزارها"/>
+          <bt:Override Locale="ur-PK" Value="اوزار"/>
+          <bt:Override Locale="id-ID" Value="Alat"/>
+          <bt:Override Locale="ms-MY" Value="Alat"/>
+          <bt:Override Locale="bn-BD" Value="টুলস"/>
+          <bt:Override Locale="bn-IN" Value="টুলস"/>
+          <bt:Override Locale="hi-IN" Value="उपकरण"/>
+          <bt:Override Locale="zh-CN" Value="工具"/>
+          <bt:Override Locale="ko-KR" Value="도구"/>
+          <bt:Override Locale="ja-JP" Value="ツール"/>
+        </bt:String>
+        <bt:String id="Tab.History" DefaultValue="History">
+          <bt:Override Locale="uz-UZ" Value="Тарих"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Тарих"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Tarix"/>
+          <bt:Override Locale="ru-RU" Value="История"/>
+          <bt:Override Locale="ar-SA" Value="السجل"/>
+          <bt:Override Locale="tr-TR" Value="Geçmiş"/>
+          <bt:Override Locale="fr-FR" Value="Historique"/>
+          <bt:Override Locale="de-DE" Value="Verlauf"/>
+          <bt:Override Locale="es-ES" Value="Historial"/>
+          <bt:Override Locale="kk-KZ" Value="Тарих"/>
+          <bt:Override Locale="ky-KG" Value="Тарых"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Таърих"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Tarixçə"/>
+          <bt:Override Locale="fa-IR" Value="تاریخچه"/>
+          <bt:Override Locale="ur-PK" Value="تاریخچہ"/>
+          <bt:Override Locale="id-ID" Value="Riwayat"/>
+          <bt:Override Locale="ms-MY" Value="Sejarah"/>
+          <bt:Override Locale="bn-BD" Value="ইতিহাস"/>
+          <bt:Override Locale="bn-IN" Value="ইতিহাস"/>
+          <bt:Override Locale="hi-IN" Value="इतिहास"/>
+          <bt:Override Locale="zh-CN" Value="历史"/>
+          <bt:Override Locale="ko-KR" Value="기록"/>
+          <bt:Override Locale="ja-JP" Value="履歴"/>
+        </bt:String>
+        <bt:String id="Tab.Favs" DefaultValue="Favourites">
+          <bt:Override Locale="uz-UZ" Value="Сараланганлар"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Сараланганлар"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Saralanganlar"/>
+          <bt:Override Locale="ru-RU" Value="Избранное"/>
+          <bt:Override Locale="ar-SA" Value="المفضلة"/>
+          <bt:Override Locale="tr-TR" Value="Favoriler"/>
+          <bt:Override Locale="fr-FR" Value="Favoris"/>
+          <bt:Override Locale="de-DE" Value="Favoriten"/>
+          <bt:Override Locale="es-ES" Value="Favoritos"/>
+          <bt:Override Locale="kk-KZ" Value="Таңдаулылар"/>
+          <bt:Override Locale="ky-KG" Value="Тандалгандар"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Баргузидаҳо"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Seçilmişlər"/>
+          <bt:Override Locale="fa-IR" Value="برگزیده‌ها"/>
+          <bt:Override Locale="ur-PK" Value="پسندیدہ"/>
+          <bt:Override Locale="id-ID" Value="Favorit"/>
+          <bt:Override Locale="ms-MY" Value="Kegemaran"/>
+          <bt:Override Locale="bn-BD" Value="প্রিয়"/>
+          <bt:Override Locale="bn-IN" Value="প্রিয়"/>
+          <bt:Override Locale="hi-IN" Value="पसंदीदा"/>
+          <bt:Override Locale="zh-CN" Value="收藏"/>
+          <bt:Override Locale="ko-KR" Value="즐겨찾기"/>
+          <bt:Override Locale="ja-JP" Value="お気に入り"/>
+        </bt:String>
+        <bt:String id="Tab.Basket" DefaultValue="Basket">
+          <bt:Override Locale="uz-UZ" Value="Сават"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Сават"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Savat"/>
+          <bt:Override Locale="ru-RU" Value="Корзина"/>
+          <bt:Override Locale="ar-SA" Value="السلة"/>
+          <bt:Override Locale="tr-TR" Value="Sepet"/>
+          <bt:Override Locale="fr-FR" Value="Panier"/>
+          <bt:Override Locale="de-DE" Value="Korb"/>
+          <bt:Override Locale="es-ES" Value="Cesta"/>
+          <bt:Override Locale="kk-KZ" Value="Себет"/>
+          <bt:Override Locale="ky-KG" Value="Себет"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Сабад"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Səbət"/>
+          <bt:Override Locale="fa-IR" Value="سبد"/>
+          <bt:Override Locale="ur-PK" Value="ٹوکری"/>
+          <bt:Override Locale="id-ID" Value="Keranjang"/>
+          <bt:Override Locale="ms-MY" Value="Bakul"/>
+          <bt:Override Locale="bn-BD" Value="ঝুড়ি"/>
+          <bt:Override Locale="bn-IN" Value="ঝুড়ি"/>
+          <bt:Override Locale="hi-IN" Value="टोकरी"/>
+          <bt:Override Locale="zh-CN" Value="篮子"/>
+          <bt:Override Locale="ko-KR" Value="바구니"/>
+          <bt:Override Locale="ja-JP" Value="かご"/>
+        </bt:String>
+        <bt:String id="Tab.Quote" DefaultValue="Check a quote">
+          <bt:Override Locale="uz-UZ" Value="Иқтибосни текшириш"/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Иқтибосни текшириш"/>
+          <bt:Override Locale="uz-Latn-UZ" Value="Iqtibosni tekshirish"/>
+          <bt:Override Locale="ru-RU" Value="Проверить цитату"/>
+          <bt:Override Locale="ar-SA" Value="تحقّق من اقتباس"/>
+          <bt:Override Locale="tr-TR" Value="Alıntıyı denetle"/>
+          <bt:Override Locale="fr-FR" Value="Vérifier une citation"/>
+          <bt:Override Locale="de-DE" Value="Zitat prüfen"/>
+          <bt:Override Locale="es-ES" Value="Comprobar una cita"/>
+          <bt:Override Locale="kk-KZ" Value="Дәйексөзді тексеру"/>
+          <bt:Override Locale="ky-KG" Value="Цитатаны текшерүү"/>
+          <bt:Override Locale="tg-Cyrl-TJ" Value="Санҷидани иқтибос"/>
+          <bt:Override Locale="az-Latn-AZ" Value="Sitatı yoxla"/>
+          <bt:Override Locale="fa-IR" Value="بررسی نقل‌قول"/>
+          <bt:Override Locale="ur-PK" Value="اقتباس کی جانچ"/>
+          <bt:Override Locale="id-ID" Value="Periksa kutipan"/>
+          <bt:Override Locale="ms-MY" Value="Semak petikan"/>
+          <bt:Override Locale="bn-BD" Value="উদ্ধৃতি যাচাই"/>
+          <bt:Override Locale="bn-IN" Value="উদ্ধৃতি যাচাই"/>
+          <bt:Override Locale="hi-IN" Value="उद्धरण जाँचें"/>
+          <bt:Override Locale="zh-CN" Value="核对引文"/>
+          <bt:Override Locale="ko-KR" Value="인용 확인"/>
+          <bt:Override Locale="ja-JP" Value="引用を確認"/>
+        </bt:String>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Press Khatt al-Quran on the Home tab to search for ayahs and insert them with translations.">
@@ -550,6 +956,42 @@
           <bt:Override Locale="zh-CN" Value="各版本的更新内容"/>
           <bt:Override Locale="ko-KR" Value="버전별 변경 사항"/>
           <bt:Override Locale="ja-JP" Value="各バージョンの変更点"/>
+        </bt:String>
+        <bt:String id="Tab.Search.Tip" DefaultValue="Searches the text selected in the document once (Alt+F in the panel).">
+          <bt:Override Locale="uz-UZ" Value="Ҳужжатда белгиланган матнни бир марта қидиради (панелда Alt+F)."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Ҳужжатда белгиланган матнни бир марта қидиради (панелда Alt+F)."/>
+          <bt:Override Locale="ru-RU" Value="Один раз ищет выделенный в документе текст (в панели Alt+F)."/>
+          <bt:Override Locale="ar-SA" Value="يبحث مرة واحدة عن النص المحدد في المستند (Alt+F في اللوحة)."/>
+        </bt:String>
+        <bt:String id="Tab.Live.Tip" DefaultValue="Switches live search on or off: selected Arabic text is searched at once.">
+          <bt:Override Locale="uz-UZ" Value="Жонли қидирувни ёқади ёки ўчиради: белгиланган арабча матн дарров қидирилади."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Жонли қидирувни ёқади ёки ўчиради: белгиланган арабча матн дарров қидирилади."/>
+          <bt:Override Locale="ru-RU" Value="Включает или выключает живой поиск: выделенный арабский текст ищется сразу."/>
+          <bt:Override Locale="ar-SA" Value="يشغّل البحث الحي أو يوقفه: يُبحث فورًا عن النص العربي المحدد."/>
+        </bt:String>
+        <bt:String id="Tab.History.Tip" DefaultValue="The ayahs you inserted or copied lately.">
+          <bt:Override Locale="uz-UZ" Value="Яқинда қўйилган ёки нусхаланган оятлар."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Яқинда қўйилган ёки нусхаланган оятлар."/>
+          <bt:Override Locale="ru-RU" Value="Недавно вставленные или скопированные аяты."/>
+          <bt:Override Locale="ar-SA" Value="الآيات التي أدرجتها أو نسختها مؤخرًا."/>
+        </bt:String>
+        <bt:String id="Tab.Favs.Tip" DefaultValue="Your favourite ayahs.">
+          <bt:Override Locale="uz-UZ" Value="Сараланган оятларингиз."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Сараланган оятларингиз."/>
+          <bt:Override Locale="ru-RU" Value="Ваши избранные аяты."/>
+          <bt:Override Locale="ar-SA" Value="آياتك المفضلة."/>
+        </bt:String>
+        <bt:String id="Tab.Basket.Tip" DefaultValue="Collect several ayahs and insert them all at once.">
+          <bt:Override Locale="uz-UZ" Value="Бир нечта оятни йиғиб, бирданига қўйиш."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Бир нечта оятни йиғиб, бирданига қўйиш."/>
+          <bt:Override Locale="ru-RU" Value="Собрать несколько аятов и вставить их разом."/>
+          <bt:Override Locale="ar-SA" Value="اجمع عدة آيات وأدرجها دفعة واحدة."/>
+        </bt:String>
+        <bt:String id="Tab.Quote.Tip" DefaultValue="Compare a pasted Arabic text with the selected ayah word by word.">
+          <bt:Override Locale="uz-UZ" Value="Қўйилган арабча матнни танланган оят билан сўзма-сўз солиштириш."/>
+          <bt:Override Locale="uz-Cyrl-UZ" Value="Қўйилган арабча матнни танланган оят билан сўзма-сўз солиштириш."/>
+          <bt:Override Locale="ru-RU" Value="Сравнить вставленный арабский текст с выбранным аятом по словам."/>
+          <bt:Override Locale="ar-SA" Value="قارن نصًّا عربيًّا ملصقًا بالآية المحددة كلمةً كلمةً."/>
         </bt:String>
       </bt:LongStrings>
     </Resources>
