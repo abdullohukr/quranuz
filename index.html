@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="46">
+<meta name="myquran-version" content="48">
 <link rel="icon" href="assets/brand/word-office/clear-32.png">
 <link rel="icon" href="assets/brand/word-office/square-32.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="assets/brand/word-office/square-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=46">
+<link rel="stylesheet" href="style.css?v=48">
 <script>
 /* Office.js only where this page is a Word add-in. In the frame of another host (browser extension, Google Docs, WordPress,
    Adobe) it stops the page and leaves a blank screen. Same blocking order as a normal script tag. */
 if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
-<script src="i18n.js?v=46"></script>
-<script src="core.js?v=46"></script>
+<script src="i18n.js?v=48"></script>
+<script src="core.js?v=48"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -26,6 +26,9 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
 <body>
 <header class="topbar">
   <div class="brand"><img class="logo" src="assets/brand/word-office/clear-64.png" width="30" height="30" alt=""><h1>Khatt al-Quran</h1><span id="host-badge" class="badge" hidden>Word</span></div>
+  <button type="button" id="hist-btn" class="icon-btn" data-i18n-title="history" aria-label="History" aria-expanded="false" aria-controls="marks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span id="hist-n" class="n"></span></button>
+  <button type="button" id="fav-btn" class="icon-btn" data-i18n-title="favorites" aria-label="Favourites" aria-expanded="false" aria-controls="marks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg><span id="fav-n" class="n"></span></button>
+  <button type="button" id="bask-btn" class="icon-btn" data-i18n-title="basket" aria-label="Basket" aria-expanded="false" aria-controls="marks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.6 9.2a2 2 0 0 1-2 1.8H7.6a2 2 0 0 1-2-1.8L4 9Z"/><path d="m8 9 3-5M16 9l-3-5"/></svg><span id="bask-n" class="n"></span></button>
   <button id="help-btn" class="icon-btn" data-i18n-title="help" aria-label="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9"/><circle cx="12" cy="17.2" r=".6" class="fill"/></svg></button>
   <button id="settings-btn" class="icon-btn" data-i18n-title="settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
 </header>
@@ -33,13 +36,13 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
 <main>
   <section id="votd" class="votd card" hidden aria-labelledby="votd-h">
     <div class="votd-head"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg><h2 id="votd-h" data-i18n="ayahOfDay"></h2><bdi id="votd-ref" class="muted small"></bdi>
-      <button type="button" id="votd-close" class="icon-btn" data-i18n-title="votdHide" aria-label="Hide until tomorrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <button type="button" id="votd-close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <div id="votd-ar" class="votd-ar" dir="rtl"></div>
     <div id="votd-tr" class="votd-tr"></div>
     <div class="votd-actions"><button type="button" id="votd-pick" class="btn" data-i18n="votdPick"></button><button type="button" id="votd-insert" class="btn primary" data-i18n="insert"></button></div>
   </section>
-  <section class="search card">
-    <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="search" autocomplete="off" dir="auto" data-i18n-placeholder="search"></div>
+  <div class="pin"><section class="card pin-card">
+    <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="search" autocomplete="off" dir="auto" list="recent-q" data-i18n-placeholder="search"><datalist id="recent-q"></datalist></div>
     <div class="pick">
       <select id="sura" aria-label="Surah"></select>
       <button id="info-btn" class="icon-btn" data-i18n-title="surahInfo" aria-label="info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" class="fill"/></svg></button>
@@ -50,34 +53,44 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
       <span class="dash">—</span>
       <input id="to" type="number" min="1" value="1" aria-label="to">
     </div>
+  </section></div>
+  <section class="search card" id="found">
+    <div class="marks">
+      <div id="marks-panel" class="marks-panel" hidden>
+        <ul id="marks-list"></ul>
+        <p id="bask-acts" class="bask-acts" hidden><button type="button" id="bask-insert" class="btn primary" data-i18n="basketInsert"></button><button type="button" id="bask-copy" class="btn" data-i18n="basketCopy"></button></p>
+        <p class="marks-foot"><span id="marks-empty" class="muted small"></span><button type="button" id="marks-clear" class="link small" data-i18n="clearAll"></button></p>
+      </div>
+    </div>
     <div id="status" class="muted small" data-i18n="loading"></div>
     <p id="deep-note" class="muted small" aria-live="polite"></p>
     <ol id="results"></ol>
     <button type="button" id="more" class="link small" hidden data-i18n="showMore"></button>
-    <div class="marks">
-      <div class="marks-bar">
-        <button type="button" id="hist-btn" class="chip" aria-expanded="false" aria-controls="marks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span data-i18n="history"></span><span id="hist-n" class="n"></span></button>
-        <button type="button" id="fav-btn" class="chip" aria-expanded="false" aria-controls="marks-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg><span data-i18n="favorites"></span><span id="fav-n" class="n"></span></button>
-        <button type="button" id="again" class="icon-btn" data-i18n-title="insertAgain" aria-label="Insert the last one again" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4v3.5H8"/></svg></button>
-      </div>
-      <div id="marks-panel" class="marks-panel" hidden>
-        <ul id="marks-list"></ul>
-        <p class="marks-foot"><span id="marks-empty" class="muted small"></span><button type="button" id="marks-clear" class="link small" data-i18n="clearAll"></button></p>
-      </div>
-    </div>
   </section>
 
   <section class="selection card">
     <div class="sel-head">
       <strong id="sel-title"></strong>
       <button id="reset-words" class="link" hidden data-i18n="fullAyah"></button>
+      <button type="button" id="next" class="icon-btn" data-i18n-title="nextAyah" aria-label="Next ayah"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+      <button type="button" id="more-btn" class="icon-btn" data-i18n-title="moreMenu" aria-label="More" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2" class="fill"/><circle cx="12" cy="12" r="1.2" class="fill"/><circle cx="19" cy="12" r="1.2" class="fill"/></svg></button>
       <button type="button" id="fav-toggle" class="icon-btn star" aria-pressed="false" aria-label="Add to favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg></button>
     </div>
+    <div id="more-menu" class="menu" role="menu" hidden>
+      <button type="button" role="menuitem" id="m-text" data-i18n="copyText"></button>
+      <button type="button" role="menuitem" id="m-md" data-i18n="copyMd"></button>
+      <button type="button" role="menuitem" id="m-link" data-i18n="copyLink"></button>
+      <button type="button" role="menuitem" id="m-bask" data-i18n="basketAdd"></button>
+      <button type="button" role="menuitem" id="m-foot" data-i18n="footnoteIns" hidden></button>
+      <button type="button" role="menuitem" id="m-update" data-i18n="updateAyahs" hidden></button>
+    </div>
+    <div id="chips" class="tchips" aria-label="Translations"></div>
     <p id="script-note" class="note small" hidden data-i18n="ayahByAyah"></p>
     <div id="preview-ar" class="arabic" dir="rtl"></div>
     <div class="actions">
       <button id="insert" class="btn primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg><span data-i18n="insert"></span></button>
       <button id="copy" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span data-i18n="copy"></span></button>
+      <button id="again" class="btn pic-btn" data-i18n-title="undoInsert" aria-label="Undo the last insert" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
       <button id="copy-pic" class="btn pic-btn" data-i18n-title="copyPicture" aria-label="Copy as a picture"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4 17 5-4.5 3.5 3 3-2.5 4.5 4"/></svg></button>
     </div>
   </section>
@@ -103,6 +116,8 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
         <label class="field"><span data-i18n="uiLang"></span> <select id="s-ui-lang"></select></label>
         <label class="field"><span data-i18n="mushaf"></span> <select id="s-script"></select></label>
         <label class="switch"><input type="checkbox" id="s-votd"><i></i> <span data-i18n="votdShow"></span></label>
+        <label class="field"><span data-i18n="votdCloseSet"></span> <select id="s-votd-close">
+          <option value="ask" data-i18n="askMe"></option><option value="day" data-i18n="votdHideDay"></option><option value="off" data-i18n="votdTurnOff"></option></select></label>
         <div class="field"><span data-i18n="theme"></span><div id="s-theme" class="themes" role="radiogroup"></div></div>
         <div class="opt-group" id="s-search">
           <h3 data-i18n="searchGroup"></h3>
@@ -111,6 +126,14 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
             <option value="selected" data-i18n="scopeSelected"></option>
             <option value="all" data-i18n="scopeAll"></option></select></label>
           <p class="small muted" data-i18n="scopeNote"></p>
+        </div>
+        <div class="opt-group">
+          <h3 data-i18n="presetsTitle"></h3>
+          <div class="chips"><button type="button" data-preset="ar" data-i18n="presetAr"></button><button type="button" data-preset="article" data-i18n="presetArticle"></button><button type="button" data-preset="tafsir" data-i18n="presetTafsir"></button></div>
+        </div>
+        <div class="opt-group" aria-live="polite">
+          <button type="button" id="s-reset" class="btn" data-i18n="resetSettings"></button>
+          <p class="small muted" data-i18n="resetNote"></p>
         </div>
       </section>
 
@@ -135,6 +158,9 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
           <label class="switch opt"><span data-i18n="ref"></span><bdi class="sample ar" dir="rtl">[يونس ١]</bdi><input type="checkbox" id="s-ref"><i></i></label>
           <label class="switch opt"><span data-i18n="refTr"></span><bdi class="sample" id="s-tr-ref-sample">(Yunus: 1)</bdi><input type="checkbox" id="s-tr-ref"><i></i></label>
           <label class="switch opt"><span data-i18n="newPara"></span><span class="sample">¶</span><input type="checkbox" id="s-newpara"><i></i></label>
+          <label class="switch opt" id="s-mark-row" hidden><span data-i18n="markAyahs"></span><input type="checkbox" id="s-mark"><i></i></label>
+          <label class="field"><span data-i18n="picActionSet"></span> <select id="s-pic-action">
+            <option value="ask" data-i18n="askMe"></option><option value="insert" data-i18n="picInsert"></option><option value="copy" data-i18n="picCopy"></option></select></label>
           <label class="switch opt"><span data-i18n="picBg"></span><input type="color" id="s-picbg" class="sample" value="#ffffff"><input type="checkbox" id="s-picbg-on"><i></i></label>
         </div>
         <div class="opt-group">
@@ -223,8 +249,38 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
   </form>
 </dialog>
 
+<dialog id="tr-fail" class="sheet" aria-labelledby="tr-fail-h">
+  <form method="dialog">
+    <div class="sheet-head"><h2 id="tr-fail-h" data-i18n="translation"></h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="sheet-body"><p data-i18n="trFailQ"></p><p id="tr-fail-names" class="small muted"></p>
+      <p class="actions col"><button value="ar" class="btn primary" data-i18n="trFailAr"></button><button value="reload" class="btn" data-i18n="trFailReload"></button><button value="other" class="btn" data-i18n="trFailOther"></button></p></div>
+  </form>
+</dialog>
+
+<dialog id="votd-ask" class="sheet" aria-labelledby="votd-ask-h">
+  <form method="dialog">
+    <div class="sheet-head"><h2 id="votd-ask-h" data-i18n="ayahOfDay"></h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="sheet-body"><p data-i18n="votdAskQ"></p>
+      <p class="actions"><button value="off" class="btn" data-i18n="votdTurnOff"></button><button value="day" class="btn primary" data-i18n="votdHideDay"></button></p>
+      <p class="small muted" data-i18n="votdAskNote"></p></div>
+  </form>
+</dialog>
+
+<dialog id="pic-ask" class="sheet" aria-labelledby="pic-ask-h">
+  <form method="dialog">
+    <div class="sheet-head"><h2 id="pic-ask-h" data-i18n="picTitle"></h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="sheet-body"><p data-i18n="picAskQ"></p>
+      <p class="actions"><button value="insert" class="btn primary" data-i18n="picInsert"></button><button value="copy" class="btn" data-i18n="picCopy"></button></p>
+      <label class="switch"><input type="checkbox" id="pic-remember"><i></i> <span data-i18n="dontAskAgain"></span></label>
+      <p class="small muted" data-i18n="picAskNote"></p></div>
+  </form>
+</dialog>
+
 <div id="toast" role="status"></div>
-<script src="search.js?v=46"></script>
-<script src="app.js?v=46"></script>
+<script src="search.js?v=48"></script>
+<script src="app.js?v=48"></script>
 </body>
 </html>

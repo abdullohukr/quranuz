@@ -10,7 +10,7 @@
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
         if (t !== 'auto') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
-<link rel="stylesheet" href="style.css?v=46">
+<link rel="stylesheet" href="style.css?v=48">
 <style>
   .page { max-width: 780px; margin: 0 auto; padding: 16px; }
   .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -37,7 +37,7 @@
   <div id="content"></div>
   <p class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" data-i18n="privacy">Privacy</a> · <a href="terms.html" data-i18n="terms">Terms</a> · <a href="releases.html" data-i18n="whatsNew">What's new</a></p>
 </div>
-<script src="i18n.js?v=46"></script>
+<script src="i18n.js?v=48"></script>
 <script>
 (function () {
   'use strict';
@@ -67,6 +67,7 @@
       'Созламаларда (⚙) мусҳаф, таржима ва тафсирлар (бир нечтасини танлаш мумкин), аъузу, басмала, ҳаволалар, шрифт ва ўлчамни танланг.',
       '«Қўйиш» тугмасини босинг — матн Word\'да курсор турган жойга қўйилади.'],
     faq: [
+      ['Панелнинг қўшимча имкониятлари', 'Юқоридаги белгилар: соат — тарих, юлдуз — сараланганлар, сават — бир нечта оятни йиғиб бирданига қўйиш. «Бекор қилиш» тугмаси охирги қўйилганни олиб ташлайди (матн ўзгартирилган бўлса, ўчирмайди). Оят рақами ёнидаги «›» — кейинги оят, «⋯» — оддий матн, Markdown ёки ҳавола қилиб нусха олиш. Тугмалар: / — қидирув, Enter — биринчи топилган, Ctrl+Enter — қўйиш, Alt+↑/↓ — олдинги/кейинги оят. Ҳавола: quran.abdulloh.org/#2:255. Интернетсиз ишлаш: бир марта очилган маълумотлар ва шрифтлар сақланиб қолади.'],
       ['Word\'да араб матни оддий шрифтда ёки нотўғри кўринади', 'Ўрнатгандан кейин Word\'ни тўлиқ ёпиб (Mac: Cmd+Q) қайта очинг; ўзгармаса, яна бир марта ёпиб очинг (macOS янги шрифтларни фонда фаоллаштиради). Ёрдам бермаса, ўрнатувчини қайта ишга туширинг.'],
       ['Word «We weren\'t able to load all of your fonts» дейди', 'Ўрнатувчини қайта ишга туширинг: у шрифтларнинг такрор нусхаларини олиб ташлайди. Кейин Word\'ни қайта очинг.'],
       ['QPC V1 / V2 / V4 мусҳафида ғалати белгилар чиқади', 'Бу мусҳафлар 604 саҳифанинг ҳар бири учун алоҳида шрифтдан фойдаланади. Уларни ўрнатувчи ўрнатади; ўрнатгандан кейин Word\'ни қайта очинг.'],
@@ -89,6 +90,7 @@
       'Sozlamalarda (⚙) mushaf, tarjima va tafsirlar (bir nechtasini tanlash mumkin), aʼuzu, basmala, havolalar, shrift va oʻlchamni tanlang.',
       '«Qoʻyish» tugmasini bosing — matn Word’da kursor turgan joyga qoʻyiladi.'],
     faq: [
+      ['Panelning qoʻshimcha imkoniyatlari', 'Yuqoridagi belgilar: soat — tarix, yulduz — saralanganlar, savat — bir nechta oyatni yigʻib birdaniga qoʻyish. «Bekor qilish» tugmasi oxirgi qoʻyilganni olib tashlaydi (matn oʻzgartirilgan boʻlsa, oʻchirmaydi). Oyat raqami yonidagi «›» — keyingi oyat, «⋯» — oddiy matn, Markdown yoki havola qilib nusxa olish. Tugmalar: / — qidiruv, Enter — birinchi topilgan, Ctrl+Enter — qoʻyish, Alt+↑/↓ — oldingi/keyingi oyat. Havola: quran.abdulloh.org/#2:255. Internetsiz ishlash: bir marta ochilgan maʼlumotlar va shriftlar saqlanib qoladi.'],
       ['Word’da arab matni oddiy shriftda yoki notoʻgʻri koʻrinadi', 'Oʻrnatgandan keyin Word’ni toʻliq yopib (Mac: Cmd+Q) qayta oching; oʻzgarmasa, yana bir marta yopib oching (macOS yangi shriftlarni fonda faollashtiradi). Yordam bermasa, oʻrnatuvchini qayta ishga tushiring.'],
       ['Word «We weren\'t able to load all of your fonts» deydi', 'Oʻrnatuvchini qayta ishga tushiring: u shriftlarning takror nusxalarini olib tashlaydi. Keyin Word’ni qayta oching.'],
       ['QPC V1 / V2 / V4 mushafida gʻalati belgilar chiqadi', 'Bu mushaflar 604 sahifaning har biri uchun alohida shriftdan foydalanadi. Ularni oʻrnatuvchi oʻrnatadi; oʻrnatgandan keyin Word’ni qayta oching.'],
@@ -111,6 +113,7 @@
       'In Settings (⚙) choose the mushaf, translations and tafsirs (several at once), isti‘adhah, basmalah, references, fonts and sizes.',
       'Press Insert — the text goes to the cursor position in Word.'],
     faq: [
+      ['Extra features of the panel', 'Icons at the top: clock — history, star — favourites, basket — collect several ayahs and insert them at once. “Undo” takes out the last insert (it never deletes text that was edited). Next to the ayah: “›” — next ayah, “⋯” — copy as plain text, Markdown or a link. Keys: / — search, Enter — the first result, Ctrl+Enter — insert, Alt+↑/↓ — previous/next ayah. Link: quran.abdulloh.org/#2:255. Offline: data and fonts that were opened once are kept.'],
       ['The Arabic text in Word is in a plain font or looks wrong', 'After installing, quit Word completely (Mac: Cmd+Q) and open it again; if nothing changes, do it once more (macOS activates the new fonts in the background). If that does not help, run the installer again.'],
       ['Word says “We weren\'t able to load all of your fonts”', 'Run the installer again: it removes duplicate copies of the fonts. Then reopen Word.'],
       ['QPC V1 / V2 / V4 shows strange symbols', 'These mushafs use a separate font for each of the 604 pages. The installer installs them; reopen Word afterwards.'],
@@ -133,6 +136,7 @@
       'В настройках (⚙) выберите мусхаф, переводы и тафсиры (можно несколько), аузу, басмалу, ссылки, шрифты и размеры.',
       'Нажмите «Вставить» — текст появится в Word на месте курсора.'],
     faq: [
+      ['Дополнительные возможности панели', 'Значки сверху: часы — история, звезда — избранное, корзина — собрать несколько аятов и вставить сразу. Кнопка «Отменить» убирает последнюю вставку (если текст изменили, не удаляет). Рядом с аятом: «›» — следующий аят, «⋯» — копировать простым текстом, Markdown или ссылкой. Клавиши: / — поиск, Enter — первый найденный, Ctrl+Enter — вставить, Alt+↑/↓ — предыдущий/следующий аят. Ссылка: quran.abdulloh.org/#2:255. Без интернета: открытые ранее данные и шрифты сохраняются.'],
       ['Арабский текст в Word обычным шрифтом или выглядит неправильно', 'После установки полностью закройте Word (Mac: Cmd+Q) и откройте снова; если не изменилось — ещё раз (macOS включает новые шрифты в фоне). Если не помогло, запустите установщик ещё раз.'],
       ['Word пишет «We weren\'t able to load all of your fonts»', 'Запустите установщик ещё раз: он убирает повторные копии шрифтов. Затем откройте Word заново.'],
       ['В мусхафе QPC V1 / V2 / V4 странные значки', 'Эти мусхафы используют отдельный шрифт для каждой из 604 страниц. Их ставит установщик; после установки откройте Word заново.'],
@@ -155,6 +159,7 @@
       'في الإعدادات (⚙) اختر المصحف والترجمات والتفاسير (يمكن أكثر من واحد)، والاستعاذة والبسملة والمراجع والخطوط والأحجام.',
       'اضغط «إدراج» فيُدرج النص في موضع المؤشر في Word.'],
     faq: [
+      ['ميزات إضافية في اللوحة', 'الأيقونات في الأعلى: الساعة للسجل، والنجمة للمفضلة، والسلة لجمع عدة آيات وإدراجها دفعة واحدة. زر «تراجع» يزيل آخر إدراج (ولا يحذف نصًّا عُدِّل). بجانب الآية: «›» الآية التالية، و«⋯» النسخ كنص عادي أو Markdown أو رابط. المفاتيح: / للبحث، Enter لأول نتيجة، Ctrl+Enter للإدراج، Alt+↑/↓ للآية السابقة/التالية. الرابط: quran.abdulloh.org/#2:255. دون إنترنت: تُحفظ البيانات والخطوط التي فُتحت من قبل.'],
       ['النص العربي في Word بخط عادي أو يظهر بشكل خاطئ', 'شغّل برنامج التثبيت مرة أخرى، ثم أغلق Word تمامًا (Mac: Cmd+Q) وافتحه من جديد.'],
       ['يظهر في Word «We weren\'t able to load all of your fonts»', 'شغّل برنامج التثبيت مرة أخرى: فهو يزيل النسخ المكررة من الخطوط. ثم أعد فتح Word.'],
       ['تظهر رموز غريبة في مصاحف QPC V1 / V2 / V4', 'تستخدم هذه المصاحف خطًا مستقلًا لكل صفحة من الصفحات الـ604، ويثبّتها برنامج التثبيت؛ أعد فتح Word بعد التثبيت.'],

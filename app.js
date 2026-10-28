@@ -13,6 +13,9 @@
     picBgOn: false, picBg: '#ffffff',                  // the Arabic as a picture: transparent unless a background is switched on
     extInsert: 'ask',                                  // browser extension, editors on web pages: 'ask' | 'text' | 'picture'
     votd: true,                                        // the "Ayah of the day" card at the top
+    votdClose: 'ask',                                  // its cross: 'ask' | 'day' (hide until tomorrow) | 'off' (turn it off)
+    markAyahs: false,                                  // Word: every inserted ayah goes into a content control, so "Update all ayahs" can find it
+    picAction: 'ask',                                  // the picture button in Word: 'ask' | 'insert' | 'copy'
     searchScope: 'default',                            // search in every language: 'default' | 'selected' | 'all'
     auzaFont: '', auzaSize: 0, basmalaFont: '', basmalaSize: 0, refFont: '', refSize: 0    // 0 / '': automatic
   };
@@ -30,6 +33,20 @@
   var ADOBE = HOST === 'adobe';
   var clickStart = null, inWord = false, online = !!HOST && !ADOBE, windows = /Win/.test(navigator.platform || ''), results = [];
   var t = function (k, v) { return i18n.t(k, v); };
+  /* host=ext: only the extension's own page (chrome-extension:// …) is a parent that counts; its origin is learnt from its
+     first message and is the only address the panel sends to (the history and favourites never go out with '*') */
+  var extOrigin = '';
+  function fromExt(e) {
+    if (HOST !== 'ext') return true;
+    if (!/^(chrome|moz|safari-web)-extension:\/\//.test(e.origin || '') || (extOrigin && e.origin !== extOrigin)) return false;
+    extOrigin = e.origin; return true;
+  }
+  function toParent(msg) {
+    if (HOST !== 'ext') { window.parent.postMessage(msg, '*'); return true; }
+    if (extOrigin) { window.parent.postMessage(msg, extOrigin); return true; }
+    if (msg.type === 'khatt-ready') { window.parent.postMessage(msg, '*'); return true; }     // nothing in it
+    return false;
+  }
 
   /* ---------- settings (kept in localStorage, so they survive restarts) ---------- */
   function loadSettings() {
@@ -49,9 +66,27 @@
       if (saved) Object.keys(saved).forEach(function (k) { if (saved[k] !== undefined) st[k] = saved[k]; });
       else firstRun = true;                         // nothing saved yet: the welcome screen asks for the language
     } catch (e) {}
+    sanitize(st);
     migrateFmt(st);
     fixFont(st);
     return st;
+  }
+  /* damaged or foreign data in the storage must never stop the panel: every value gets the type it must have */
+  function sanitize(st) {
+    var oneOf = function (v, list, d) { return list.indexOf(v) >= 0 ? v : d; };
+    ['translations', 'tafsirs'].forEach(function (k) {
+      st[k] = Array.isArray(st[k]) ? st[k].filter(function (x) { return typeof x === 'string'; }).slice(0, 200) : DEFAULTS[k].slice();
+    });
+    ['uiLang', 'script', 'theme', 'tab', 'arFont', 'uzFont', 'picBg', 'auzaFont', 'basmalaFont', 'refFont'].forEach(function (k) { if (typeof st[k] !== 'string') st[k] = DEFAULTS[k]; });
+    ['arSize', 'uzSize', 'auzaSize', 'basmalaSize', 'refSize'].forEach(function (k) { if (typeof st[k] === 'string' && +st[k]) st[k] = +st[k]; if (typeof st[k] !== 'number' || !isFinite(st[k])) st[k] = DEFAULTS[k]; });
+    ['withTr', 'withTafsir', 'brackets', 'auza', 'basmala', 'ref', 'trRef', 'newPara', 'ayahNums', 'hizb', 'sajda', 'waqf', 'arBold', 'arText', 'picBgOn', 'votd', 'markAyahs']
+      .forEach(function (k) { st[k] = typeof st[k] === 'boolean' ? st[k] : DEFAULTS[k]; });
+    st.searchScope = oneOf(st.searchScope, ['default', 'selected', 'all'], 'default');
+    st.votdClose = oneOf(st.votdClose, ['ask', 'day', 'off'], 'ask');
+    st.picAction = oneOf(st.picAction, ['ask', 'insert', 'copy'], 'ask');
+    st.extInsert = oneOf(st.extInsert, ['ask', 'text', 'picture'], 'ask');
+    if (!/^#[0-9a-f]{6}$/i.test(st.picBg)) st.picBg = DEFAULTS.picBg;
+    if (st.fmt !== undefined && (!st.fmt || typeof st.fmt !== 'object' || Array.isArray(st.fmt))) delete st.fmt;
   }
   /* The tafsir.one text is not encoded for KFGQPC fonts (ی, ۝ + digits): in KFGQPC it shows dots
      and double circles. Asking for KFGQPC therefore selects the Quran Library Hafs mushaf, whose
@@ -63,9 +98,20 @@
   }
   function saveSettings() { try { localStorage.setItem('myquran-settings', JSON.stringify(settings)); } catch (e) {} }
 
-  function toast(msg) {
-    var el = $('toast'); el.textContent = msg; el.classList.add('show');
-    clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, 2000);
+  var MAC = /Mac|iPhone|iPad/.test(navigator.platform || '');
+  /* toast(text) or toast(text, {label, fn}): a button in the message (stays 7 s); on a Mac the keys are written with ⌘ */
+  function toast(msg, act) {
+    var el = $('toast');
+    if (MAC) msg = String(msg).replace(/(Ctrl|Strg)\+/g, '⌘');
+    el.textContent = msg;
+    if (act) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'toast-act'; b.textContent = act.label;
+      b.addEventListener('click', function () { el.classList.remove('show'); act.fn(); });
+      el.appendChild(b);
+    }
+    el.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('show'); }, act ? 7000 : 2000);
   }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function getJSON(path) {
@@ -93,7 +139,7 @@
   function setUiLang(lang) {
     settings.uiLang = lang; i18n.set(lang); saveSettings();
     $('s-ui-lang').value = lang;
-    applyI18n(); fillSuraSelect(); fillScriptSelect(); fillThemes(); render(); footerLinks(); drawMarks(); drawVotd();
+    applyI18n(); resetIdle(); fillSuraSelect(); fillScriptSelect(); fillThemes(); render(); footerLinks(); drawMarks(); drawVotd();
     if (quran) $('status').textContent = '';          // applyI18n put the "Loading…" text back
     if (searchQ.trim()) runSearch();
     fmtEditor();                                     // Format tab: part names, font placeholder, preview
@@ -321,7 +367,7 @@
     return n ? n[i - 1] : quran.suras[i - 1][1];
   }
 
-  function loadTranslation(tr) { return getJSON(tr.file).then(function (d) { tr.data = d; return d; }); }
+  function loadTranslation(tr) { return getJSON(tr.file).then(function (d) { tr.data = d; tr.failed = false; return d; }, function (e) { tr.failed = true; throw e; }); }
   function loadTafsirSura(tf, s) {
     tf.suras = tf.suras || {};
     if (tf.format === 'array') return getJSON(tf.file).then(function (d) { tf.all = d; });
@@ -342,8 +388,13 @@
     if (settings.withTafsir) activeTafsirs().forEach(function (tf) {
       if (tf.format === 'array' ? !tf.all : !(tf.suras && tf.suras[sel.sura])) jobs.push(loadTafsirSura(tf, sel.sura));
     });
-    return Promise.all(jobs).catch(function (e) { toast(t('error') + ': ' + e.message); });
+    return Promise.all(jobs).then(function () { loadFailed = []; }, function (e) {
+      loadFailed = (settings.withTr ? activeTranslations().filter(function (x) { return !x.data; }) : [])
+        .concat(settings.withTafsir ? activeTafsirs().filter(function (tf) { return tf.format === 'array' ? !tf.all : !(tf.suras && tf.suras[sel.sura]); }) : []);
+      if (!loadFailed.length) toast(t('error') + ': ' + e.message);
+    }).then(function () { drawChips(); });
   }
+  var loadFailed = [], muted = {}, skipExtras = false;      // what did not load; translations switched off for now (chips); "only Arabic" for one insert
 
   /* ---------- mushaf (Arabic script) ---------- */
   var loadedFonts = {};
@@ -707,12 +758,17 @@
   }
   var searchTimer;
   $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250); });
-  $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(true); } });
+  $('q').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    clearTimeout(searchTimer); runSearch(true); addRecent($('q').value);
+    if (results.length && !quran.parseRef($('q').value)) setSel(results[0].sura, results[0].aya, results[0].aya);     // Enter: the first one found
+  });
   $('results').addEventListener('click', function (e) {
     var li = e.target.closest('li'); if (!li) return;
     var r = results[+li.dataset.i]; if (!r) return;
     if (e.shiftKey && r.sura === sel.sura) setSel(r.sura, Math.min(sel.from, r.aya), Math.max(sel.to, r.aya));
     else {
+      addRecent($('q').value);
       setSel(r.sura, r.aya, r.aya);                       // the whole ayah is what gets inserted; the found words stay marked in the list,
     }                                                     // a part is chosen by tapping the words (as before)
     [].forEach.call($('results').children, function (x) { x.classList.toggle('active', x === li); });
@@ -764,11 +820,11 @@
       bold: false,                                     // weight etc. come from settings.fmt
       // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
       basmalaText: settings.fmt.basmala.font && sc.glyph && !src ? QuranCore.BASMALA : null,
-      translations: settings.withTr ? activeTranslations().filter(function (x) { return x.data; }).map(function (x) {
+      translations: settings.withTr && !skipExtras ? activeTranslations().filter(function (x) { return x.data && !muted[x.id]; }).map(function (x) {
         return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'],
                  suraName: suraName(sel.sura, x.lang, x.data[quran.index(sel.sura, sel.from)]) };
       }) : [],
-      tafsirs: settings.withTafsir ? activeTafsirs().map(function (tf) {
+      tafsirs: settings.withTafsir && !skipExtras ? activeTafsirs().filter(function (tf) { return !muted[tf.id]; }).map(function (tf) {
         var get = tafsirGetter(tf), first = get(sel.sura, sel.from);
         return { name: tf.name, dir: tf.dir, quotes: QUOTES[tf.lang] || ['«', '»'],
                  suraName: suraName(sel.sura, tf.lang, first && first.text), get: get };
@@ -836,7 +892,7 @@
     }
     $('preview-ar').innerHTML = html;
     $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
-    starState();
+    starState(); drawChips();
   }
 
   /* Word selection: click first word then last word, or drag across words with the mouse. */
@@ -1058,34 +1114,54 @@
      start of a paragraph nothing is split. Before, it was put after the end of the whole paragraph. */
   function insertWord(out) {
     // page-font mushaf where local fonts do not exist: the Arabic paragraph goes in as a picture
-    return (asPicture() ? ayahPicture(out) : Promise.resolve(null)).then(function (pic) { return insertWordWith(out, pic); });
+    return (asPicture() ? ayahPicture(out) : Promise.resolve(null)).then(function (pic) { return insertWordWith(out, pic, { tag: refTag() }); });
   }
-  function insertWordWith(out, pic) {
+  function insertWordWith(out, pic, opts) {
+    opts = opts || {};
     return Word.run(function (ctx) {
-      var sel = ctx.document.getSelection(), before = null;
+      var sel = ctx.document.getSelection(), before = null, safe = true;
+      sel.load('text');
       if (settings.newPara) {
         before = sel.paragraphs.getFirst().getRange('Start').expandTo(sel.getRange('Start'));
         before.load('text');
       }
       return ctx.sync().then(function () {
         var target = sel;
+        // a selection that gets replaced, or a paragraph that is split: "Undo" could not bring that back, so it only advises Ctrl+Z
+        if (sel.text) safe = false;
         // 'After' = the start of the new second half; 'End' of the break is still before its paragraph
         // mark, so the Arabic text was glued to the first half and an empty paragraph was left over
-        if (before && before.text.replace(/\s+/g, '') !== '') target = sel.insertText('\n', 'Replace').getRange('After');
-        target.insertOoxml(buildOoxml(out, pic), 'Replace');
-        return ctx.sync();
+        if (before && before.text.replace(/\s+/g, '') !== '') { target = sel.insertText('\n', 'Replace').getRange('After'); safe = false; }
+        var rng = opts.html ? target.insertHtml(opts.html, 'Replace') : target.insertOoxml(buildOoxml(out, pic), 'Replace');
+        return keepInserted(ctx, rng, safe, opts.tag);
       });
     }).catch(function () {
       return Word.run(function (ctx) {                       // hosts without OOXML support
         var target = ctx.document.getSelection();
         if (settings.newPara) target = target.insertText('\n', 'Replace').getRange('After');
-        target.insertHtml(buildHtml(out), 'Replace');
-        return ctx.sync();
+        return keepInserted(ctx, target.insertHtml(opts.html || buildHtml(out), 'Replace'), false, opts.tag);
       });
     });
   }
-  function copy(out) {
-    var html = buildHtml(out), text = out.text;
+  /* The inserted range is tracked, so "Undo" can take exactly it out again (only when nothing was replaced or split and
+     the text is still the same). With "mark ayahs" the range goes into a content control that carries the reference
+     (tag khatt:sura:from-to[:wordFrom:wordTo]); "Update all ayahs" finds them by it. A failure here never repeats the insert. */
+  function keepInserted(ctx, rng, safe, tag) {
+    return ctx.sync().then(function () {
+      var cc = null;
+      if (tag && settings.markAyahs) {
+        try { cc = rng.insertContentControl(); cc.tag = tag; cc.title = 'Khatt al-Quran'; cc.appearance = 'Hidden'; } catch (e) { cc = null; }
+      }
+      var obj = cc || rng;
+      try { obj.track(); obj.load('text'); } catch (e) { setUndo(true, null); return; }
+      return ctx.sync().then(function () { setUndo(true, safe ? { rng: obj, cc: !!cc, text: obj.text } : null); }, function () { setUndo(true, null); });
+    });
+  }
+  function refTag() {
+    return 'khatt:' + sel.sura + ':' + sel.from + '-' + sel.to + (sel.wordFrom > 0 || sel.wordTo != null ? ':' + sel.wordFrom + ':' + (sel.wordTo == null ? 'n' : sel.wordTo) : '');
+  }
+  function copy(out) { return copyRaw(buildHtml(out), out.text); }
+  function copyRaw(html, text) {
     if (navigator.clipboard && window.ClipboardItem) {
       return navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob([html], { type: 'text/html' }),
@@ -1098,11 +1174,32 @@
   }
   function doInsert() {
     return ensureData().then(function () {
-      var out = current();
-      remember();
-      if (HOST) return sendToHost(out);
-      return (inWord ? insertWord(out) : copy(out)).then(function () { toast(inWord ? t('inserted') : t('copiedPaste')); });
+      if (loadFailed.length && !skipExtras) return askTrFail();       // a translation did not load: ask before inserting without it
+      return insertNow();
     }).catch(function (e) { toast(t('error') + ': ' + e.message); });
+  }
+  function insertNow() {
+    var out = current();
+    remember();
+    if (HOST) return sendToHost(out);
+    return (inWord ? insertWord(out) : copy(out)).then(function () { toast(inWord ? t('inserted') : t('copiedPaste'), inWord && undoReady ? undoAct() : null); });
+  }
+  function undoAct() { return { label: t('undoShort'), fn: doUndo }; }
+  /* the translation or tafsir that was asked for did not load (no network, a mirror down): the text would go in without it */
+  function askTrFail() {
+    $('tr-fail-names').textContent = loadFailed.map(function (x) { return x.name; }).join(', ');
+    $('tr-fail').returnValue = '';
+    $('tr-fail').showModal();
+    return new Promise(function (done) {
+      $('tr-fail').addEventListener('close', function once() {
+        $('tr-fail').removeEventListener('close', once);
+        var how = $('tr-fail').returnValue;
+        if (how === 'ar') { skipExtras = true; Promise.resolve(insertNow()).then(function () { skipExtras = false; }, function () { skipExtras = false; }).then(done); }
+        else if (how === 'reload') location.reload();
+        else if (how === 'other') { $('settings-btn').click(); showTab('tr'); done(); }
+        else done();
+      });
+    });
   }
   $('insert').addEventListener('click', doInsert);
   /* Embedding hosts get the result as a message: html + text (web pages, editors) and doc, the paragraphs
@@ -1162,11 +1259,19 @@
     var d = e.data;
     if (typeof d === 'string' && fromAdobe(e)) try { d = JSON.parse(d); } catch (x) { return; }
     if (d && d.type === 'khatt-host' && fromAdobe(e)) { adobePicAlways = d.picture === 'always'; return; }
-    if (!HOST || (e.source !== window.parent && !fromAdobe(e)) || !d || d.type !== 'khatt-result') return;
+    if (!HOST || (e.source !== window.parent && !fromAdobe(e)) || !d || d.type !== 'khatt-result' || !fromExt(e)) return;
     clearTimeout(hostWait);
+    if (d.undo) {                                                                 // the answer to "Undo"
+      clearTimeout(undoWait);
+      if (d.ok) { setUndo(false); toast(t('undoDone')); }
+      else if (d.error === 'gone') { setUndo(false); toast(t('undoGone')); }
+      else toast(t(d.error === 'changed' ? 'undoChanged' : 'undoManual'));
+      return;
+    }
+    if (d.ok && !d.ask) setUndo(true, null);
     if (HOST === 'ext' && d.ask) { askExt(); return; }                            // an editor, the way is not chosen yet
     if (HOST === 'ext' && d.ok && d.pic === 'none') { toast(t('extNoPicture')); return; }
-    if (d.ok) toast(t('inserted'));
+    if (d.ok) toast(t('inserted'), HOST === 'wp' || HOST === 'gdocs' ? undoAct() : null);
     else if (ADOBE && /^adobe[A-Z]\w*$/.test(d.error || '')) toast(t(d.error));   // "Open a document first", …
     else if (ADOBE && d.error) toast(t('error') + ': ' + d.error);    // other Adobe errors: the text itself, not "copied"
     else (hostCopied || Promise.resolve(false)).then(function (ok) { toast(ok ? t('copiedPaste') : t('error') + (d.error ? ': ' + d.error : '')); });
@@ -1188,11 +1293,11 @@
           Math.round(pic.wPt * 4 / 3) + '" style="max-width:100%;height:auto"></p>';      // shown at the size of the text
         msg.restHtml = buildHtml(out, true);
       }
-      window.parent.postMessage(msg, '*');
+      toParent(msg);
       hostWait = setTimeout(function () { copied.then(function (ok) { toast(ok ? t('copiedPaste') : t('error')); }); }, 4000);
     });
   }
-  function extPref() { if (HOST === 'ext') window.parent.postMessage({ type: 'khatt-pref', extInsert: settings.extInsert }, '*'); }
+  function extPref() { if (HOST === 'ext') toParent({ type: 'khatt-pref', extInsert: settings.extInsert }); }
   var CLOSE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
   if (HOST === 'ext') {
     var askDlg = document.createElement('dialog');
@@ -1232,7 +1337,7 @@
   }
   window.addEventListener('message', function (e) {
     var d = e.data;
-    if (!HOST || ADOBE || e.source !== window.parent || !d) return;
+    if (!HOST || ADOBE || e.source !== window.parent || !d || !fromExt(e)) return;
     if (d.type === 'khatt-search' && typeof d.q === 'string') searchFor(d.q);
     else if (d.type === 'khatt-pref' && HOST === 'ext') {
       if (/^(ask|text|picture)$/.test(d.extInsert || '')) {
@@ -1243,7 +1348,7 @@
       else if (marks.fav.length || marks.hist.length) marksPref();
     }
   });
-  if (HOST === 'ext') window.parent.postMessage({ type: 'khatt-ready' }, '*');
+  if (HOST === 'ext') toParent({ type: 'khatt-ready' });
   /* text dragged onto the panel (from a web page, another program) is searched */
   var dropTimer;
   function dropOff() { document.body.style.boxShadow = ''; }
@@ -1271,13 +1376,13 @@
      History: every insert and copy (newest first, up to 50); favourites: the star on the ayah card (up to 500).
      Kept in localStorage. In the browser extension also in its storage.sync (khatt-pref {fav, hist}, like extInsert):
      the extension's copy wins when the panel starts, every change here is sent to it at once. */
-  var MARK_KEY = { hist: 'myquran-history', fav: 'myquran-favorites' }, MARK_MAX = { hist: 50, fav: 500 }, marksOpen = '';
+  var MARK_KEY = { hist: 'myquran-history', fav: 'myquran-favorites', bask: 'myquran-basket' }, MARK_MAX = { hist: 50, fav: 500, bask: 100 }, marksOpen = '';
   function okMark(x) { return !!x && x.sura >= 1 && x.sura <= 114 && x.from >= 1 && x.to >= x.from && x.to <= 286; }
   function loadMarks(k) {
     try { var x = JSON.parse(localStorage.getItem(MARK_KEY[k]) || '[]'); return Array.isArray(x) ? x.filter(okMark).slice(0, MARK_MAX[k]) : []; }
     catch (e) { return []; }
   }
-  var marks = { hist: loadMarks('hist'), fav: loadMarks('fav') };
+  var marks = { hist: loadMarks('hist'), fav: loadMarks('fav'), bask: loadMarks('bask') };
   function markId(x) { return x.sura + ':' + x.from + '-' + x.to; }
   function storeMarks(k) { try { localStorage.setItem(MARK_KEY[k], JSON.stringify(marks[k])); } catch (e) {} }
   function saveMarks(k) { storeMarks(k); marksPref(); drawMarks(); starState(); }
@@ -1311,9 +1416,18 @@
   }
   function drawMarks() {
     if (!quran) return;
-    $('hist-n').textContent = marks.hist.length || ''; $('fav-n').textContent = marks.fav.length || '';
-    $('again').disabled = !marks.hist.length;
-    ['hist', 'fav'].forEach(function (k) { $(k + '-btn').setAttribute('aria-expanded', marksOpen === k); });
+    ['hist', 'fav', 'bask'].forEach(function (k) {         // a mark beyond the end of its surah (damaged data) is dropped
+      var n = marks[k].length;
+      marks[k] = marks[k].filter(function (x) { return x.to <= quran.count(x.sura); });
+      if (marks[k].length !== n) storeMarks(k);
+    });
+    $('hist-n').textContent = marks.hist.length || ''; $('fav-n').textContent = marks.fav.length || ''; $('bask-n').textContent = marks.bask.length || '';
+    [['hist', 'history'], ['fav', 'favorites'], ['bask', 'basket']].forEach(function (x) {      // the count is read by screen readers too
+      var b = $(x[0] + '-btn'), n = marks[x[0]].length;
+      b.title = t(x[1]) + (n ? ' (' + n + ')' : ''); b.setAttribute('aria-label', b.title);
+    });
+    ['hist', 'fav', 'bask'].forEach(function (k) { $(k + '-btn').setAttribute('aria-expanded', marksOpen === k); });
+    $('bask-acts').hidden = marksOpen !== 'bask' || !marks.bask.length;
     $('marks-panel').hidden = !marksOpen;
     if (!marksOpen) return;
     var list = marks[marksOpen];
@@ -1324,11 +1438,14 @@
         '</span><span class="mk-ar" dir="rtl">' + esc(ar) + '</span></button>' +
         '<button type="button" class="icon-btn mk-del" title="' + esc(t('remove')) + '" aria-label="' + esc(t('remove') + ': ' + markRef(x)) + '">' + CLOSE_SVG + '</button></li>';
     }).join('');
-    $('marks-empty').textContent = list.length ? '' : t(marksOpen === 'hist' ? 'histEmpty' : 'favEmpty');
+    $('marks-empty').textContent = list.length ? '' : t(marksOpen === 'hist' ? 'histEmpty' : marksOpen === 'fav' ? 'favEmpty' : 'basketEmpty');
     $('marks-clear').hidden = !list.length;
   }
-  ['hist', 'fav'].forEach(function (k) {
-    $(k + '-btn').addEventListener('click', function () { marksOpen = marksOpen === k ? '' : k; drawMarks(); });
+  ['hist', 'fav', 'bask'].forEach(function (k) {
+    $(k + '-btn').addEventListener('click', function () {
+      marksOpen = marksOpen === k ? '' : k; drawMarks();
+      if (marksOpen) $('marks-panel').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
   });
   function pickMark(x) {
     setSel(x.sura, x.from, x.to);
@@ -1348,13 +1465,48 @@
     if (!marksOpen) return;
     marks[marksOpen] = []; saveMarks(marksOpen); $(marksOpen + '-btn').focus();
   });
-  /* the last insert / copy again: the same ayahs (and words) with the settings of now */
-  $('again').addEventListener('click', function () { var x = marks.hist[0]; if (!x || !quran) return; pickMark(x); doInsert(); });
+  /* Undo the last insert, as careful as possible (it is somebody's book): only when nothing was replaced or split and the
+     inserted text is still exactly as it was put in. Word: the tracked range is deleted; WordPress and Google Docs take the
+     inserted blocks / paragraphs out themselves (khatt-undo) under the same rule; everything else says "press Ctrl+Z". */
+  var undoReady = false, undoRange = null, undoWait = null;
+  function setUndo(on, word) {
+    var old = undoRange;
+    if (old && old !== word && old.rng && window.Word) {                    // free the tracking of the previous insert
+      try { Word.run(old.rng, function (ctx) { old.rng.untrack(); return ctx.sync(); }).catch(function () {}); } catch (e) {}
+    }
+    undoReady = on; undoRange = on ? word || null : null; $('again').disabled = !on;
+  }
+  function doUndo() {
+    if (!undoReady) return;
+    if (HOST) {
+      if (HOST !== 'wp' && HOST !== 'gdocs') { toast(t('undoManual')); return; }
+      clearTimeout(undoWait); undoWait = setTimeout(function () { toast(t('undoManual')); }, 6000);
+      window.parent.postMessage({ type: 'khatt-undo', v: 1 }, '*');
+      return;
+    }
+    var u = undoRange;
+    if (!inWord || !u || !window.Word) { toast(t('undoManual')); return; }
+    Word.run(u.rng, function (ctx) {
+      u.rng.load('text');
+      return ctx.sync().then(function () {
+        var now = u.rng.text;
+        if (!String(now).replace(/\s+/g, '')) return 'gone';        // already taken out (the person pressed Ctrl+Z)
+        if (now !== u.text) return 'changed';                       // edited since: do not delete the person's own words
+        if (u.cc) u.rng.delete(false); else u.rng.delete();
+        return ctx.sync().then(function () { try { u.rng.untrack(); } catch (e) {} return 'ok'; });
+      });
+    }).then(function (r) {
+      if (r === 'ok') { setUndo(false); toast(t('undoDone')); }
+      else if (r === 'gone') { setUndo(false); toast(t('undoGone')); }
+      else toast(t('undoChanged'));
+    }, function () { toast(t('undoManual')); });
+  }
+  $('again').addEventListener('click', doUndo);
   function marksPref() {
     if (HOST !== 'ext') return;
-    window.parent.postMessage({ type: 'khatt-pref', fav: marks.fav.map(markId).join(','), hist: marks.hist.map(function (x) {
+    toParent({ type: 'khatt-pref', fav: marks.fav.map(markId).join(','), hist: marks.hist.map(function (x) {
       return [x.sura, x.from, x.to, Math.round((x.time || 0) / 1000)].concat(x.wf != null ? [x.wf, x.wt] : []);
-    }) }, '*');
+    }) });
   }
   function takeExtMarks(d) {
     if (typeof d.fav === 'string') {
@@ -1391,8 +1543,7 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
     toast(t('pictureSaved'));
   }
-  $('copy-pic').addEventListener('click', function () {
-    if (!quran) return;
+  function copyPicture() {
     var blob = ensureData().then(function () { remember(); return pictureBlob(current()); }), write;
     // the clipboard item gets the promise: it is written while the click still counts (Safari needs that)
     try {
@@ -1402,7 +1553,178 @@
     } catch (e) { write = Promise.reject(e); }
     write.then(function () { toast(t('pictureCopied')); }, function () { return blob.then(savePicture); })
       .catch(function (e) { toast(t('error') + (e && e.message ? ': ' + e.message : '')); });
+  }
+  function insertPicture() {                         // Word: the Arabic as a picture at the cursor
+    return ensureData().then(function () {
+      remember();
+      var out = current();
+      return ayahPicture(out).then(function (pic) { return insertWordWith(out, pic, { tag: refTag() }); });
+    }).then(function () { toast(t('inserted'), undoReady ? undoAct() : null); }, function (e) { toast(t('error') + (e && e.message ? ': ' + e.message : '')); });
+  }
+  /* In Word the button asks: insert the picture or copy it (the answer can be remembered; Settings, Insert tab). */
+  $('copy-pic').addEventListener('click', function () {
+    if (!quran) return;
+    if (!inWord || HOST || settings.picAction === 'copy') return copyPicture();
+    if (settings.picAction === 'insert') return insertPicture();
+    $('pic-remember').checked = false; $('pic-ask').returnValue = ''; $('pic-ask').showModal();
   });
+  $('pic-ask').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button[value=insert], button[value=copy]');
+    if (!b) return;
+    e.preventDefault();                                          // the action runs in this click, then the dialog closes
+    var how = b.value;
+    if ($('pic-remember').checked) { settings.picAction = how; saveSettings(); $('s-pic-action').value = how; }
+    if (how === 'insert') insertPicture(); else copyPicture();
+    $('pic-ask').close(how);
+  });
+
+  /* ---------- 3.11: translation chips, next ayah, "More" menu, basket, keyboard, recent searches, quick sets ---------- */
+  function drawChips() {
+    var box = $('chips'); if (!box || !quran) return;
+    var items = (settings.withTr ? activeTranslations() : []).concat(settings.withTafsir ? activeTafsirs() : []);
+    box.hidden = !items.length;
+    box.innerHTML = items.map(function (x) {
+      var bad = loadFailed.indexOf(x) >= 0;
+      return '<button type="button" class="tchip' + (muted[x.id] ? ' off' : '') + (bad ? ' bad' : '') + '" data-id="' + esc(x.id) + '" aria-pressed="' + !muted[x.id] +
+        '" title="' + esc(t('chipHint')) + '">' + esc(x.name) + '</button>';
+    }).join('');
+  }
+  $('chips').addEventListener('click', function (e) {
+    var b = e.target.closest('.tchip'); if (!b) return;
+    muted[b.dataset.id] = !muted[b.dataset.id]; drawChips();
+  });
+  function stepAyah(d) {
+    if (!quran) return;
+    var c = quran.count(sel.sura);
+    if (d > 0) { if (sel.to < c) setSel(sel.sura, sel.to + 1, sel.to + 1); else if (sel.sura < 114) setSel(sel.sura + 1, 1, 1); }
+    else if (sel.from > 1) setSel(sel.sura, sel.from - 1, sel.from - 1);
+    else if (sel.sura > 1) setSel(sel.sura - 1, quran.count(sel.sura - 1), quran.count(sel.sura - 1));
+  }
+  $('next').addEventListener('click', function () { stepAyah(1); });
+  document.addEventListener('keydown', function (e) {
+    var tag = (e.target.tagName || ''), typing = /^(INPUT|TEXTAREA|SELECT)$/.test(tag) || e.target.isContentEditable, dlg = document.querySelector('dialog[open]');
+    if (e.key === '/' && !typing && !dlg && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); $('q').focus(); $('q').select(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !dlg) { e.preventDefault(); doInsert(); }
+    else if (e.altKey && (e.key === 'ArrowDown' || e.key === 'ArrowUp') && !dlg) { e.preventDefault(); stepAyah(e.key === 'ArrowDown' ? 1 : -1); }
+  });
+
+  var RECENT_KEY = 'myquran-recent';
+  function recentList() {
+    try { var x = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(x) ? x.filter(function (s) { return typeof s === 'string'; }).slice(0, 10) : []; } catch (e) { return []; }
+  }
+  function addRecent(q) {
+    q = String(q || '').trim();
+    if (q.length < 2 || q.length > 80) return;
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify([q].concat(recentList().filter(function (x) { return x !== q; })).slice(0, 10))); } catch (e) {}
+    drawRecent();
+  }
+  function drawRecent() { $('recent-q').innerHTML = recentList().map(function (q) { return '<option value="' + esc(q) + '">'; }).join(''); }
+  drawRecent();
+
+  /* "More": copy as plain text / Markdown / a link, the basket, a footnote (Word), update the marked ayahs (Word) */
+  var LINK_BASE = 'https://quran.abdulloh.org/#';
+  function refLink() { return LINK_BASE + sel.sura + ':' + sel.from + (sel.to > sel.from ? '-' + sel.to : ''); }
+  function mdOf(out) {
+    return String(out.text).split(/\n+/).filter(function (p) { return p.trim(); }).map(function (p, i) { return '> ' + (i ? '*' + p.trim() + '*' : p.trim()); }).join('\n>\n');
+  }
+  function clipText(txt) {
+    var done = function () { toast(t('copied')); };
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(txt).then(done, function () { fallback(); });
+    function fallback() { var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast(t('error')); } ta.remove(); }
+    fallback();
+  }
+  function menuOpen(on) {
+    var m = $('more-menu'); m.hidden = !on; $('more-btn').setAttribute('aria-expanded', !!on);
+    if (on) {
+      $('m-foot').hidden = !(inWord && window.Office && Office.context && Office.context.requirements && Office.context.requirements.isSetSupported('WordApi', '1.5'));
+      $('m-update').hidden = !(inWord && settings.markAyahs); delete $('m-update').dataset.sure; $('m-update').textContent = t('updateAyahs');
+    }
+  }
+  $('more-btn').addEventListener('click', function (e) { e.stopPropagation(); menuOpen($('more-menu').hidden); });
+  document.addEventListener('click', function (e) { if (!$('more-menu').hidden && !e.target.closest('#more-menu')) menuOpen(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('more-menu').hidden) { menuOpen(false); $('more-btn').focus(); } });
+  function withOut(fn) { if (!quran) return; ensureData().then(function () { remember(); fn(current()); }); }
+  $('m-text').addEventListener('click', function () { menuOpen(false); withOut(function (out) { clipText(out.text); }); });
+  $('m-md').addEventListener('click', function () { menuOpen(false); withOut(function (out) { clipText(mdOf(out)); }); });
+  $('m-link').addEventListener('click', function () { menuOpen(false); clipText(refLink()); });
+  /* the basket: ayahs and ranges collected in order, inserted (or copied) all at once */
+  function addBask(x) {
+    var id = markId(x);
+    marks.bask = marks.bask.filter(function (y) { return markId(y) !== id; }).concat([x]).slice(-MARK_MAX.bask);     // in the order they were added
+    saveMarks('bask');
+  }
+  $('m-bask').addEventListener('click', function () {
+    menuOpen(false); if (!quran) return;
+    var x = { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() };
+    if (sel.wordFrom > 0 || sel.wordTo != null) { x.wf = sel.wordFrom; x.wt = sel.wordTo; }
+    addBask(x); toast(t('basketAdded'));
+  });
+  function basketParts() {
+    var save = JSON.parse(JSON.stringify(sel)), parts = [];
+    return marks.bask.slice().reduce(function (p, x) {
+      return p.then(function () {
+        sel = { sura: x.sura, from: x.from, to: x.to, wordFrom: x.wf > 0 ? x.wf : 0, wordTo: x.wt == null ? null : x.wt };
+        return ensureData().then(function () { var out = current(); parts.push({ html: buildHtml(out), text: out.text, doc: hostDoc(out) }); });
+      });
+    }, Promise.resolve()).then(function () { sel = save; render(); return parts; }, function (e) { sel = save; render(); throw e; });
+  }
+  function basketGo(copyOnly) {
+    if (!quran || !marks.bask.length) return;
+    basketParts().then(function (parts) {
+      var html = parts.map(function (x) { return x.html; }).join(''), text = parts.map(function (x) { return x.text; }).join('\n\n');
+      if (!copyOnly && inWord && !HOST) return insertWordWith(null, null, { html: html }).then(function () { toast(t('inserted'), undoReady ? undoAct() : null); });
+      if (!copyOnly && (HOST === 'gdocs' || HOST === 'wp' || HOST === 'ext')) {
+        var msg = { type: 'khatt-insert', v: 1, html: html, text: text, doc: [].concat.apply([], parts.map(function (x) { return x.doc; })), newPara: !!settings.newPara };
+        if (HOST === 'ext') msg.mode = 'text';
+        hostCopied = copyRaw(html, text).then(function () { return true; }, function () { return false; });
+        toParent(msg); return;
+      }
+      return copyRaw(html, text).then(function () { toast(t('copied')); });
+    }).catch(function (e) { toast(t('error') + ': ' + e.message); });
+  }
+  $('bask-insert').addEventListener('click', function () { basketGo(false); });
+  $('bask-copy').addEventListener('click', function () { basketGo(true); });
+  /* Word: the reference as a footnote at the cursor */
+  $('m-foot').addEventListener('click', function () {
+    menuOpen(false);
+    Word.run(function (ctx) { ctx.document.getSelection().insertFootnote(markRef(sel)); return ctx.sync(); })
+      .then(function () { toast(t('inserted')); }, function () { toast(t('footnoteNo')); });
+  });
+  /* Word: every ayah that was inserted with "mark ayahs" is put in again with the settings of now (asks twice) */
+  $('m-update').addEventListener('click', function () {
+    var b = this;
+    if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = t('pressAgain'); return; }
+    menuOpen(false);
+    var save = JSON.parse(JSON.stringify(sel)), n = 0;
+    Word.run(function (ctx) {
+      var ccs = ctx.document.contentControls; ccs.load('items/tag');
+      return ctx.sync().then(function () {
+        var jobs = ccs.items.map(function (cc) { var m = /^khatt:(\d+):(\d+)-(\d+)(?::(\d+):(\d+|n))?$/.exec(cc.tag || ''); return m && { cc: cc, m: m }; }).filter(Boolean);
+        return jobs.reduce(function (p, j) {
+          return p.then(function () {
+            sel = { sura: +j.m[1], from: +j.m[2], to: +j.m[3], wordFrom: j.m[4] ? +j.m[4] : 0, wordTo: j.m[5] && j.m[5] !== 'n' ? +j.m[5] : null };
+            return ensureData().then(function () { j.cc.insertOoxml(buildOoxml(current(), null), 'Replace'); n++; return ctx.sync(); });
+          });
+        }, Promise.resolve());
+      });
+    }).then(function () { sel = save; render(); toast(n ? t('updatedN', { n: n }) : t('updateNone')); },
+            function (e) { sel = save; render(); toast(t('error') + (e && e.message ? ': ' + e.message : '')); });
+  });
+  /* quick sets of settings */
+  var PRESETS = { ar: { withTr: false, withTafsir: false }, article: { withTr: true, withTafsir: false, ref: true, trRef: true }, tafsir: { withTr: true, withTafsir: true } };
+  [].forEach.call(document.querySelectorAll('[data-preset]'), function (b) {
+    b.addEventListener('click', function () {
+      var p = PRESETS[b.dataset.preset]; if (!p) return;
+      Object.keys(p).forEach(function (k) { settings[k] = p[k]; });
+      if (settings.withTr && !settings.translations.length && catalog.translations.length) settings.translations = [catalog.translations[0].id];
+      if (settings.withTafsir && !settings.tafsirs.length && catalog.tafsirs.length) settings.tafsirs = [catalog.tafsirs[0].id];
+      saveSettings(); fillSettingsForm(); applySettings(); toast(t('presetApplied'));
+    });
+  });
+  /* offline: the service worker keeps the Quran data, the search index and the fonts that were used (never the pages themselves) */
+  if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.protocol + '//' + location.hostname) && !ADOBE) {
+    window.addEventListener('load', function () { setTimeout(function () { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} }, 3000); });
+  }
 
   /* ---------- ayah of the day: the same for everyone on a calendar day; drawn after the panel ---------- */
   var votdList = null, VOTD_CLOSED = 'myquran-votd-closed';
@@ -1441,9 +1763,21 @@
   }
   $('votd-pick').addEventListener('click', function () { if (votdSel()) $('preview-ar').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
   $('votd-insert').addEventListener('click', function () { if (votdSel()) doInsert(); });
-  $('votd-close').addEventListener('click', function () {       // until tomorrow
-    try { localStorage.setItem(VOTD_CLOSED, dayKey(new Date())); } catch (e) {}
+  /* the cross: the first time asks "turn it off or hide until tomorrow"; the answer is a setting (Settings, General) */
+  function closeVotd(how) {
+    if (how === 'off') { settings.votd = false; $('s-votd').checked = false; saveSettings(); }
+    else { try { localStorage.setItem(VOTD_CLOSED, dayKey(new Date())); } catch (e) {} }
     $('votd').hidden = true;
+  }
+  $('votd-close').addEventListener('click', function () {
+    if (settings.votdClose === 'off' || settings.votdClose === 'day') closeVotd(settings.votdClose);
+    else { $('votd-ask').returnValue = ''; $('votd-ask').showModal(); }
+  });
+  $('votd-ask').addEventListener('close', function () {
+    var how = $('votd-ask').returnValue;
+    if (how !== 'off' && how !== 'day') return;
+    settings.votdClose = how; saveSettings(); $('s-votd-close').value = how;
+    closeVotd(how);
   });
   document.addEventListener('visibilitychange', function () {   // the panel stayed open past midnight
     if (!document.hidden && quran && $('votd').dataset.day !== dayKey(new Date())) drawVotd();
@@ -1452,7 +1786,7 @@
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
             ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', picBgOn: 's-picbg-on', picBg: 's-picbg',
-            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd',
+            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd', votdClose: 's-votd-close', picAction: 's-pic-action', markAyahs: 's-mark',
             searchScope: 's-search-scope' };
   if (HOST === 'ext') B.extInsert = 's-ext-insert';
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
@@ -1511,7 +1845,8 @@
       [].forEach.call(list.querySelectorAll('.grp'), function (el) { el.hidden = !!q && !groups[el.dataset.g]; });
     });
   });
-  $('settings-btn').addEventListener('click', function () {
+  $('settings-btn').addEventListener('click', function () { fillSettingsForm(); $('settings').showModal(); });
+  function fillSettingsForm() {
     Object.keys(B).forEach(function (k) {
       var el = $(B[k]); if (el.type === 'checkbox') el.checked = !!settings[k]; else el.value = settings[k] || '';
     });
@@ -1524,8 +1859,8 @@
     checklist($('s-tr-list'), catalog.translations, settings.translations);
     checklist($('s-tf-list'), catalog.tafsirs, settings.tafsirs);
     syncLists(); insertTab();
-    $('settings').showModal();
-  });
+    $('s-mark-row').hidden = !inWord;
+  }
   /* Insert tab: the translation reference sample in the interface language; in the page-font mushafs
      (QPC V1/V2/V4) hizb, sajdah and pause signs are parts of word glyphs and cannot be left out */
   function insertTab() {
@@ -1566,7 +1901,7 @@
     if (!e.target.classList.contains('filter') && e.target.id !== 's-ui-lang' && !e.target.closest('.fmt-card')) applyLater();
   });
   $('settings').addEventListener('submit', function () { clearTimeout(applyTimer); applySettings(); });
-  $('settings').addEventListener('close', function () { clearTimeout(applyTimer); applySettings(); });
+  $('settings').addEventListener('close', function () { clearTimeout(applyTimer); applySettings(); resetIdle(); });
   function applySettings() {
     Object.keys(B).forEach(function (k) {
       var el = $(B[k]);
@@ -1583,6 +1918,32 @@
     saveSettings();
     (scriptChanged ? useScript(settings.script) : Promise.resolve()).then(ensureData).then(function () { render(); if (searchQ.trim()) runSearch(); drawVotd(); });
   }
+
+  /* Reset: everything but the interface language, history and favourites. The first press asks, the second does it. */
+  var resetTimer;
+  function resetIdle() { var b = $('s-reset'); clearTimeout(resetTimer); delete b.dataset.sure; b.textContent = t('resetSettings'); }
+  $('s-reset').addEventListener('click', function () {
+    var b = this;
+    if (!b.dataset.sure) {
+      b.dataset.sure = '1'; b.textContent = t('resetSure');
+      resetTimer = setTimeout(function () { delete b.dataset.sure; b.textContent = t('resetSettings'); }, 5000);
+      return;
+    }
+    clearTimeout(resetTimer); clearTimeout(applyTimer);
+    try { localStorage.removeItem(VOTD_CLOSED); localStorage.setItem('myquran-settings', JSON.stringify({ uiLang: settings.uiLang })); } catch (e) {}
+    settings.extInsert = 'ask'; extPref();
+    toast(t('resetDone'));
+    setTimeout(function () { location.reload(); }, 400);
+  });
+
+  /* the search block stays under the top bar: the page knows both heights (CSS: .pin, scroll-margin of the lists) */
+  function layoutVars() {
+    var root = document.documentElement.style, bar = document.querySelector('.topbar'), pin = document.querySelector('.pin');
+    if (bar) root.setProperty('--topbar-h', bar.offsetHeight + 'px');
+    if (pin) root.setProperty('--pin-h', pin.offsetHeight + 'px');
+  }
+  layoutVars(); window.addEventListener('resize', layoutVars);
+  if (window.ResizeObserver) { var lro = new ResizeObserver(layoutVars); [].forEach.call(document.querySelectorAll('.topbar, .pin'), function (e) { lro.observe(e); }); }
 
   /* ---------- surah info ---------- */
   $('info-btn').addEventListener('click', function () {
@@ -1668,6 +2029,8 @@
   checkVersion();
   /* The ribbon's "Settings" button opens the panel at index.html#settings */
   function fromHash() {
+    var m = quran && /^#(\d{1,3}):(\d{1,3})(?:-(\d{1,3}))?$/.exec(location.hash);       // a link to an ayah: #2:255 or #2:255-257
+    if (m && +m[1] >= 1 && +m[1] <= 114) { setSel(+m[1], +m[2], +(m[3] || m[2])); return; }
     if (location.hash !== '#settings' || !quran) return;
     history.replaceState(null, '', location.pathname + location.search);
     $('settings-btn').click();
@@ -1744,7 +2107,7 @@
   })();
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
-    setOnline: function (v) { online = !!v; }, pictureBlob: function () { return pictureBlob(current()); },
+    setOnline: function (v) { online = !!v; }, setWord: function (v) { inWord = !!v; }, pictureBlob: function () { return pictureBlob(current()); },
     dayAyah: function (d) { return dayAyah(d || new Date()); }, marks: function () { return marks; } };   // tests only
 
   if (window.Office && Office.onReady) {
