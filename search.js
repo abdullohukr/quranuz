@@ -286,6 +286,21 @@
   function now() { return Date.now(); }
   function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function tick() { return typeof setTimeout === 'function' ? delay(0) : Promise.resolve(); }
+  /* a newer query took over: not an error of the data (no warning, no "partial") */
+  function abortError() { var e = new Error('cancelled'); e.name = 'AbortError'; e.cancelled = true; return e; }
+  function isAbort(e) { return !!(e && e.cancelled); }
+  /* p, or null after ms (a Cache API that never answers must not stop the search); late(): called on the timeout */
+  function orNull(p, ms, late) {
+    return new Promise(function (resolve) {
+      var tm = setTimeout(function () { if (late) late(); resolve(null); }, ms);
+      Promise.resolve(p).then(function (v) { clearTimeout(tm); resolve(v); }, function () { clearTimeout(tm); resolve(null); });
+    });
+  }
+  function onAbort(signal, fn) {
+    if (!signal || !signal.addEventListener) return function () {};
+    signal.addEventListener('abort', fn);
+    return function () { signal.removeEventListener('abort', fn); };
+  }
 
   function Loader(o) {
     o = o || {};
@@ -317,26 +332,33 @@
     if (i >= 0 && i !== this.order.length - 1) { this.order.splice(i, 1); this.order.push(key); }
     return e.v;
   };
-  Loader.prototype.slot = function (fn) {          // at most `max` requests at a time
+  /* at most `max` requests at a time, in the order asked; want() false when its turn comes (every query that waited
+     for it has been replaced by a newer one): it is dropped without a request and the next one goes */
+  Loader.prototype.slot = function (fn, want) {
     var self = this;
     return new Promise(function (resolve, reject) {
-      function run() {
+      self.queue.push(function () {
+        if (want && !want()) { reject(abortError()); return; }
         self.active++;
         var p;
         try { p = Promise.resolve(fn()); } catch (e) { p = Promise.reject(e); }
         p.then(function (v) { done(); resolve(v); }, function (e) { done(); reject(e); });
-      }
-      function done() { self.active--; var nx = self.queue.shift(); if (nx) nx(); }
-      if (self.active < self.max) run(); else self.queue.push(run);
+      });
+      function done() { self.active--; self.pump(); }
+      self.pump();
     });
+  };
+  Loader.prototype.pump = function () {
+    while (this.active < this.max && this.queue.length) this.queue.shift()();
   };
   Loader.prototype.cache = function () {
     if (this.cacheObj) return Promise.resolve(this.cacheObj);
     if (!this.cacheName || typeof caches === 'undefined' || !caches.open) return Promise.resolve(null);
     var self = this;
-    if (!this._cache) this._cache = caches.open(this.cacheName).catch(function () { self.cacheName = null; return null; });
+    if (!this._cache) this._cache = orNull(caches.open(this.cacheName), 3000).then(function (c) { if (!c) self.cacheName = null; return c; });
     return this._cache;
   };
+  Loader.prototype.noCache = function () { this.cacheObj = null; this.cacheName = null; };   // the Cache API hangs: go without it
   Loader.prototype.fetchOne = function (url) {
     var self = this, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer;
     return new Promise(function (resolve, reject) {
@@ -349,11 +371,35 @@
       }).then(function (v) { clearTimeout(timer); resolve(v); }, function (e) { clearTimeout(timer); reject(e); });
     });
   };
-  /* path relative to the bases; type 'bin' | 'json'; immutable: the answer may be kept in the Cache API forever */
-  Loader.prototype.get = function (path, type, immutable) {
+  /* path relative to the bases; type 'bin' | 'json'; immutable: the answer may be kept in the Cache API forever.
+     One load per file, shared by everybody who asks for it. signal (AbortSignal, optional): the asker gives up — its
+     promise rejects at once (an AbortError, err.cancelled); the shared load goes on while somebody else waits for it
+     or its request is already running (the answer is kept for later), a queued one nobody wants any more is dropped. */
+  Loader.prototype.get = function (path, type, immutable, signal) {
     var self = this, key = type + ':' + path, m = this.recall(key);
+    if (signal && signal.aborted) return Promise.reject(abortError());
     if (m !== undefined) { this.stats.memory++; return Promise.resolve(m); }
-    if (this.inflight[key]) return this.inflight[key];
+    var e = this.inflight[key] || this.load(key, path, type, immutable);
+    if (!signal) { e.strong++; return e.p; }
+    e.users++;
+    return new Promise(function (resolve, reject) {
+      var over = false, off = onAbort(signal, function () { end(); reject(abortError()); });
+      function end() { if (over) return false; over = true; e.users--; off(); return true; }
+      e.p.then(function (v) { if (end()) resolve(v); }, function (err) {
+        if (!end()) return;
+        // the shared load was dropped just before this asker joined it: start it again
+        if (isAbort(err) && !signal.aborted) self.get(path, type, immutable, signal).then(resolve, reject);
+        else reject(err);
+      });
+    });
+  };
+  Loader.prototype.load = function (key, path, type, immutable) {
+    var self = this, e = { users: 0, strong: 0 };
+    function want() {                               // somebody still waits for it (else: forget it at once)
+      if (e.strong > 0 || e.users > 0) return true;
+      if (self.inflight[key] === e) delete self.inflight[key];
+      return false;
+    }
     var cacheKey = 'https://khatt-search.invalid/' + path;
     function parse(ab) {
       if (type === 'bin') return { v: new Uint8Array(ab), n: ab.byteLength * 3 };
@@ -361,13 +407,14 @@
       return { v: JSON.parse(text), n: text.length * 2 + 64 };
     }
     var p = (immutable ? this.cache().then(function (c) {
-      return c ? c.match(cacheKey).then(function (r) { return r ? r.arrayBuffer() : null; }).catch(function () { return null; }) : null;
+      return c ? orNull(c.match(cacheKey).then(function (r) { return r ? r.arrayBuffer() : null; }), 3000, function () { self.noCache(); }) : null;
     }) : Promise.resolve(null)).then(function (ab) {
       if (ab) {
         try { var got = parse(ab); self.stats.cache++; return got; }
-        catch (e) { self.cache().then(function (c) { if (c && c['delete']) c['delete'](cacheKey); }); }
+        catch (er) { self.cache().then(function (c) { if (c && c['delete']) c['delete'](cacheKey); }); }
       }
-      return self.network(path).then(function (res) {
+      if (!want()) throw abortError();
+      return self.network(path, want).then(function (res) {
         var got = parse(res.ab);                     // throws on broken data: the caller skips this part
         self.stats.network++; self.stats.bytes += res.ab.byteLength;
         if (immutable) self.cache().then(function (c) {
@@ -376,14 +423,22 @@
         return got;
       });
     }).then(function (got) {
-      delete self.inflight[key];
+      if (self.inflight[key] === e) delete self.inflight[key];
       self.remember(key, got.v, got.n);
       return got.v;
-    }, function (e) { delete self.inflight[key]; self.stats.failed++; throw e; });
-    this.inflight[key] = p;
-    return p;
+    }, function (er) {
+      if (self.inflight[key] === e) delete self.inflight[key];
+      if (!isAbort(er)) self.stats.failed++;
+      throw er;
+    });
+    p.then(null, function () { /* the askers get the error; nobody left: not an unhandled rejection */ });
+    e.p = p;
+    this.inflight[key] = e;
+    return e;
   };
-  Loader.prototype.network = function (path) {
+  /* the mirrors in turn (404: the next one; down / slow: the next one, and that mirror is left alone for a while);
+     want(): see slot() */
+  Loader.prototype.network = function (path, want) {
     var self = this;
     if (!this.fetch) return Promise.reject(new Error('no fetch'));
     function round(attempt) {
@@ -396,12 +451,20 @@
           var e = lastErr || new Error('not loaded'); e.path = path; throw e;
         }
         var base = live[k];
-        return self.slot(function () { return self.fetchOne(base + path); }).then(null, function (e) {
+        return self.slot(function () {
+          // a mirror found down while this request waited in the queue: straight to the next one
+          while (k + 1 < live.length && self.dead[live[k]] > now()) k++;
+          base = live[k];
+          return self.fetchOne(base + path).then(null, function (e) {
+            // down / slow: leave it alone for a while (marked before the slot is free: the next one in the queue skips it)
+            if (e.status !== 404) self.dead[base] = now() + self.deadMs;
+            throw e;
+          });
+        }, want).then(null, function (e) {
+          if (isAbort(e)) throw e;                             // nobody waits for it any more: not the mirror's fault
           lastErr = e;
-          if (e.status === 404) return next(k + 1);           // the file is not there (yet): try the next mirror
-          all404 = false;
-          self.dead[base] = now() + self.deadMs;               // down / slow: leave it alone for a while
-          return next(k + 1);
+          if (e.status !== 404) all404 = false;                // 404: the file is not there (yet)
+          return next(k + 1);                                  // either way: the next mirror
         });
       }
       return next(0);
@@ -529,17 +592,17 @@
       });
     });
   };
-  Search.prototype.chunk = function (m, group, n) {
+  Search.prototype.chunk = function (m, group, n, signal) {
     var self = this, key = 'dec:' + group + '/' + n, have = this.loader.recall(key);
     if (have) return Promise.resolve(have);
-    return this.loader.get(this.root + 'v' + m.version + '/' + group + '/' + n + '.bin', 'bin', true).then(function (u8) {
+    return this.loader.get(this.root + 'v' + m.version + '/' + group + '/' + n + '.bin', 'bin', true, signal).then(function (u8) {
       var d = decodeChunk(u8, m.ayahs);
       self.loader.remember(key, d, 64 + d.terms.length * 48);
       return d;
     });
   };
-  Search.prototype.block = function (m, src, b) {
-    return this.loader.get(this.root + 'v' + m.version + '/text/' + src + '/' + b + '.json', 'json', true);
+  Search.prototype.block = function (m, src, b, signal) {
+    return this.loader.get(this.root + 'v' + m.version + '/text/' + src + '/' + b + '.json', 'json', true, signal);
   };
 
   /* which sources take part */
@@ -559,17 +622,22 @@
     return out;
   }
 
+  /* opts.signal (AbortSignal): a newer query replaces this one: from then on no onResults / onProgress, its loads nobody
+     else waits for are dropped, the promise resolves at once with [] (.cancelled). opts.deadline (ms, 15000): what has
+     not come by then is left out (a warning, .partial): the search always ends. */
   var K1 = 1.2, B = 0.6;
   Search.prototype.run = function (query, opts) {
     var self = this;
     opts = opts || {};
-    var warnings = [], limit = Math.max(1, Math.min(opts.limit || 50, 500)), progress = opts.onProgress || function () {};
-    var q = cleanQuery(query), quran = opts.quran || null, local = [];
+    var warnings = [], limit = Math.max(1, Math.min(opts.limit || 50, 500));
+    var q = cleanQuery(query), quran = opts.quran || null, local = [], user = opts.signal || null;
+    function cancelled() { return !!(user && user.aborted); }
+    function progress(p) { if (opts.onProgress && !cancelled()) try { opts.onProgress(p); } catch (e) { /* the caller's problem */ } }
     function finish(list, partial) {
       list.warnings = warnings; list.partial = !!partial;
       return list;
     }
-    function emit(list, stage) { if (opts.onResults) try { opts.onResults(list, { stage: stage }); } catch (e) { /* the caller's problem */ } }
+    function emit(list, stage) { if (opts.onResults && !cancelled()) try { opts.onResults(list, { stage: stage }); } catch (e) { /* the caller's problem */ } }
     if (!q) return Promise.resolve(finish([], false));
     // 1. at once: the Quran itself (reference, Arabic, transliteration) and the translations already in memory
     try {
@@ -579,12 +647,31 @@
     emit(local.slice(0, limit), 'local');
     progress({ stage: 'local', done: 0, total: 1 });
     if (opts.scope === 'quran') return Promise.resolve(finish(local.slice(0, limit), false));
+    if (cancelled()) return Promise.resolve(gone());
+
+    // the loads of this run: given up when the caller cancels or when the run is over (nobody needs them then)
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, signal = ctl ? ctl.signal : null;
+    var t0 = now(), deadline = opts.deadline > 0 ? opts.deadline : 15000, settle = null;
+    var stop = new Promise(function (resolve) { settle = resolve; });   // resolves on cancel: the run ends at once
+    var unhook = onAbort(user, function () { settle(); if (ctl) ctl.abort(); });
+    function gone() { var l = finish([], false); l.cancelled = true; return l; }
+    function check(v) { if (cancelled()) throw abortError(); return v; }
+    /* p, or an error 'slow' when the deadline of the whole run has passed */
+    function within(p) {
+      var left = deadline - (now() - t0);
+      return new Promise(function (resolve, reject) {
+        var tm = setTimeout(function () { reject(new Error('slow')); }, Math.max(0, left));
+        p.then(function (v) { clearTimeout(tm); resolve(v); }, function (e) { clearTimeout(tm); reject(e); });
+      });
+    }
+    var ctx = { signal: signal, within: within, cancelled: cancelled };
 
     var m, prefixLast = !/\s$/.test(String(query == null ? '' : query));
-    return this.manifest().then(function (man) {
-      m = man;
-      return self._index(q, m, opts, warnings, progress, prefixLast);
+    var work = within(this.manifest()).then(function (man) {
+      check(); m = man;
+      return self._index(q, m, opts, warnings, progress, prefixLast, ctx);
     }).then(function (found) {
+      check();
       // nothing in the default languages: search everywhere (not when parts of the data are missing)
       // (not for Arabic-script words the Quran itself has found: that would read every Urdu / Persian / … group)
       var widen = !found.length && !warnings.length && (opts.scope || 'default') === 'default' && opts.widen !== false &&
@@ -593,24 +680,32 @@
       var o2 = {};
       for (var k in opts) o2[k] = opts[k];
       o2.scope = 'all';
-      return self._index(q, m, o2, warnings, progress, prefixLast);
+      return self._index(q, m, o2, warnings, progress, prefixLast, ctx);
     }).then(function (found) {
+      check();
       var list = merge(local, found, limit);
       emit(clean(list.slice(0, limit), true), 'index');
-      return self._confirm(q, m, list, opts, warnings);
+      return self._confirm(q, m, list, opts, warnings, ctx);
     }).then(function (list) {
+      check();
       list = clean(list.slice(0, limit), false);
       emit(list, 'final');
       progress({ stage: 'done', done: 1, total: 1 });
       return finish(list, warnings.length > 0);
     }, function (e) {
+      if (isAbort(e) || cancelled()) return gone();
       warnings.push('index: ' + (e && e.message || e));
       var list = local.slice(0, limit);
       emit(list, 'final');
       return finish(list, true);
     }).then(null, function (e) {                       // never rejects
+      if (cancelled()) return gone();
       warnings.push('search: ' + (e && e.message || e));
       return finish(local.slice(0, limit), true);
+    });
+    return Promise.race([work, stop.then(gone)]).then(function (list) {
+      unhook(); if (ctl) ctl.abort();                  // over: the loads only this run waited for are dropped
+      return list;
     });
   };
 
@@ -648,8 +743,9 @@
     });
   }
 
-  Search.prototype._index = function (q, m, opts, warnings, progress, prefixLast) {
+  Search.prototype._index = function (q, m, opts, warnings, progress, prefixLast, ctx) {
     var self = this, srcs = chooseSources(m, opts);
+    ctx = ctx || { signal: null, within: function (p) { return p; }, cancelled: function () { return false; } };
     if (!srcs.length) return Promise.resolve([]);
     var allowed = {}, needStem = false, needFull = false;
     srcs.forEach(function (n) { var st = !!m.sources[n].stem; allowed[n] = st ? 2 : 1; if (st) needStem = true; else needFull = true; });
@@ -682,10 +778,13 @@
       var keys = Object.keys(jobs), chunks = {}, done = 0;
       progress({ stage: 'chunks', done: 0, total: keys.length });
       return Promise.all(keys.map(function (k) {
-        return self.chunk(m, jobs[k].g, jobs[k].n).then(function (d) { chunks[k] = d; }, function (e) {
-          warnings.push('chunk ' + k + ': ' + (e && e.message || e));
+        return ctx.within(self.chunk(m, jobs[k].g, jobs[k].n, ctx.signal)).then(function (d) { chunks[k] = d; }, function (e) {
+          if (!isAbort(e)) warnings.push('chunk ' + k + ': ' + (e && e.message || e));
         }).then(function () { progress({ stage: 'chunks', done: ++done, total: keys.length }); });
-      })).then(tick).then(function () { scoreVariant({ v: v, words: words }, chunks, m, allowed, opts, results); });
+      })).then(tick).then(function () {
+        if (ctx.cancelled()) throw abortError();
+        scoreVariant({ v: v, words: words }, chunks, m, allowed, opts, results);
+      });
     }
     function good() { var n = 0; for (var k in results) n++; return n; }
     var step = runVariant({ q: q, w: 1 }), sc = scriptOfQuery(q), other = null;
@@ -806,7 +905,8 @@
   }
 
   /* the phrase in the text of the best sources of the first results: +2, and the ranges to highlight */
-  Search.prototype._confirm = function (q, m, list, opts, warnings) {
+  Search.prototype._confirm = function (q, m, list, opts, warnings, ctx) {
+    var within = ctx ? ctx.within : function (p) { return p; }, signal = ctx ? ctx.signal : null;
     var self = this, top = list.slice(0, opts.confirm != null ? opts.confirm : 10), maxBlocks = opts.maxBlocks || 2;
     if (!m.text || !top.length) return Promise.resolve(list);
     var want = {}, order = [];
@@ -822,8 +922,8 @@
     order = order.slice(0, maxBlocks);
     var blocks = {};
     return Promise.all(order.map(function (k) {
-      return self.block(m, want[k].src, want[k].b).then(function (arr) { if (Array.isArray(arr)) blocks[k] = arr; },
-        function (e) { warnings.push('text ' + k + ': ' + (e && e.message || e)); });
+      return within(self.block(m, want[k].src, want[k].b, signal)).then(function (arr) { if (Array.isArray(arr)) blocks[k] = arr; },
+        function (e) { if (!isAbort(e)) warnings.push('text ' + k + ': ' + (e && e.message || e)); });
     })).then(function () {
       var multi = T.tokenize(q).length > 1 || T.tokenize(q).some(function (t) { return t.pairs; });
       list.forEach(function (r) {

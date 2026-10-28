@@ -504,13 +504,22 @@
         the static search index (web/search.js, docs/search-index-format.md). Its results stream in (local, index,
         final) into the same list: an ayah already shown gets the fragment of the translation with the words marked and
         the name of its source, new ayahs go below. Nothing that is shown moves or blinks, the chosen item stays chosen.
-        A newer text makes the older search stale (deepSeq): its answers are dropped. Search.run never rejects; nothing
-        reaches the screen as an error, only a quiet line when a part of the sources could not be loaded.
+        A newer text makes the older search stale at the first keystroke (stopDeep): its answers are dropped (deepSeq) and
+        it is cancelled (AbortSignal: its loads nobody else waits for leave the queue, so they never hold up the new one).
+        Search.run never rejects and always ends (a deadline); nothing reaches the screen as an error, only a quiet line
+        when a part of the sources could not be loaded. #deep-note data-state: wait (typing) | run | done, data-q: the
+        query that state belongs to (read by tools/test-embed/run.mjs).
      The list shows PAGE items, "Show more" the next ones. */
   var PAGE = 30, shown = PAGE, byKey = {}, searchQ = '', deepSeq = 0, deepTimer, deepClient = null, deepState = null, srcIndex = null;
+  /* the search under way is out of date: no more answers from it, its loads are given up */
+  function stopDeep() {
+    deepSeq++; clearTimeout(deepTimer);
+    if (deepState && deepState.ctl) try { deepState.ctl.abort(); } catch (e) { /* ignore */ }
+    deepState = null;
+  }
   function runSearch(now) {
     var q = $('q').value;
-    searchQ = q; deepSeq++; clearTimeout(deepTimer); deepState = null;
+    stopDeep(); searchQ = q;
     var ref = q.trim() && quran.parseRef(q);
     if (ref) setSel(ref.sura, ref.from, ref.to);
     var trs = activeTranslations().filter(function (x) { return x.data; }).map(function (x) { return x.data; });
@@ -519,12 +528,11 @@
     results.forEach(function (r) { byKey[r.sura + ':' + r.aya] = r; });
     shown = PAGE;
     $('results').innerHTML = '';
-    deepNote('', false);
     if (!ref && q.trim().length >= 2 && window.QuranSearch) {
-      deepState = { seq: deepSeq, q: q, done: false, blocks: 0 };
-      $('deep-note').dataset.state = 'run';
+      deepState = { seq: deepSeq, q: q, done: false, blocks: 0, ctl: typeof AbortController !== 'undefined' ? new AbortController() : null };
+      deepNote('', false, 'run');
       deepTimer = setTimeout(function () { deepSearch(q); }, now ? 0 : 50);
-    }
+    } else deepNote('', false, 'done');                     // nothing more to come for this text
     drawResults(); statusLine();
   }
   function statusLine() {
@@ -533,7 +541,8 @@
   }
   function deepNote(text, busy, state) {
     var el = $('deep-note');
-    el.dataset.state = state || (busy ? 'run' : '');         // run | done (read by tools/test-embed/run.mjs)
+    el.dataset.state = state || (busy ? 'run' : '');         // wait | run | done (read by tools/test-embed/run.mjs)
+    el.dataset.q = searchQ;
     if (el.textContent !== text) el.textContent = text;
     el.classList.toggle('busy', !!busy && !!text);
   }
@@ -629,13 +638,13 @@
     return h + esc(text.slice(pos, end)) + (end < text.length ? '…' : '');
   }
   /* the texts of the shown items: a loaded translation, else a text block of the index (at most a few new blocks a time) */
-  function hitText(id, i) {
+  function hitText(id, i, signal) {
     var c = trById(id);
     if (c && c.data) return Promise.resolve({ text: QuranCore.stripHtml(c.data[i] || '').replace(/\s+/g, ' ').trim(), local: true });
     var m = deepClient && deepClient._manifest, x = srcMeta(id);
     if (!m || !m.text || !x || x.n == null || !x.text) return Promise.resolve(null);
     var b = Math.floor(i / m.text.block);
-    return deepClient.block(m, x.n, b).then(function (arr) { var s = Array.isArray(arr) && arr[i - b * m.text.block]; return typeof s === 'string' ? { text: s } : null; });
+    return deepClient.block(m, x.n, b, signal).then(function (arr) { var s = Array.isArray(arr) && arr[i - b * m.text.block]; return typeof s === 'string' ? { text: s } : null; });
   }
   /* Two at a time, in the order of the list; a newer query stops the queue of the older one, so its text blocks do not
      stand in the way of the new search (the loader has only 4 requests at a time). */
@@ -660,7 +669,7 @@
     }
     function run(r, h) {
       st.active++; st.blocks++; r.loading = key(h);
-      hitText(h.src, quran.index(r.sura, r.aya)).then(function (x) {
+      hitText(h.src, quran.index(r.sura, r.aya), st.ctl && st.ctl.signal).then(function (x) {
         if (st !== deepState || !x || !x.text) return;
         var meta = srcMeta(h.src) || {}, ranges = !x.local && h.ranges ? h.ranges : QuranSearch.highlight(x.text, st.q, meta.script);
         r.frag = { src: h.src, ranged: !!h.ranges, dir: meta.dir || 'auto', html: fragmentHtml(x.text, ranges) };
@@ -718,7 +727,7 @@
     var seq = st.seq, scope = settings.searchScope || 'default', ids = chosenSources();
     var mine = activeTranslations().filter(function (x) { return x.data; });
     try {
-      s.run(q, { quran: quran, scope: scope, uiLang: i18n.code(), langs: mine.map(function (x) { return x.lang; }), selected: ids, prefer: ids,
+      s.run(q, { quran: quran, scope: scope, signal: st.ctl && st.ctl.signal, uiLang: i18n.code(), langs: mine.map(function (x) { return x.lang; }), selected: ids, prefer: ids,
                  limit: 100, localTranslations: mine.map(function (x) { return { id: x.id, data: x.data }; }),
         onProgress: function (p) {
           if (seq !== deepSeq || st.done || p.stage !== 'chunks' || p.done >= p.total) return;
@@ -727,7 +736,7 @@
         },
         onResults: function (list) { if (seq === deepSeq) takeDeep(list); }
       }).then(function (list) {
-        if (seq !== deepSeq) return;
+        if (seq !== deepSeq || st !== deepState) return;
         st.done = true;
         deepNote(list && list.partial ? t('searchPartial') : list && widened(list, scope, ids) ? t('searchWidened') : '', false, 'done');
         statusLine();
@@ -757,7 +766,10 @@
     return html + piece(pos, t.length);
   }
   var searchTimer;
-  $('q').addEventListener('input', function () { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250); });
+  $('q').addEventListener('input', function () {
+    clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250);
+    stopDeep(); deepNote('', false, 'wait');                 // the text changed: the search of the old one stops now
+  });
   $('q').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     clearTimeout(searchTimer); runSearch(true); addRecent($('q').value);
