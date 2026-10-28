@@ -14,6 +14,7 @@
     extInsert: 'ask',                                  // browser extension, editors on web pages: 'ask' | 'text' | 'picture'
     votd: true,                                        // the "Ayah of the day" card at the top
     votdClose: 'ask',                                  // its cross: 'ask' | 'day' (hide until tomorrow) | 'off' (turn it off)
+    liveSearch: false,                                 // follow the selected ARABIC text of the document and search it at once (off by default)
     markAyahs: false,                                  // Word: every inserted ayah goes into a content control, so "Update all ayahs" can find it
     picAction: 'ask',                                  // the picture button in Word: 'ask' | 'insert' | 'copy'
     searchScope: 'default',                            // search in every language: 'default' | 'selected' | 'all'
@@ -28,8 +29,8 @@
      ?host=adobe: InDesign / InCopy / Photoshop / Premiere (adobe/uxp: a <webview>, not a frame, so window.parent is
      the page itself and the way out is window.uxpHost) or a CEP panel (an iframe). Fonts installed on the computer
      work there, so the QPC page mushafs stay and online is false. */
-  var HOST = (location.search.match(/[?&]host=(gdocs|wp|ext|adobe)\b/) || [])[1] || '';
-  if (window.parent === window && HOST !== 'adobe') HOST = '';
+  var HOST = (location.search.match(/[?&]host=(gdocs|wp|ext|adobe|tg)\b/) || [])[1] || '';
+  if (window.parent === window && HOST !== 'adobe' && HOST !== 'tg') HOST = '';        // tg: the Telegram Mini App is the page itself
   var ADOBE = HOST === 'adobe';
   var clickStart = null, inWord = false, online = !!HOST && !ADOBE, windows = /Win/.test(navigator.platform || ''), results = [];
   var t = function (k, v) { return i18n.t(k, v); };
@@ -79,7 +80,7 @@
     });
     ['uiLang', 'script', 'theme', 'tab', 'arFont', 'uzFont', 'picBg', 'auzaFont', 'basmalaFont', 'refFont'].forEach(function (k) { if (typeof st[k] !== 'string') st[k] = DEFAULTS[k]; });
     ['arSize', 'uzSize', 'auzaSize', 'basmalaSize', 'refSize'].forEach(function (k) { if (typeof st[k] === 'string' && +st[k]) st[k] = +st[k]; if (typeof st[k] !== 'number' || !isFinite(st[k])) st[k] = DEFAULTS[k]; });
-    ['withTr', 'withTafsir', 'brackets', 'auza', 'basmala', 'ref', 'trRef', 'newPara', 'ayahNums', 'hizb', 'sajda', 'waqf', 'arBold', 'arText', 'picBgOn', 'votd', 'markAyahs']
+    ['withTr', 'withTafsir', 'brackets', 'auza', 'basmala', 'ref', 'trRef', 'newPara', 'ayahNums', 'hizb', 'sajda', 'waqf', 'arBold', 'arText', 'picBgOn', 'votd', 'markAyahs', 'liveSearch']
       .forEach(function (k) { st[k] = typeof st[k] === 'boolean' ? st[k] : DEFAULTS[k]; });
     st.searchScope = oneOf(st.searchScope, ['default', 'selected', 'all'], 'default');
     st.votdClose = oneOf(st.votdClose, ['ask', 'day', 'off'], 'ask');
@@ -517,7 +518,7 @@
     if (deepState && deepState.ctl) try { deepState.ctl.abort(); } catch (e) { /* ignore */ }
     deepState = null;
   }
-  function runSearch(now) {
+  function runSearch(now, localOnly) {
     var q = $('q').value;
     stopDeep(); searchQ = q;
     var ref = q.trim() && quran.parseRef(q);
@@ -528,7 +529,7 @@
     results.forEach(function (r) { byKey[r.sura + ':' + r.aya] = r; });
     shown = PAGE;
     $('results').innerHTML = '';
-    if (!ref && q.trim().length >= 2 && window.QuranSearch) {
+    if (!ref && q.trim().length >= 2 && window.QuranSearch && !localOnly) {
       deepState = { seq: deepSeq, q: q, done: false, blocks: 0, ctl: typeof AbortController !== 'undefined' ? new AbortController() : null };
       deepNote('', false, 'run');
       deepTimer = setTimeout(function () { deepSearch(q); }, now ? 0 : 50);
@@ -1254,11 +1255,32 @@
     if (HOST === 'ext') out = withUnicodeText(out);
     var copied = hostCopied = copy(out).then(function () { return true; }, function () { return false; });
     if (ADOBE) return sendToAdobe(out, copied);
+    if (HOST === 'tg') return sendToTg(out, copied);
     if (HOST === 'ext') return sendToExt(out, copied);
     window.parent.postMessage({ type: 'khatt-insert', v: 1, html: buildHtml(out), text: out.text, doc: hostDoc(out),
                                 newPara: !!settings.newPara }, '*');
     clearTimeout(hostWait);
     hostWait = setTimeout(function () { copied.then(function (ok) { toast(ok ? t('copiedPaste') : t('error')); }); }, 4000);
+  }
+  /* Telegram Mini App (host=tg, the bot's /app): the text is copied; where the app was opened so that Telegram allows it, the ayah is
+     offered to a chat through the bot's inline mode (the reference, e.g. "2:255"). The Mini App script comes from Telegram itself. */
+  function tgApp() { return window.Telegram && Telegram.WebApp; }
+  function sendToTg(out, copied) {
+    return copied.then(function (ok) {
+      var tg = tgApp(), ref = sel.sura + ':' + sel.from + (sel.to > sel.from ? '-' + sel.to : '');
+      if (tg && tg.switchInlineQuery) { try { tg.switchInlineQuery(ref, ['users', 'groups', 'channels']); return; } catch (e) { /* not allowed here: the copy stays */ } }
+      toast(ok ? t('copiedPaste') : t('error'));
+    });
+  }
+  if (HOST === 'tg') {
+    document.body.classList.add('tg');
+    var tgs = document.createElement('script');
+    tgs.src = 'https://telegram.org/js/telegram-web-app.js';
+    tgs.onload = function () {
+      var tg = tgApp(); if (!tg) return;
+      try { tg.ready(); tg.expand(); if (settings.theme === 'auto' && tg.colorScheme) document.documentElement.setAttribute('data-theme', tg.colorScheme === 'dark' ? 'dark' : 'light'); } catch (e) {}
+    };
+    document.head.appendChild(tgs);
   }
   /* Adobe: the same message, plus for a QPC page mushaf the Arabic paragraph as a picture (pic: transparent PNG
      unless a background is set, see ayahPicture). The program uses the text when it can (InDesign with the page
@@ -1365,8 +1387,9 @@
   window.addEventListener('message', function (e) {
     var d = e.data;
     if (!HOST || ADOBE || e.source !== window.parent || !d || !fromExt(e)) return;
-    if (d.type === 'khatt-search' && typeof d.q === 'string') searchFor(d.q);
+    if (d.type === 'khatt-search' && typeof d.q === 'string') { if (d.live) liveSelect(d.q); else searchFor(d.q); }
     else if (d.type === 'khatt-pref' && HOST === 'ext') {
+      if (settings.liveSearch) hostLive(true);                         // the extension is known now: tell it to follow the selection
       if (/^(ask|text|picture)$/.test(d.extInsert || '')) {
         if (settings.extInsert !== d.extInsert) { settings.extInsert = d.extInsert; saveSettings(); }
         if ($('s-ext-insert')) $('s-ext-insert').value = settings.extInsert;
@@ -1791,6 +1814,54 @@
     window.addEventListener('load', function () { setTimeout(function () { try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {} }, 3000); });
   }
 
+  /* ---------- live search: follows the selected ARABIC text of the document (off by default) ----------
+     Light on everybody: only Arabic text of 2–160 characters, only when it changed, 500 ms after the selection stopped moving,
+     only while the panel is visible, and only the instant LOCAL search (nothing is fetched from the server for it). The host
+     sends the selection: Word (selection-changed event), the browser extension (the selected text of the page), the WordPress
+     editor, Google Docs (every 2 s while it is on). */
+  var liveLast = '', liveTimer, liveWordOn = false, liveWordTimer;
+  function liveArabic(text) {
+    text = String(text || '').replace(/\s+/g, ' ').trim();
+    if (text.length < 2 || text.length > 160) return '';
+    var bare = text.replace(/\s/g, ''), ar = (bare.match(/[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/g) || []).length;
+    return ar >= 2 && ar / bare.length >= 0.6 ? text : '';
+  }
+  function liveSelect(text) {
+    if (!settings.liveSearch || !quran || document.hidden) return;
+    var q = liveArabic(text);
+    if (!q || q === liveLast) return;
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(function () {
+      liveLast = q; $('q').value = q;
+      clearTimeout(searchTimer); runSearch(true, true);
+      if (results.length && !quran.parseRef(q)) { setSel(results[0].sura, results[0].aya, results[0].aya); }
+    }, 500);
+  }
+  function hostLive(on) { if (HOST && !ADOBE && HOST !== 'tg') toParent({ type: 'khatt-live', on: !!on }); }
+  function wordSelection() {                           // Word: the selection changed
+    clearTimeout(liveWordTimer);
+    liveWordTimer = setTimeout(function () {
+      if (!settings.liveSearch || !window.Word || document.hidden) return;
+      Word.run(function (ctx) { var r = ctx.document.getSelection(); r.load('text'); return ctx.sync().then(function () { return r.text; }); })
+        .then(liveSelect, function () {});
+    }, 300);
+  }
+  function setLive(on) {
+    if (settings.liveSearch !== !!on) { settings.liveSearch = !!on; saveSettings(); }      // (the start-up call changes nothing)
+    $('live-btn').setAttribute('aria-pressed', !!on); $('s-live').checked = !!on; liveLast = '';
+    var tt = t(on ? 'liveOn' : 'liveOff'); $('live-btn').title = tt; $('live-btn').setAttribute('aria-label', tt);
+    hostLive(on);
+    if (inWord && window.Office && Office.context && Office.context.document && Office.context.document.addHandlerAsync) {
+      try {
+        if (on && !liveWordOn) { liveWordOn = true; Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, wordSelection); }
+        else if (!on && liveWordOn) { liveWordOn = false; Office.context.document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler: wordSelection }); }
+      } catch (e) { liveWordOn = false; }
+    }
+  }
+  $('live-btn').addEventListener('click', function () { setLive(!settings.liveSearch); toast(t(settings.liveSearch ? 'liveOn' : 'liveOff')); });
+  $('s-live').addEventListener('change', function () { setLive(this.checked); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && settings.liveSearch) hostLive(true); });
+
   /* ---------- ayah of the day: the same for everyone on a calendar day; drawn after the panel ---------- */
   var votdList = null, VOTD_CLOSED = 'myquran-votd-closed';
   function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
@@ -1851,7 +1922,7 @@
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
             ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', picBgOn: 's-picbg-on', picBg: 's-picbg',
-            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd', votdClose: 's-votd-close', picAction: 's-pic-action', markAyahs: 's-mark',
+            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd', liveSearch: 's-live', votdClose: 's-votd-close', picAction: 's-pic-action', markAyahs: 's-mark',
             searchScope: 's-search-scope' };
   if (HOST === 'ext') B.extInsert = 's-ext-insert';
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
@@ -2075,7 +2146,8 @@
         }, function () { searchDataRead = true; warmSearch(); });
       }, 50);
       drawMarks();
-      setTimeout(function () { ensureData().then(drawVotd); }, 300);   // after the panel is drawn: it must not slow the start down
+      setTimeout(function () { ensureData().then(drawVotd); }, 300);
+      setLive(settings.liveSearch);   // after the panel is drawn: it must not slow the start down
     }).catch(function (e) { $('status').textContent = t('error') + ': ' + e.message; });
   }
 
@@ -2181,12 +2253,12 @@
       // fonts installed on the computer exist only in Word for Windows and Mac (not on the web, iPad, …)
       online = !!HOST && !ADOBE || inWord && info.platform !== Office.PlatformType.PC && info.platform !== Office.PlatformType.Mac;
       if (inWord) windows = info.platform === Office.PlatformType.PC;
-      if (inWord) { document.body.classList.add('office'); $('host-badge').hidden = false; }
+      if (inWord) { document.body.classList.add('office'); $('host-badge').hidden = false; if (settings.liveSearch) setLive(true); }
       if (online && quran) render();
     });
   }
   if (HOST) {
-    $('host-badge').textContent = { gdocs: 'Google Docs', wp: 'WordPress', ext: t('browser'), adobe: 'Adobe' }[HOST];
+    $('host-badge').textContent = { gdocs: 'Google Docs', wp: 'WordPress', ext: t('browser'), adobe: 'Adobe', tg: 'Telegram' }[HOST];
     if (HOST === 'ext') $('host-badge').dataset.i18n = 'browser';     // follows the interface language
     $('host-badge').hidden = false;
     document.body.classList.add('embedded');

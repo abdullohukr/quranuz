@@ -1,6 +1,19 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.13.0', '2026-10-29', { uz: 'Жонли қидирув, Telegram Mini App', ru: 'Живой поиск, Telegram Mini App', en: 'Live search, Telegram Mini App', ar: 'البحث الحي وتطبيق Telegram المصغّر' }, {
+    uz: ['Жонли қидирув: қидирув майдонининг ўнг томонидаги тугма (ёки Созламалар). Ёқилса, ҳужжатда белгиланган АРАБЧА матн бу ерга нусхаланмасдан дарров қидирилади (Word, браузер кенгайтмаси, WordPress, Google Docs). Одатда ўчиқ. Фақат арабча матн, қурилмангизда ишлайди, серверни юкламайди.',
+         'Telegram Mini App: ботда /app — сайтдаги панелнинг ўзи Telegram ичида; оятни чатга юбориш мумкин.',
+         'Кенгайтма 1.1.1, WordPress плагини 1.1.3: жонли қидирув учун.'],
+    ru: ['Живой поиск: кнопка справа в строке поиска (или Настройки). Если включить, АРАБСКИЙ текст, выделенный в документе, ищется сразу, без копирования сюда (Word, расширение браузера, WordPress, Google Docs). По умолчанию выключен. Только арабский текст, работает на вашем устройстве, не нагружает сервер.',
+         'Telegram Mini App: в боте /app — та же панель с сайта внутри Telegram; аят можно отправить в чат.',
+         'Расширение 1.1.1 и плагин WordPress 1.1.3 — для живого поиска.'],
+    en: ['Live search: a button at the right of the search box (or Settings). When it is on, ARABIC text selected in the document is searched at once, without copying it here (Word, the browser extension, WordPress, Google Docs). Off by default. Arabic text only, it runs on your device and does not load the server.',
+         'Telegram Mini App: /app in the bot opens the same panel as the site inside Telegram; an ayah can be sent to a chat.',
+         'Extension 1.1.1 and WordPress plugin 1.1.3 carry the live search.'],
+    ar: ['البحث الحي: زر في يمين مربع البحث (أو الإعدادات). عند تشغيله يُبحث فورًا عن النص العربي المحدد في المستند دون نسخه إلى هنا (Word وإضافة المتصفح وWordPress وGoogle Docs). متوقف افتراضيًا. للنص العربي فقط، ويعمل على جهازك ولا يحمّل الخادم.',
+         'تطبيق Telegram المصغّر: الأمر /app في البوت يفتح اللوحة نفسها داخل Telegram ويمكن إرسال الآية إلى محادثة.',
+         'الإضافة 1.1.1 وملحق WordPress 1.1.3 لأجل البحث الحي.'] }],
   ['3.12.0', '2026-10-29', { uz: 'Иқтибосни текшириш, тезроқ биринчи қидирув', ru: 'Проверка цитаты, быстрый первый поиск', en: 'Check a quote, a faster first search', ar: 'التحقق من اقتباس وأول بحث أسرع' }, {
     uz: ['Оят остидаги «⋯» менюда «Иқтибосни текшириш» пайдо бўлди: арабча матнни қўйсангиз, у танланган оят билан сўзма-сўз солиштирилади. Тушиб қолган сўзлар ўчирилган, ортиқчалари чизилган кўринишда чиқади. Ҳаракатлар ва алиф ёзилиши (усмоний ёки оддий) фарқ қилмайди.',
          'Панел очилгандан кейинги биринчи қидирув энди секинлашмайди.'],

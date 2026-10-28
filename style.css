@@ -393,3 +393,11 @@ input[type=color].sample { width: 28px; height: 22px; padding: 0; border: 1px so
 .quote-out .ok { color: var(--accent); }
 .quote-out del { color: #c0392b; text-decoration: line-through; background: color-mix(in srgb, #c0392b 12%, transparent); }
 .quote-out ins { text-decoration: underline wavy #d68910; background: color-mix(in srgb, #d68910 14%, transparent); }
+
+/* live search: a button at the end of the search box */
+.search-box .live-btn { position: absolute; inset-inline-end: 4px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: 10px; background: none; color: var(--muted); cursor: pointer; padding: 0; }
+.search-box .live-btn:hover { background: var(--surface-2); }
+.search-box .live-btn[aria-pressed=true] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+.search-box input { padding-inline-end: 44px; }
+.search-box .live-btn svg { position: static; color: inherit; }

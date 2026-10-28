@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="50">
+<meta name="myquran-version" content="51">
 <link rel="icon" href="assets/brand/word-office/clear-32.png">
 <link rel="icon" href="assets/brand/word-office/square-32.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="assets/brand/word-office/square-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=50">
+<link rel="stylesheet" href="style.css?v=51">
 <script>
 /* Office.js only where this page is a Word add-in. In the frame of another host (browser extension, Google Docs, WordPress,
    Adobe) it stops the page and leaves a blank screen. Same blocking order as a normal script tag. */
-if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
+if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
-<script src="i18n.js?v=50"></script>
-<script src="core.js?v=50"></script>
+<script src="i18n.js?v=51"></script>
+<script src="core.js?v=51"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -42,7 +42,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
     <div class="votd-actions"><button type="button" id="votd-pick" class="btn" data-i18n="votdPick"></button><button type="button" id="votd-insert" class="btn primary" data-i18n="insert"></button></div>
   </section>
   <div class="pin"><section class="card pin-card">
-    <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="search" autocomplete="off" dir="auto" list="recent-q" data-i18n-placeholder="search"><datalist id="recent-q"></datalist></div>
+    <div class="search-box"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><input id="q" type="search" autocomplete="off" dir="auto" list="recent-q" data-i18n-placeholder="search"><datalist id="recent-q"></datalist><button type="button" id="live-btn" class="live-btn" aria-pressed="false" data-i18n-title="liveSearch" aria-label="Live search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button></div>
     <div class="pick">
       <select id="sura" aria-label="Surah"></select>
       <button id="info-btn" class="icon-btn" data-i18n-title="surahInfo" aria-label="info"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" class="fill"/></svg></button>
@@ -116,6 +116,8 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
       <section class="tab" data-tab="general">
         <label class="field"><span data-i18n="uiLang"></span> <select id="s-ui-lang"></select></label>
         <label class="field"><span data-i18n="mushaf"></span> <select id="s-script"></select></label>
+        <label class="switch"><input type="checkbox" id="s-live"><i></i> <span data-i18n="liveSearch"></span></label>
+        <p class="small muted" data-i18n="liveNote"></p>
         <label class="switch"><input type="checkbox" id="s-votd"><i></i> <span data-i18n="votdShow"></span></label>
         <label class="field"><span data-i18n="votdCloseSet"></span> <select id="s-votd-close">
           <option value="ask" data-i18n="askMe"></option><option value="day" data-i18n="votdHideDay"></option><option value="off" data-i18n="votdTurnOff"></option></select></label>
@@ -292,7 +294,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="search.js?v=50"></script>
-<script src="app.js?v=50"></script>
+<script src="search.js?v=51"></script>
+<script src="app.js?v=51"></script>
 </body>
 </html>
