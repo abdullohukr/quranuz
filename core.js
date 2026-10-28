@@ -471,12 +471,23 @@
     return { sura: sura, from: from, to: to };
   };
 
-  var normCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
-  function normalized(arr) {
-    var v = normCache && normCache.get(arr);
-    if (!v) { v = arr.map(function (t) { return ' ' + normText(stripHtml(t)) + ' '; }); if (normCache) normCache.set(arr, v); }
-    return v;
+  /* arr.map(fn), kept in cache (a WeakMap); built in parts when `until` (a time) is given: null while not complete,
+     the next call goes on from there (warmSearch); without `until` it is completed at once */
+  function partMap(cache, parts, arr, fn, until) {
+    var v = cache && cache.get(arr);
+    if (v) return v;
+    var p = parts && parts.get(arr) || { v: new Array(arr.length), i: 0 };
+    for (; p.i < arr.length; p.i++) {
+      if (until && (p.i & 31) === 0 && p.i && Date.now() > until) { if (parts) parts.set(arr, p); return null; }
+      p.v[p.i] = fn(arr[p.i]);
+    }
+    if (parts) parts['delete'](arr);
+    if (cache) cache.set(arr, p.v);
+    return p.v;
   }
+  var normCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null, normParts = normCache && new WeakMap();
+  function normOne(t) { return ' ' + normText(stripHtml(t)) + ' '; }
+  function normalized(arr, until) { return partMap(normCache, normParts, arr, normOne, until); }
 
   /* Search: reference, Arabic text (with or without diacritics), or the text of
      any of the given translations (arrays of 6236 strings, any language). */
@@ -659,6 +670,27 @@
   };
   /* the data of web/data/quran.search.json (checked against normArabic of every ayah: `fix`) */
   Quran.prototype.searchData = function () { return buildWords(this.baseAyahs, true); };
+
+  /* The tables the first search builds (the words of the Quran, the normalised texts of the translations), made
+     ahead in small parts so that the first query does not block the page: call it again until it returns true.
+     translations: arrays of 6236 texts; ms: the time of one part. */
+  Quran.prototype.warmSearch = function (translations, ms) {
+    var until = Date.now() + (ms || 12), W = this._words(), self = this;
+    var steps = [function () { return W.f2; }, function () { W.levels23(); }, function () { return W.st; }, function () { W.forms(); },
+                 function () { return W.occ; }, function () { W.tables(); }, function () { return W.skel; }, function () { W.skelText(); },
+                 function () { return self._idx; }, function () { self._buildIndex(); }];
+    for (var k = 0; k < steps.length; k += 2) {
+      if (steps[k]()) continue;
+      steps[k + 1]();
+      if (Date.now() > until) return false;
+    }
+    var trs = translations || [];
+    for (var j = 0; j < trs.length; j++) {
+      if (!trs[j] || !trs[j].length) continue;
+      if (!normalized(trs[j], until) || !partMap(trCache, trParts, trs[j], trOne, until)) return false;
+    }
+    return true;
+  };
 
   /* Score tiers of searchSmart, from exact to loose (a bonus of 0..19 inside a tier: how much of the ayah the
      match covers, +4 when it starts the ayah). */
@@ -854,10 +886,10 @@
     }
   };
 
-  var trCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  var trCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null, trParts = trCache && new WeakMap();
+  function trOne(t) { return ' ' + norm(stripHtml(t)) + ' '; }
   Quran.prototype._smartText = function (q, data, id, put) {
-    var nt = trCache && trCache.get(data);
-    if (!nt) { nt = data.map(function (t) { return ' ' + norm(stripHtml(t)) + ' '; }); if (trCache) trCache.set(data, nt); }
+    var nt = partMap(trCache, trParts, data, trOne);
     var toks = tokenize(q).slice(0, MAX_WORDS * 2);
     if (!toks.length) return;
     var nq = toks.map(function (t) { return t.t; }).join(' ');

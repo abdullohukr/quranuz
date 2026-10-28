@@ -765,10 +765,25 @@
     });
     return html + piece(pos, t.length);
   }
+  /* the tables of the first search are made ahead, a small part at a time (Quran.warmSearch): while the page is idle,
+     when the field gets the focus and in the pause of typing, so that the first query does not block the page */
+  var warmTimer = null, searchDataRead = false;             // after web/data/quran.search.json (or its failure)
+  function warmSearch() {
+    if (warmTimer || !searchDataRead || !quran || !quran.warmSearch) return;
+    (function part() {
+      warmTimer = null;
+      var trs = activeTranslations().filter(function (x) { return x.data; }).map(function (x) { return x.data; });
+      var done = true;
+      try { done = quran.warmSearch(trs, 10); } catch (e) { /* the search builds them itself */ }
+      if (!done) warmTimer = setTimeout(part, 0);
+    })();
+  }
   var searchTimer;
+  $('q').addEventListener('focus', warmSearch);
   $('q').addEventListener('input', function () {
     clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 250);
     stopDeep(); deepNote('', false, 'wait');                 // the text changed: the search of the old one stops now
+    warmSearch();
   });
   $('q').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
@@ -1659,6 +1674,44 @@
   $('m-text').addEventListener('click', function () { menuOpen(false); withOut(function (out) { clipText(out.text); }); });
   $('m-md').addEventListener('click', function () { menuOpen(false); withOut(function (out) { clipText(mdOf(out)); }); });
   $('m-link').addEventListener('click', function () { menuOpen(false); clipText(refLink()); });
+  /* "Check a quote": the pasted Arabic is compared with the selected ayah(s), word by word, without vowel marks and with the
+     different spellings of alef / ya / ta marbuta treated as the same (the Uthmani and the ordinary spelling both match) */
+  function qNorm(w) {
+    return w.replace(/[ً-ٰٟۖ-ۭـ‌‍‏]/g, '').replace(/[ٱأإآ]/g, 'ا').replace(/[ىیئ]/g, 'ي').replace(/ة/g, 'ه').replace(/ک/g, 'ك')
+      .replace(/[^ء-ي]/g, '').replace(/ا/g, '');      // no alef at all: the Uthmani dagger alef and the ordinary alef agree
+  }
+  function qWords(text) {
+    return String(text).replace(/۝[٠-٩0-9]*/g, ' ').split(/\s+/).map(function (w) { return { raw: w, n: qNorm(w) }; }).filter(function (x) { return x.n; }).slice(0, 1500);
+  }
+  function qDiff(a, b) {                          // a = the ayah, b = the quote; ops: = same, - only in the ayah, + only in the quote
+    var n = a.length, m = b.length, L = [], i, j;
+    for (i = 0; i <= n; i++) { L.push(new Array(m + 1).fill(0)); }
+    for (i = n - 1; i >= 0; i--) for (j = m - 1; j >= 0; j--) L[i][j] = a[i].n === b[j].n ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    var ops = []; i = 0; j = 0;
+    while (i < n && j < m) {
+      if (a[i].n === b[j].n) { ops.push(['=', a[i].raw]); i++; j++; }
+      else if (L[i + 1][j] >= L[i][j + 1]) { ops.push(['-', a[i].raw]); i++; }
+      else { ops.push(['+', b[j].raw]); j++; }
+    }
+    while (i < n) ops.push(['-', a[i++].raw]);
+    while (j < m) ops.push(['+', b[j++].raw]);
+    return ops;
+  }
+  function quoteCompare() {
+    var quote = qWords($('quote-in').value), ayah = [];
+    for (var a = sel.from; a <= sel.to; a++) ayah = ayah.concat(qWords(quran.baseAyahs[quran.index(sel.sura, a)] || ''));
+    var out = $('quote-out');
+    if (!quote.length) { out.innerHTML = '<div class="verdict">' + esc(t('quoteEmpty')) + '</div>'; return; }
+    var ops = qDiff(ayah, quote), same = ops.every(function (o) { return o[0] === '='; });
+    out.innerHTML = '<div class="verdict' + (same ? ' ok' : '') + '" dir="' + i18n.dir() + '">' + esc(t(same ? 'quoteSame' : 'quoteDiff')) + '</div>' +
+      ops.map(function (o) { var w = esc(o[1]); return o[0] === '=' ? w : o[0] === '-' ? '<del>' + w + '</del>' : '<ins>' + w + '</ins>'; }).join(' ');
+  }
+  $('m-quote').addEventListener('click', function () {
+    menuOpen(false); if (!quran) return;
+    $('quote-ref').textContent = markRef(sel); $('quote-out').innerHTML = '';
+    $('quote-dlg').showModal(); $('quote-in').focus();
+  });
+  $('quote-run').addEventListener('click', quoteCompare);
   /* the basket: ayahs and ranges collected in order, inserted (or copied) all at once */
   function addBask(x) {
     var id = markId(x);
@@ -2018,8 +2071,8 @@
         optional('quran.search.json', null).then(function (sd) {
           var ok = sd && sd.v === 1 && sd.ayahs && sd.ayahs.length === quran.baseAyahs.length && !quran._idx && !quran._w;
           if (ok) quran._sd = sd;
-          setTimeout(function () { quran._buildIndex(); if (ok) setTimeout(function () { quran._words().tables(); }, 0); }, 0);
-        });
+          searchDataRead = true; warmSearch();               // built a small part at a time (warmSearch)
+        }, function () { searchDataRead = true; warmSearch(); });
       }, 50);
       drawMarks();
       setTimeout(function () { ensureData().then(drawVotd); }, 300);   // after the panel is drawn: it must not slow the start down

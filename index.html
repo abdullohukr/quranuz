@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="49">
+<meta name="myquran-version" content="50">
 <link rel="icon" href="assets/brand/word-office/clear-32.png">
 <link rel="icon" href="assets/brand/word-office/square-32.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="assets/brand/word-office/square-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=49">
+<link rel="stylesheet" href="style.css?v=50">
 <script>
 /* Office.js only where this page is a Word add-in. In the frame of another host (browser extension, Google Docs, WordPress,
    Adobe) it stops the page and leaves a blank screen. Same blocking order as a normal script tag. */
 if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
-<script src="i18n.js?v=49"></script>
-<script src="core.js?v=49"></script>
+<script src="i18n.js?v=50"></script>
+<script src="core.js?v=50"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -80,6 +80,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
       <button type="button" role="menuitem" id="m-text" data-i18n="copyText"></button>
       <button type="button" role="menuitem" id="m-md" data-i18n="copyMd"></button>
       <button type="button" role="menuitem" id="m-link" data-i18n="copyLink"></button>
+      <button type="button" role="menuitem" id="m-quote" data-i18n="quoteCheck"></button>
       <button type="button" role="menuitem" id="m-bask" data-i18n="basketAdd"></button>
       <button type="button" role="menuitem" id="m-foot" data-i18n="footnoteIns" hidden></button>
       <button type="button" role="menuitem" id="m-update" data-i18n="updateAyahs" hidden></button>
@@ -249,6 +250,17 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
   </form>
 </dialog>
 
+<dialog id="quote-dlg" class="sheet" aria-labelledby="quote-h">
+  <form method="dialog">
+    <div class="sheet-head"><h2 id="quote-h" data-i18n="quoteCheck"></h2>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="sheet-body"><p class="small muted" data-i18n="quoteHint"></p><p id="quote-ref" class="small"></p>
+      <textarea id="quote-in" class="quote-in" dir="rtl" rows="4"></textarea>
+      <p class="actions"><button type="button" id="quote-run" class="btn primary" data-i18n="quoteRun"></button></p>
+      <div id="quote-out" class="quote-out" aria-live="polite"></div></div>
+  </form>
+</dialog>
+
 <dialog id="tr-fail" class="sheet" aria-labelledby="tr-fail-h">
   <form method="dialog">
     <div class="sheet-head"><h2 id="tr-fail-h" data-i18n="translation"></h2>
@@ -280,7 +292,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe)\b/.test(location.search)) document.write('<s
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="search.js?v=49"></script>
-<script src="app.js?v=49"></script>
+<script src="search.js?v=50"></script>
+<script src="app.js?v=50"></script>
 </body>
 </html>

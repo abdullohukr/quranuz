@@ -386,3 +386,10 @@ input[type=color].sample { width: 28px; height: 22px; padding: 0; border: 1px so
 .actions.col { flex-direction: column; }
 .actions.col .btn { flex: none; }
 .sel-head { align-items: center; gap: 4px; }
+
+.quote-in { width: 100%; box-sizing: border-box; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: var(--radius-s); padding: 9px 11px; font-family: var(--ar-font); font-size: 20px; line-height: 1.8; resize: vertical; }
+.quote-out { font-family: var(--ar-font); font-size: 20px; line-height: 1.9; direction: rtl; text-align: right; }
+.quote-out .verdict { font-family: var(--ui-font); font-size: 14px; direction: inherit; text-align: start; margin-bottom: 6px; font-weight: 600; }
+.quote-out .ok { color: var(--accent); }
+.quote-out del { color: #c0392b; text-decoration: line-through; background: color-mix(in srgb, #c0392b 12%, transparent); }
+.quote-out ins { text-decoration: underline wavy #d68910; background: color-mix(in srgb, #d68910 14%, transparent); }
