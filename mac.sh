@@ -11,8 +11,11 @@
 # Uninstall:        curl -fsSL https://quran.abdulloh.org/mac-uninstall.sh | bash
 # Options for the setup program (tools/installers/app); without them the script works as before:
 #   KHATT_SRC=<dir>        offline: MyQuran-fonts.zip, MyQuran-QPC-V1/V2/V4-fonts.zip and manifest.xml from this folder
+#                          (and KhattAlQuran.dotm, KhattAlQuranHTTP.applescript when it has them)
 #   KHATT_ONLY=fonts,word  install only these parts (default: all); "word" includes word-autoupdate (the agent that
-#                          keeps the add-in manifest up to date), which can also be given alone
+#                          keeps the add-in manifest up to date) and word-tab (the "Khatt al-Quran" ribbon tab of the
+#                          Startup template KhattAlQuran.dotm, there at every start of Word), which can also be given
+#                          alone. Tests: KHATT_ONLY=word-tab with HOME=<a test folder> touches nothing else
 #   KHATT_UI=1             no colours; progress lines for the program: "@@step <n> <total> <id>",
 #                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@error <text>", "@@done"
 #   KHATT_ADOBE=1          (testing, the packages are not published yet) also the Adobe panels: components
@@ -47,6 +50,7 @@ if [ -n "$UI" ]; then B="" DIM="" CY="" GR="" YE="" RE="" N=""; fi
 STEP=0 STEPS=0
 if want fonts; then STEPS=$((STEPS + 5)); fi
 if want word; then STEPS=$((STEPS + 1)); elif want word-autoupdate; then STEPS=$((STEPS + 1)); fi
+if want word || want word-tab; then STEPS=$((STEPS + 1)); fi
 if want_adobe adobe-uxp; then STEPS=$((STEPS + 1)); fi
 if want_adobe adobe-cep; then STEPS=$((STEPS + 1)); fi
 clock() { printf '%02d:%02d' $((SECONDS / 60)) $((SECONDS % 60)); }
@@ -392,6 +396,61 @@ if [ -z "${KHATT_NO_LAUNCHCTL:-}" ]; then   # tests: KHATT_NO_LAUNCHCTL=1 (no ag
   launchctl bootstrap "gui/$(id -u)" "$MU_AGENT" >/dev/null 2>&1 || true
 fi
 ok "the add-in updates itself (at login and once a day)"
+fi
+
+if want word || want word-tab; then   # ---- the "Khatt al-Quran" ribbon tab ----
+# The add-in's own tab appears only when Word loads the add-in (Insert -> My Add-ins); this tab is always there, like
+# the tabs of Acrobat: KhattAlQuran.dotm (tools/build_khatt_dotm.py: buttons Ayah, Panel, Help, What's new, Update)
+# goes into Word's Startup folder, which Word loads at every start. Its macro only downloads public files of
+# quran.abdulloh.org/api/; on the Mac it does that through KhattAlQuranHTTP.scpt in Word's Application Scripts folder
+# (VBA cannot download in the sandbox). Every run replaces both with the current version. Word shows the tab after a
+# restart. Removed by mac-uninstall.sh (into the Trash).
+step word-tab "Word ribbon tab «Khatt al-Quran»" "Word: «Khatt al-Quran» ёрлиғи" "Вкладка Word «Khatt al-Quran»" "تبويب «Khatt al-Quran» في Word"
+OFFICE="$HOME/Library/Group Containers/UBF8T346G9.Office"
+WORD_STARTUP=""
+for uc in "User Content.localized" "User Content"; do
+  for st in "Startup.localized" "Startup"; do
+    [ -z "$WORD_STARTUP" ] && [ -d "$OFFICE/$uc/$st/Word" ] && WORD_STARTUP="$OFFICE/$uc/$st/Word"
+  done
+done
+if [ -z "$WORD_STARTUP" ]; then   # Word has not made it yet: the names Word for Mac uses (Finder hides .localized)
+  uc="User Content.localized"
+  if [ -d "$OFFICE/User Content" ] && [ ! -d "$OFFICE/User Content.localized" ]; then uc="User Content"; fi
+  WORD_STARTUP="$OFFICE/$uc/Startup.localized/Word"
+fi
+WORD_SCRIPTS="$HOME/Library/Application Scripts/com.microsoft.Word"
+get_tab_file() {   # $1 name -> $TMP/$1: KHATT_SRC first, then the site, then its mirror
+  rm -f "$TMP/$1"
+  if [ -n "$SRC" ] && [ -f "$SRC/$1" ]; then cp -f "$SRC/$1" "$TMP/$1" && return 0; fi
+  curl -fsSL --retry 2 --connect-timeout 15 "$SITE/install/$1" -o "$TMP/$1" 2>/dev/null && return 0
+  curl -fsSL --retry 2 --connect-timeout 15 "$MIRROR/install/$1" -o "$TMP/$1" 2>/dev/null && return 0
+  rm -f "$TMP/$1"; return 1
+}
+tab_ok=""
+if ! get_tab_file KhattAlQuran.dotm || ! get_tab_file KhattAlQuranHTTP.applescript; then
+  warn "KhattAlQuran.dotm could not be downloaded ($SITE/install/): the ribbon tab was not installed"
+elif ! unzip -tq "$TMP/KhattAlQuran.dotm" >/dev/null 2>&1 || ! unzip -p "$TMP/KhattAlQuran.dotm" docProps/core.xml 2>/dev/null | grep -q 'khatt-al-quran-word-tab' ||
+     ! unzip -l "$TMP/KhattAlQuran.dotm" 2>/dev/null | grep -q 'customUI/customUI14.xml'; then
+  warn "KhattAlQuran.dotm is not the Khatt al-Quran tab: not installed"
+elif ! head -1 "$TMP/KhattAlQuranHTTP.applescript" | grep -q '^-- Khatt al-Quran' || ! grep -q '^on khattGet' "$TMP/KhattAlQuranHTTP.applescript"; then
+  warn "KhattAlQuranHTTP.applescript is not the helper of the tab: not installed"
+elif ! osacompile -o "$TMP/KhattAlQuranHTTP.scpt" "$TMP/KhattAlQuranHTTP.applescript" >/dev/null 2>&1; then
+  warn "KhattAlQuranHTTP.applescript could not be compiled (osacompile): the tab was not installed"
+else
+  mkdir -p "$WORD_STARTUP" "$WORD_SCRIPTS"
+  rm -rf "$WORD_SCRIPTS/KhattAlQuranHTTP.scpt"
+  if cp -f "$TMP/KhattAlQuranHTTP.scpt" "$WORD_SCRIPTS/KhattAlQuranHTTP.scpt" && cp -f "$TMP/KhattAlQuran.dotm" "$WORD_STARTUP/KhattAlQuran.dotm"; then
+    tab_ok=1
+    TAB_VER="$(unzip -p "$WORD_STARTUP/KhattAlQuran.dotm" docProps/core.xml 2>/dev/null | sed -n 's/.*<cp:version>\([^<]*\)<.*/\1/p')"
+    ok "Word -> Khatt al-Quran${TAB_VER:+ $TAB_VER}: $WORD_STARTUP/KhattAlQuran.dotm"
+    if pgrep -x "Microsoft Word" >/dev/null 2>&1; then
+      warn "restart Word to see the tab (Cmd+Q, then open Word)"
+      printf '    Ёрлиқ кўриниши учун Word’ни қайта очинг (Cmd+Q)\n    Перезапустите Word (Cmd+Q), чтобы появилась вкладка\n    أعد تشغيل Word (Cmd+Q) لتظهر علامة التبويب\n'
+    fi
+  else
+    warn "the ribbon tab could not be copied into $WORD_STARTUP"
+  fi
+fi
 fi
 
 if want fonts; then   # ---- fonts: step 6 ----

@@ -5,8 +5,10 @@
 # current user. Every run is a clean reinstall (close Word first). Uninstall:  irm https://quran.abdulloh.org/win-uninstall.txt | iex
 # Options for the setup program (tools/installers/app); without them the script works as before:
 #   KHATT_SRC=<dir>        offline: MyQuran-fonts.zip, MyQuran-QPC-V1/V2/V4-fonts.zip and manifest.xml from this folder
+#                          (and KhattAlQuran.dotm when it has it)
 #   KHATT_ONLY=fonts,word  install only these parts (default: all); "word" includes word-autoupdate (keeps the
-#                          add-in manifest up to date at sign-in and daily), which can also be given alone
+#                          add-in manifest up to date at sign-in and daily) and word-tab (the "Khatt al-Quran" ribbon
+#                          tab of the template KhattAlQuran.dotm in Word's STARTUP folder), which can also be given alone
 #   KHATT_UI=1             no progress bars, no questions; progress lines for the program: "@@step <n> <total> <id>",
 #                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@wait <id>", "@@error <text>", "@@done"
 $ErrorActionPreference = 'Stop'
@@ -48,6 +50,7 @@ $Clock = [Diagnostics.Stopwatch]::StartNew()
 $Steps = 0; $StepN = 0
 if (Want 'fonts') { $Steps += 5 }
 if (Want 'word') { $Steps += 1 } elseif (Want 'word-autoupdate') { $Steps += 1 }
+if ((Want 'word') -or (Want 'word-tab')) { $Steps += 1 }
 function T { '{0:00}:{1:00}' -f [int][Math]::Floor($Clock.Elapsed.TotalMinutes), $Clock.Elapsed.Seconds }
 function Step($id, $en, $uz, $ru) {
   $script:StepN++; $n = $script:StepN
@@ -431,6 +434,72 @@ try {   # once a day for computers that stay signed in; not essential (the Run k
   Register-ScheduledTask -TaskName 'Khatt al-Quran manifest' -Action $act -Trigger $trg -Settings $set -Force -ErrorAction Stop | Out-Null
 } catch { Warn 'the daily check could not be scheduled; the add-in is still checked at every sign-in' }
 Ok 'the add-in updates itself (at sign-in and once a day)'
+}
+
+if ((Want 'word') -or (Want 'word-tab')) {   # ---- the "Khatt al-Quran" ribbon tab ----
+# The add-in's own tab appears only when Word loads the add-in; this tab is always there, like the tabs of Acrobat:
+# KhattAlQuran.dotm (tools/build_khatt_dotm.py: Ayah, Panel, Help, What's new, Update) goes into Word's STARTUP
+# folder (Options -> Advanced -> File Locations -> Startup; a trusted location: its macro runs without a question).
+# The macro only downloads public files of quran.abdulloh.org/api/ (MSXML2.ServerXMLHTTP). Every run replaces it with
+# the current version; a running Word keeps the file open, so it is replaced once Word is closed. Removed by
+# win-uninstall.txt (into the Recycle Bin).
+Step 'word-tab' 'Word ribbon tab «Khatt al-Quran»' "Word: «Khatt al-Quran» yorlig'i" 'Вкладка Word «Khatt al-Quran»'
+function Get-WordStartup {
+  $k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Microsoft\Office\16.0\Word\Options')
+  if ($k) {
+    $v = [string]$k.GetValue('STARTUP-PATH'); $k.Close()
+    if ($v) { $v = [Environment]::ExpandEnvironmentVariables($v.TrimEnd('\')); if (Test-Path -LiteralPath $v) { return $v } }
+  }
+  Join-Path $env:APPDATA 'Microsoft\Word\STARTUP'
+}
+$TabNew = Join-Path $Tmp 'KhattAlQuran.dotm'
+$got = $false
+if ($Src -and (Test-Path -LiteralPath (Join-Path $Src 'KhattAlQuran.dotm'))) { Copy-Item -Force -LiteralPath (Join-Path $Src 'KhattAlQuran.dotm') $TabNew; $got = $true }
+if (-not $got) {
+  foreach ($u in "$Site/install/KhattAlQuran.dotm", "$Mirror/install/KhattAlQuran.dotm") {
+    try { Invoke-WebRequest -UseBasicParsing $u -OutFile $TabNew; $got = $true; break } catch {}
+  }
+}
+$TabOk = $false
+if ($got) {   # the right file: a zip with the ribbon and the marker of the tab
+  try {
+    $z = [IO.Compression.ZipFile]::OpenRead($TabNew)
+    try {
+      $core = $z.GetEntry('docProps/core.xml')
+      if ($core -and $z.GetEntry('customUI/customUI14.xml') -and $z.GetEntry('word/vbaProject.bin')) {
+        $r = New-Object IO.StreamReader($core.Open()); $txt = $r.ReadToEnd(); $r.Close()
+        $TabOk = $txt -match 'khatt-al-quran-word-tab'
+        if ($txt -match '<cp:version>([^<]+)</cp:version>') { $TabVer = $Matches[1] }
+      }
+    } finally { $z.Dispose() }
+  } catch {}
+}
+if (-not $got) { Warn "KhattAlQuran.dotm could not be downloaded ($Site/install/): the ribbon tab was not installed" }
+elseif (-not $TabOk) { Warn 'KhattAlQuran.dotm is not the Khatt al-Quran tab: not installed' }
+else {
+  $StartupDir = Get-WordStartup
+  New-Item -ItemType Directory -Force -Path $StartupDir | Out-Null
+  $TabFile = Join-Path $StartupDir 'KhattAlQuran.dotm'
+  $copied = $false
+  for ($try = 0; $try -lt 2 -and -not $copied; $try++) {
+    try { Copy-Item -Force -LiteralPath $TabNew -Destination $TabFile -ErrorAction Stop; $copied = $true }
+    catch {
+      if ($try -gt 0 -or -not (Get-Process WINWORD -ErrorAction SilentlyContinue)) { break }
+      if ($UI) { Emit '@@wait word'; while (Get-Process WINWORD -ErrorAction SilentlyContinue) { Start-Sleep -Seconds 1 } }
+      else {
+        Warn 'Word keeps the old tab open: close Word, then press Enter'
+        Write-Host "    Word'ni yoping, so'ng Enter tugmasini bosing"
+        Write-Host '    Закройте Word и нажмите Enter'
+        Read-Host | Out-Null
+      }
+    }
+  }
+  if ($copied) {
+    try { Unblock-File -LiteralPath $TabFile -ErrorAction SilentlyContinue } catch {}   # no "from the internet" mark: macros stay on
+    Ok ("Word -> Khatt al-Quran" + $(if ($TabVer) { " $TabVer" } else { '' }) + ": $TabFile")
+    if (Get-Process WINWORD -ErrorAction SilentlyContinue) { Warn 'restart Word to see the tab' }
+  } else { Warn "the ribbon tab could not be copied into $StartupDir (is Word still open?)" }
+}
 }
 $FontKey.Close()
 Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue

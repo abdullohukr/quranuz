@@ -1,6 +1,19 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.17.0', '2026-10-29', { uz: 'Word лентасида доимий «Khatt al-Quran» вкладкаси', ru: 'Постоянная вкладка «Khatt al-Quran» на ленте Word', en: 'A permanent “Khatt al-Quran” tab on the Word ribbon', ar: 'تبويب «خط القرآن» دائم في شريط Word' }, {
+    uz: ['Ўрнатувчи Word автоюкламасига KhattAlQuran.dotm шаблонини қўяди: «Khatt al-Quran» вкладкаси ҳар сафар Word очилганда лентада туради (Acrobat каби). Тугмалар: «Оят» (2:255 ёки 1:1-7 ёзсангиз, арабча матн ва таржима курсор жойига қўйилади), «Панель», «Ёрдам», «Нима янги», «Янгилаш».',
+         'Панель ўнг томонда одатдагидек надстройка орқали очилади; шаблон унинг ўрнини босмайди, балки қўшимча.',
+         'Қўйиш учун маълумотлар сайтда (api/v1): макрос фақат quran.abdulloh.org’дан бир суранинг файлини юклайди.'],
+    ru: ['Установщик кладёт в автозагрузку Word шаблон KhattAlQuran.dotm: вкладка «Khatt al-Quran» стоит на ленте при каждом запуске Word (как у Acrobat). Кнопки: «Аят» (вводите 2:255 или 1:1-7 — арабский текст и перевод вставляются в место курсора), «Панель», «Справка», «Что нового», «Обновить».',
+         'Панель справа открывается, как раньше, через надстройку; шаблон её не заменяет, а дополняет.',
+         'Данные для вставки лежат на сайте (api/v1): макрос скачивает только файл одной суры с quran.abdulloh.org.'],
+    en: ['The installer puts the template KhattAlQuran.dotm into Word’s startup folder: the “Khatt al-Quran” tab is on the ribbon every time Word starts (like Acrobat). Buttons: “Ayah” (type 2:255 or 1:1-7 — the Arabic text and the translation are inserted at the cursor), “Panel”, “Help”, “What’s new”, “Update”.',
+         'The panel on the right opens as before through the add-in; the template does not replace it, it adds to it.',
+         'The data for inserting lies on the site (api/v1): the macro downloads only the file of one surah from quran.abdulloh.org.'],
+    ar: ['يضع المثبّت قالب KhattAlQuran.dotm في مجلد بدء Word: يظهر تبويب «خط القرآن» في الشريط عند كل تشغيل لـ Word (مثل Acrobat). الأزرار: «آية» (اكتب 2:255 أو 1:1-7 فيُدرج النص العربي والترجمة عند المؤشر)، «اللوحة»، «مساعدة»، «ما الجديد»، «تحديث».',
+         'تُفتح اللوحة على اليمين كما قبل عبر الإضافة؛ والقالب لا يحلّ محلها بل يُكمّلها.',
+         'بيانات الإدراج على الموقع (api/v1): ينزّل الماكرو ملف سورة واحدة فقط من quran.abdulloh.org.'] }],
   ['3.16.0', '2026-10-29', { uz: 'Word лентаси ўзи янгиланади', ru: 'Лента Word обновляется сама', en: 'The Word ribbon updates itself', ar: 'شريط Word يتحدّث تلقائيًا' }, {
     uz: ['Word’да Khatt al-Quran вкладкаси ленталаги энди ўзи янгиланади: ўрнатувчи кичик ёрдамчи қўяди (Mac’да LaunchAgent, Windows’да вазифа), у сайтдаги янги манифестни текшириб, хавфсиз бўлса алмаштиради. Фақат Word’ни қайта очиш керак.',
          'Лента эскирган бўлса, панелда бу ҳақда хабар чиқади (ўрнатилган ва жорий версия) ва ўрнатувчига ҳавола бўлади.',
