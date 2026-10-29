@@ -23,6 +23,8 @@
   // web/search/ is published with the site: the main branch of the public repository (not qul-data)
   var BASES = ['https://quran.abdulloh.org/', 'https://cdn.jsdelivr.net/gh/abdullohukr/quranuz@main/',
                'https://raw.githubusercontent.com/abdullohukr/quranuz/main/'];
+  // the tafsir index (search/tafsir/…, ~95 MB) lives in Cloudflare R2: it is asked there first (the site and its mirrors follow)
+  var TAFSIR_BASE = 'https://tafsir.abdulloh.org/';
   var MAGIC = [0x4B, 0x51, 0x53, 0x31];          // "KQS1"
   var MAX_QUERY = 200, MAX_WORDS = 12, MAX_PAIRS = 24, MAX_POSTINGS = 600000;
 
@@ -382,6 +384,7 @@
     o = o || {};
     this.fetch = o.fetch || (typeof fetch === 'function' ? function (u, init) { return fetch(u, init); } : null);
     this.bases = (o.bases || (o.base ? [].concat(o.base) : BASES)).map(function (b) { return /\/$/.test(b) ? b : b + '/'; });
+    this.tafsirBase = o.tafsirBase !== undefined ? o.tafsirBase : (o.bases || o.base ? null : TAFSIR_BASE);       // only with the default mirrors (the panel passes it with its own list)
     this.timeout = o.timeout || 6000;
     this.retries = o.retries != null ? o.retries : 1;
     this.retryPause = o.retryPause != null ? o.retryPause : 400;
@@ -514,12 +517,15 @@
   };
   /* the mirrors in turn (404: the next one; down / slow: the next one, and that mirror is left alone for a while);
      want(): see slot() */
+  Loader.prototype.basesFor = function (path) {
+    return this.tafsirBase && /^search\/tafsir\//.test(path) ? [this.tafsirBase].concat(this.bases) : this.bases;
+  };
   Loader.prototype.network = function (path, want) {
     var self = this;
     if (!this.fetch) return Promise.reject(new Error('no fetch'));
     function round(attempt) {
-      var t = now(), live = self.bases.filter(function (b) { return !(self.dead[b] > t); });
-      if (!live.length) live = self.bases.slice(0, 1);          // all marked down: try the first one once
+      var all = self.basesFor(path), t = now(), live = all.filter(function (b) { return !(self.dead[b] > t); });
+      if (!live.length) live = all.slice(0, 1);          // all marked down: try the first one once
       var all404 = true, lastErr = null;
       function next(k) {
         if (k >= live.length) {
@@ -1248,7 +1254,7 @@
     Search: Search, Builder: Builder, Loader: Loader, buildLayer: buildLayer,
     encodeChunk: encodeChunk, decodeChunk: decodeChunk, scriptKey: scriptKey, chunkOf: chunkOf, pickGroups: pickGroups,
     highlight: highlight, phraseIn: phraseIn, snippet: snippet, lengthQ: lengthQ, norm: T.norm, terms: T.terms, queryTerms: T.queryTerms, detectScript: T.detectScript,
-    DEFAULT_LANGS: DEFAULT_LANGS, BASES: BASES, AYAHS: AYAHS,
+    DEFAULT_LANGS: DEFAULT_LANGS, BASES: BASES, TAFSIR_BASE: TAFSIR_BASE, AYAHS: AYAHS,
     limits: { query: MAX_QUERY, words: MAX_WORDS, pairs: MAX_PAIRS, postings: MAX_POSTINGS }
   };
 });

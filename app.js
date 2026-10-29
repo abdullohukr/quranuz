@@ -700,7 +700,7 @@
   function searcher() {
     if (!deepClient && window.QuranSearch) try {
       var own = /^https?:/.test(location.protocol) ? new URL('./', location.href).href : null;
-      deepClient = QuranSearch.Search({ bases: (own ? [own] : []).concat(QuranSearch.BASES.filter(function (b) { return b !== own; })) });
+      deepClient = QuranSearch.Search({ bases: (own ? [own] : []).concat(QuranSearch.BASES.filter(function (b) { return b !== own; })), tafsirBase: QuranSearch.TAFSIR_BASE });
     } catch (e) { deepClient = null; }
     return deepClient;
   }
