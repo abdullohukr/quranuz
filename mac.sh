@@ -779,6 +779,13 @@ else
 fi
 fi   # ---- Adobe ----
 
+# The public counter (see privacy.html): ONE anonymous "install" event, a fresh random number made here, the platform and the version; nothing about you.
+# Off: KHATT_NO_STATS=1. Not sent for partial runs (KHATT_ONLY) and for tests (KHATT_SRC).
+if [ -z "${KHATT_NO_STATS:-}" ] && [ -z "${KHATT_ONLY:-}" ] && [ -z "${KHATT_SRC:-}" ]; then
+  _id="$(LC_ALL=C tr -dc 'a-f0-9' </dev/urandom 2>/dev/null | head -c 32)"
+  [ "${#_id}" = 32 ] && curl -s -m 5 -X POST -H 'Content-Type: text/plain;charset=UTF-8' \
+    -d "{\"id\":\"$_id\",\"e\":\"install\",\"p\":\"installer-mac\"}" https://stats.abdulloh.org/v1/hit >/dev/null 2>&1 || true
+fi
 printf '\n%s%s━━━ Done in %d min %02d s ━━━━━━━━━━━━━━━━━━━━━━━━━━━%s\n' "$GR" "$B" $((SECONDS / 60)) $((SECONDS % 60)) "$N"
 printf '  %sOpen Word: Home → Khatt al-Quran.%s If the Arabic text is in a plain font, quit Word (Cmd+Q) and open it again.\n' "$B" "$N"
 printf '  Тайёр. Word\x27ни очинг: Главная → Khatt al-Quran. Араб матни оддий шрифтда бўлса, Word\x27ни ёпиб (Cmd+Q) қайта очинг.\n'

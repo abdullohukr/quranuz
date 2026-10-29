@@ -14,6 +14,7 @@
     extInsert: 'ask',                                  // browser extension, editors on web pages: 'ask' | 'text' | 'picture'
     votd: true,                                        // the "Ayah of the day" card at the top
     votdClose: 'ask',                                  // its cross: 'ask' | 'day' (hide until tomorrow) | 'off' (turn it off)
+    statsShare: true,                                  // take part in the public counter (anonymous: see stats.js and the privacy policy)
     liveSearch: false,                                 // follow the selected ARABIC text of the document and search it at once (off by default)
     markAyahs: false,                                  // Word: every inserted ayah goes into a content control, so "Update all ayahs" can find it
     picAction: 'ask',                                  // the picture button in Word: 'ask' | 'insert' | 'copy'
@@ -80,7 +81,7 @@
     });
     ['uiLang', 'script', 'theme', 'tab', 'arFont', 'uzFont', 'picBg', 'auzaFont', 'basmalaFont', 'refFont'].forEach(function (k) { if (typeof st[k] !== 'string') st[k] = DEFAULTS[k]; });
     ['arSize', 'uzSize', 'auzaSize', 'basmalaSize', 'refSize'].forEach(function (k) { if (typeof st[k] === 'string' && +st[k]) st[k] = +st[k]; if (typeof st[k] !== 'number' || !isFinite(st[k])) st[k] = DEFAULTS[k]; });
-    ['withTr', 'withTafsir', 'brackets', 'auza', 'basmala', 'ref', 'trRef', 'newPara', 'ayahNums', 'hizb', 'sajda', 'waqf', 'arBold', 'arText', 'picBgOn', 'votd', 'markAyahs', 'liveSearch']
+    ['withTr', 'withTafsir', 'brackets', 'auza', 'basmala', 'ref', 'trRef', 'newPara', 'ayahNums', 'hizb', 'sajda', 'waqf', 'arBold', 'arText', 'picBgOn', 'votd', 'markAyahs', 'liveSearch', 'statsShare']
       .forEach(function (k) { st[k] = typeof st[k] === 'boolean' ? st[k] : DEFAULTS[k]; });
     st.searchScope = oneOf(st.searchScope, ['default', 'selected', 'all', 'tafsir'], 'default');
     st.votdClose = oneOf(st.votdClose, ['ask', 'day', 'off'], 'ask');
@@ -1488,7 +1489,9 @@
     marks[k] = [x].concat(marks[k].filter(function (y) { return markId(y) !== id; })).slice(0, MARK_MAX[k]);
     saveMarks(k);
   }
+  function platformId() { return HOST || (inWord ? 'word' : 'web'); }
   function remember() {                              // the current selection goes on top of the history
+    if (window.Stats) Stats.insert(sel.to - sel.from + 1, platformId());
     var x = { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() };
     if (sel.wordFrom > 0 || sel.wordTo != null) { x.wf = sel.wordFrom; x.wt = sel.wordTo; }
     addMark('hist', x);
@@ -1989,6 +1992,20 @@
   }
   if (HOST === 'tg') { var tgTry = setInterval(function () { if (tgSynced || !quran) { if (tgSynced) clearInterval(tgTry); return; } if (tgAuth()) tgSyncStart(); }, 1500); setTimeout(function () { clearInterval(tgTry); }, 60000); }
 
+  /* ---------- the public counter ----------
+     The numbers in the footer (everybody sees them) and, unless it is switched off in Settings, one anonymous "opened" event a day
+     (stats.js: a random number of this device, the platform, the version; no text, no name). */
+  function releaseOf() { return (window.KhattReleases && KhattReleases[0] && KhattReleases[0][0]) || (document.querySelector('meta[name="myquran-version"]') || {}).content || ''; }
+  function startStats() {
+    if (!window.Stats) return;
+    Stats.enabled = !!settings.statsShare;
+    var el = $('stats');
+    Stats.load(function (d) { Stats.render(el, d, t, i18n.code()); });
+    setTimeout(function () {                                 // after Office.onReady: the platform is known
+      var meta = document.querySelector('meta[name="myquran-version"]'), site = '';
+      Stats.open(platformId(), releaseOf(), settings.uiLang);
+    }, 2500);
+  }
   /* ---------- ayah of the day: the same for everyone on a calendar day; drawn after the panel ---------- */
   var votdList = null, VOTD_CLOSED = 'myquran-votd-closed';
   function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
@@ -2049,7 +2066,7 @@
   /* ---------- settings dialog ---------- */
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
             ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', picBgOn: 's-picbg-on', picBg: 's-picbg',
-            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd', liveSearch: 's-live', votdClose: 's-votd-close', picAction: 's-pic-action', markAyahs: 's-mark',
+            ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd', liveSearch: 's-live', statsShare: 's-stats', votdClose: 's-votd-close', picAction: 's-pic-action', markAyahs: 's-mark',
             searchScope: 's-search-scope' };
   if (HOST === 'ext') B.extInsert = 's-ext-insert';
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
@@ -2170,6 +2187,7 @@
       var el = $(B[k]);
       settings[k] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? +el.value || (DEFAULTS[k] || 0) : el.value.trim();
     });
+    if (window.Stats) Stats.enabled = !!settings.statsShare;
     settings.translations = picked($('s-tr-list'), settings.translations);
     settings.tafsirs = picked($('s-tf-list'), settings.tafsirs);
     var scriptChanged = settings.script !== $('s-script').value;
@@ -2274,7 +2292,8 @@
       }, 50);
       drawMarks();
       setTimeout(function () { ensureData().then(drawVotd); }, 300);
-      setLive(settings.liveSearch);   // after the panel is drawn: it must not slow the start down
+      setLive(settings.liveSearch);
+      startStats();   // after the panel is drawn: it must not slow the start down
     }).catch(function (e) { $('status').textContent = t('error') + ': ' + e.message; });
   }
 

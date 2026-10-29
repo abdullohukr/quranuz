@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="59">
+<meta name="myquran-version" content="60">
 <link rel="icon" href="assets/brand/word-office/clear-32.png">
 <link rel="icon" href="assets/brand/word-office/square-32.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="assets/brand/word-office/square-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=59">
+<link rel="stylesheet" href="style.css?v=60">
 <script>
 /* Office.js only where this page is a Word add-in. In the frame of another host (browser extension, Google Docs, WordPress,
    Adobe) it stops the page and leaves a blank screen. Same blocking order as a normal script tag. */
 if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
-<script src="i18n.js?v=59"></script>
-<script src="core.js?v=59"></script>
+<script src="i18n.js?v=60"></script>
+<script src="core.js?v=60"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -98,6 +98,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
     </div>
   </section>
 </main>
+<div id="stats" class="stats" hidden></div>
 <footer class="author"><span data-i18n="author">Abdulloh Hamidulloh al-Madiyniy</span> · <a href="mailto:quran@abdulloh.org">quran@abdulloh.org</a> · <a href="privacy.html" target="_blank" data-i18n="privacy">Privacy</a> · <a href="terms.html" target="_blank" data-i18n="terms">Terms</a><span id="updates-link"> · <a href="#updates" id="updates-btn" data-i18n="updates">Updates</a></span> · <a href="releases.html" target="_blank" data-i18n="whatsNew">What's new</a> · <a href="help.html" target="_blank" data-i18n="help">Help</a><span id="app-version" hidden> · <a href="#updates" class="app-version"></a></span></footer>
 
 <dialog id="settings" class="sheet">
@@ -118,6 +119,8 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
       <section class="tab" data-tab="general">
         <label class="field"><span data-i18n="uiLang"></span> <select id="s-ui-lang"></select></label>
         <label class="field"><span data-i18n="mushaf"></span> <select id="s-script"></select></label>
+        <label class="switch"><input type="checkbox" id="s-stats"><i></i> <span data-i18n="statsShare"></span></label>
+        <p class="small muted" data-i18n="statsShareNote"></p>
         <label class="switch"><input type="checkbox" id="s-live"><i></i> <span data-i18n="liveSearch"></span></label>
         <p class="small muted" data-i18n="liveNote"></p>
         <label class="switch"><input type="checkbox" id="s-votd"><i></i> <span data-i18n="votdShow"></span></label>
@@ -297,7 +300,8 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="search.js?v=59"></script>
-<script src="app.js?v=59"></script>
+<script src="stats.js?v=60"></script>
+<script src="search.js?v=60"></script>
+<script src="app.js?v=60"></script>
 </body>
 </html>

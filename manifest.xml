@@ -7,7 +7,7 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>5392de1f-c12d-4292-8fb5-64c79333149e</Id>
-  <Version>3.17.0.0</Version>
+  <Version>3.18.0.0</Version>
   <ProviderName>Abdulloh Hamidulloh al-Madiyniy</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Khatt al-Quran">
@@ -55,7 +55,7 @@
     </Sets>
   </Requirements>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0"/>
+    <SourceLocation DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -458,14 +458,14 @@
         <bt:Image id="News.80" DefaultValue="https://quran.abdulloh.org/assets/ribbon/news-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0"/>
-        <bt:Url id="Search.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#search"/>
-        <bt:Url id="Live.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#live"/>
-        <bt:Url id="History.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#history"/>
-        <bt:Url id="Favs.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#favorites"/>
-        <bt:Url id="Basket.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#basket"/>
-        <bt:Url id="Quote.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#quote"/>
-        <bt:Url id="Settings.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.17.0.0#settings"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0"/>
+        <bt:Url id="Search.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#search"/>
+        <bt:Url id="Live.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#live"/>
+        <bt:Url id="History.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#history"/>
+        <bt:Url id="Favs.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#favorites"/>
+        <bt:Url id="Basket.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#basket"/>
+        <bt:Url id="Quote.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#quote"/>
+        <bt:Url id="Settings.Url" DefaultValue="https://quran.abdulloh.org/index.html?m=3.18.0.0#settings"/>
         <bt:Url id="Commands.Url" DefaultValue="https://quran.abdulloh.org/commands.html"/>
         <bt:Url id="Repo.Url" DefaultValue="https://quran.abdulloh.org/help.html"/>
       </bt:Urls>

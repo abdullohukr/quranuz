@@ -416,3 +416,12 @@ input[type=color].sample { width: 28px; height: 22px; padding: 0; border: 1px so
 .ribbon-note > span { flex: 1; min-width: 0; }
 .ribbon-note a { font-weight: 700; white-space: nowrap; }
 .ribbon-note .icon-btn { width: 28px; height: 28px; }
+
+/* the public counter in the footer */
+.stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin: 14px 12px 0; padding: 8px 12px; font-size: 13px; color: var(--muted); }
+.stats[hidden] { display: none; }
+.stats .st { display: inline-flex; align-items: center; gap: 6px; }
+.stats .st svg { width: 16px; height: 16px; color: var(--accent); }
+.stats b { color: var(--fg); font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats .sep { color: var(--line); }
+@media (max-width: 420px) { .stats .sep { display: none; } .stats { gap: 4px 14px; } }

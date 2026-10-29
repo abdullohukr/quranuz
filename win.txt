@@ -505,6 +505,16 @@ $FontKey.Close()
 Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue
 Restore-Console
 Write-Host ''
+# The public counter (see privacy.html): ONE anonymous "install" event, a fresh random number made here, the platform; nothing about you.
+# Off: $env:KHATT_NO_STATS = '1'. Not sent for partial runs (KHATT_ONLY) and for tests (KHATT_SRC).
+if (-not $env:KHATT_NO_STATS -and -not $env:KHATT_ONLY -and -not $env:KHATT_SRC) {
+  try {
+    $bytes = New-Object byte[] 16; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $sid = -join ($bytes | ForEach-Object { $_.ToString('x2') })
+    Invoke-RestMethod -Uri 'https://stats.abdulloh.org/v1/hit' -Method Post -ContentType 'text/plain;charset=UTF-8' -TimeoutSec 5 `
+      -Body ('{"id":"' + $sid + '","e":"install","p":"installer-win"}') | Out-Null
+  } catch { }
+}
 $done = '─── Done in {0} min {1:00} s ' -f [int][Math]::Floor($Clock.Elapsed.TotalMinutes), $Clock.Elapsed.Seconds
 Write-Host ($done + ('─' * 30)) -ForegroundColor Green
 Write-Host '  Open Word: Home -> Khatt al-Quran.' -ForegroundColor White

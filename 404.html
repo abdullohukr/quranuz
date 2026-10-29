@@ -17,7 +17,7 @@
   m = location.pathname.match(/\/download\/([\w.\-]+)$/);
   if (!m) return;
   var f = m[1], tag = /^MyQuran-QPC-V\d-fonts\.zip$/.test(f) ? 'fonts' : /^Khatt-al-Quran-Setup-Offline-/.test(f) ? 'installer' : '';
-  if (tag) location.replace(REL + tag + '/' + f);
+  if (tag) location.replace(REL + tag + '/' + f);       // (these downloads are counted by GitHub: the counter adds them, see stats/)
 })();
 </script>
 <style>

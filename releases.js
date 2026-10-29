@@ -1,6 +1,15 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.18.0', '2026-10-29', { uz: 'Жамоат ҳисоблагичи', ru: 'Публичный счётчик', en: 'A public counter', ar: 'عدّاد عام' }, {
+    uz: ['Сайт ва барча панеллар (Word, браузер, Google Docs, WordPress, Adobe, Telegram) пастида энди жамоат ҳисоблагичи: фойдаланувчилар сони, қўйилган оятлар, юклаб олиш ва ўрнатишлар. Кичик рақамлар кўрсатилмайди.',
+         'Бу номсиз: фақат қурилмада ясалган тасодифий рақам, платформа ва версия юборилади; исм, почта, IP ва ҳужжат матни — ҳеч қачон. Созламаларда ўчириш мумкин («Жамоат ҳисоблагичида иштирок этиш»). Махфийлик сиёсати янгиланди.'],
+    ru: ['Внизу сайта и всех панелей (Word, браузер, Google Docs, WordPress, Adobe, Telegram) теперь публичный счётчик: сколько пользователей, сколько аятов вставлено, сколько скачиваний и установок. Маленькие цифры не показываются.',
+         'Счётчик анонимный: отправляется только случайный номер, созданный на устройстве, платформа и версия; имя, почта, IP и текст документов — никогда. Выключается в Настройках («Участвовать в публичном счётчике»). Политика конфиденциальности обновлена.'],
+    en: ['At the bottom of the site and of all the panels (Word, browser, Google Docs, WordPress, Adobe, Telegram) there is now a public counter: how many users, how many ayahs were inserted, how many downloads and installs. Small numbers are not shown.',
+         'The counter is anonymous: only a random number made on the device, the platform and the version are sent; never a name, e-mail, IP or the text of a document. It can be switched off in Settings (“Take part in the public counter”). The privacy policy was updated.'],
+    ar: ['صار في أسفل الموقع وجميع اللوحات (Word والمتصفح وGoogle Docs وWordPress وAdobe وTelegram) عدّاد عام: عدد المستخدمين وعدد الآيات المُدرجة وعدد التنزيلات والتثبيتات. ولا تُعرض الأرقام الصغيرة.',
+         'العدّاد مجهول: يُرسل فقط رقم عشوائي أُنشئ على الجهاز والمنصة والإصدار، ولا يُرسل أبدًا اسم أو بريد أو IP أو نص مستند. ويمكن إيقافه من الإعدادات («المشاركة في العدّاد العام»). وحُدّثت سياسة الخصوصية.'] }],
   ['3.17.0', '2026-10-29', { uz: 'Word лентасида доимий «Khatt al-Quran» вкладкаси', ru: 'Постоянная вкладка «Khatt al-Quran» на ленте Word', en: 'A permanent “Khatt al-Quran” tab on the Word ribbon', ar: 'تبويب «خط القرآن» دائم في شريط Word' }, {
     uz: ['Ўрнатувчи Word автоюкламасига KhattAlQuran.dotm шаблонини қўяди: «Khatt al-Quran» вкладкаси ҳар сафар Word очилганда лентада туради (Acrobat каби). Тугмалар: «Оят» (2:255 ёки 1:1-7 ёзсангиз, арабча матн ва таржима курсор жойига қўйилади), «Панель», «Ёрдам», «Нима янги», «Янгилаш».',
          'Панель ўнг томонда одатдагидек надстройка орқали очилади; шаблон унинг ўрнини босмайди, балки қўшимча.',
