@@ -126,6 +126,14 @@ body.office main, body.narrow main { --main-pad: 12px; display: flex; flex-direc
 .range { display: flex; gap: 8px; align-items: center; }
 .range-label { font-weight: 600; color: var(--muted); font-size: 13.5px; }
 .range input { width: 84px; text-align: center; }
+/* the arrows of the ayah numbers are our own buttons: one click = one step (the native ones kept repeating while the mouse moved) */
+.range input[type=number] { -moz-appearance: textfield; appearance: textfield; padding-inline-end: 24px; }
+.range input[type=number]::-webkit-inner-spin-button, .range input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+.numbox { position: relative; display: inline-block; }
+.numbox .arrows { position: absolute; inset-inline-end: 3px; top: 3px; bottom: 3px; width: 20px; display: flex; flex-direction: column; gap: 1px; }
+.numbox .arrows button { flex: 1; min-height: 0; padding: 0; border: 0; border-radius: 5px; background: var(--surface-2); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.numbox .arrows button:hover { background: var(--accent-soft); color: var(--accent); }
+.numbox .arrows svg { width: 9px; height: 6px; stroke-width: 1.6; }
 .dash { color: var(--muted); }
 #status:empty { display: none; }
 

@@ -867,6 +867,17 @@
     var all = function () { var x = this; x.select(); setTimeout(function () { if (document.activeElement === x) x.select(); }, 0); };   // now, and after the browser has put its caret
     el.addEventListener('focus', all); el.addEventListener('click', all); el.addEventListener('mouseup', function (e) { e.preventDefault(); });
   });
+  /* our arrows: exactly one step per click (no repeating, nothing follows the mouse); the mouse wheel never changes a number */
+  [].forEach.call(document.querySelectorAll('.numbox .arrows button'), function (b) {
+    b.addEventListener('mousedown', function (e) { e.preventDefault(); });              // the number field keeps its focus and selection
+    b.addEventListener('click', function () {
+      var inp = $(b.closest('.numbox').dataset['for']), max = +inp.max || 286, v = (+inp.value || 1) + (b.classList.contains('up') ? 1 : -1);
+      v = Math.min(Math.max(1, v), max);
+      if (String(v) === inp.value) return;
+      inp.value = v; inp.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+  ['from', 'to'].forEach(function (id) { $(id).addEventListener('wheel', function (e) { if (document.activeElement === this) e.preventDefault(); }, { passive: false }); });
   $('reset-words').addEventListener('click', function () { setSel(sel.sura, sel.from, sel.to); });
 
   function wordState(a, w) {

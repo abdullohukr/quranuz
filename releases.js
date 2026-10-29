@@ -1,6 +1,11 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.15.2', '2026-10-29', { uz: 'Оят рақамларининг стрелкалари тузатилди', ru: 'Исправлены стрелки у номеров аятов', en: 'Fixed the arrows of the ayah numbers', ar: 'إصلاح أسهم أرقام الآيات' }, {
+    uz: ['Оят рақамлари ёнидаги юқори/пастки стрелкалар энди фақат босилганда ишлайди: бир босиш — бир қадам. Олдин босиб, сичқончани сурсангиз рақам ўзи ўзгариб кетарди. Сичқонча ғилдираги ҳам рақамни ўзгартирмайди.'],
+    ru: ['Стрелки вверх и вниз у номеров аятов теперь работают только при нажатии: одно нажатие — один шаг. Раньше после нажатия рақам продолжал меняться, пока двигаешь мышку. Колесо мыши тоже больше не меняет номер.'.replace('рақам','номер')],
+    en: ['The up and down arrows of the ayah numbers now work only when clicked: one click, one step. Before, after pressing an arrow the number kept changing while you moved the mouse. The mouse wheel no longer changes the number either.'],
+    ar: ['صارت أسهم الأعلى والأسفل بجانب أرقام الآيات تعمل عند النقر فقط: نقرة واحدة تعني خطوة واحدة. كان الرقم سابقًا يستمر في التغيّر مع تحريك الفأرة بعد الضغط. وعجلة الفأرة لم تعد تغيّر الرقم أيضًا.'] }],
   ['3.15.1', '2026-10-29', { uz: 'Барча қўшимчаларда ягона версия', ru: 'Единая версия у всех дополнений', en: 'One version for every add-on', ar: 'إصدار واحد لكل الإضافات' }, {
     uz: ['Браузер кенгайтмалари (Chrome, Edge, Firefox), WordPress плагини, Word, Adobe InDesign/Photoshop/Premiere ва CEP панелларининг версияси энди дастур нашри билан бир хил (3.15.1) ва у билан бирга ошади.'],
     ru: ['Версия расширений браузеров (Chrome, Edge, Firefox), плагина WordPress, надстройки Word, плагинов Adobe (InDesign, Photoshop, Premiere) и панели CEP теперь совпадает с версией выпуска (3.15.1) и растёт вместе с ним.'],
