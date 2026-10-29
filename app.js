@@ -2281,13 +2281,30 @@
   /* Word for Mac serves the task pane from its WebKit cache without asking the server, so after an
      update it kept showing the old version. version.json is read past the cache; when the site has
      a newer version the page reloads at a new address (index.html?v=N), which nothing has cached. */
+  /* The Word add-in's ribbon comes from the manifest that was copied to the computer: it is not updated by the site. The manifest opens the panel
+     with ?m=<its version>, so the panel knows which one is installed (no ?m= at all: a manifest older than 3.15.3) and says when a newer one exists. */
+  var installedManifest = (location.search.match(/[?&]m=([\d.]+)/) || [])[1] || '', siteManifest = '';
+  function verCmp(a, b) { a = String(a).split('.'); b = String(b).split('.'); for (var i = 0; i < 4; i++) { var d = (+a[i] || 0) - (+b[i] || 0); if (d) return d < 0 ? -1 : 1; } return 0; }
+  function ribbonCheck() {
+    if (!inWord || !siteManifest) return;
+    var old = !installedManifest || verCmp(installedManifest, siteManifest) < 0, box = $('ribbon-note');
+    if (!old) { box.hidden = true; return; }
+    try { if (+(localStorage.getItem('myquran-ribbon-hide') || 0) > Date.now()) return; } catch (e) {}
+    $('ribbon-note-text').textContent = t('ribbonOld', { a: installedManifest || '1.x', b: siteManifest });
+    box.hidden = false;
+  }
+  $('ribbon-note-close').addEventListener('click', function () {
+    $('ribbon-note').hidden = true;
+    try { localStorage.setItem('myquran-ribbon-hide', String(Date.now() + 3 * 864e5)); } catch (e) {}      // three days
+  });
   function checkVersion() {
     var meta = document.querySelector('meta[name="myquran-version"]'), mine = meta && meta.content;
     if (!mine || !window.fetch) return;
     fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (d && d.m) { siteManifest = String(d.m); ribbonCheck(); }
       if (!d || !d.v || d.v === mine) return;
       try { if (sessionStorage.getItem('myquran-reload') === d.v) return; sessionStorage.setItem('myquran-reload', d.v); } catch (e) {}
-      location.replace(location.pathname + '?v=' + encodeURIComponent(d.v) + (HOST ? '&host=' + HOST : '') + location.hash);
+      location.replace(location.pathname + '?v=' + encodeURIComponent(d.v) + (HOST ? '&host=' + HOST : '') + (installedManifest ? '&m=' + encodeURIComponent(installedManifest) : '') + location.hash);
     }).catch(function () {});
   }
   checkVersion();
@@ -2384,7 +2401,7 @@
   })();
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
-    setOnline: function (v) { online = !!v; }, setWord: function (v) { inWord = !!v; }, pictureBlob: function () { return pictureBlob(current()); },
+    setOnline: function (v) { online = !!v; }, setWord: function (v) { inWord = !!v; ribbonCheck(); }, pictureBlob: function () { return pictureBlob(current()); },
     dayAyah: function (d) { return dayAyah(d || new Date()); }, marks: function () { return marks; } };   // tests only
 
   if (window.Office && Office.onReady) {
@@ -2393,7 +2410,7 @@
       // fonts installed on the computer exist only in Word for Windows and Mac (not on the web, iPad, …)
       online = !!HOST && !ADOBE || inWord && info.platform !== Office.PlatformType.PC && info.platform !== Office.PlatformType.Mac;
       if (inWord) windows = info.platform === Office.PlatformType.PC;
-      if (inWord) { document.body.classList.add('office'); $('host-badge').hidden = false; if (settings.liveSearch) setLive(true); }
+      if (inWord) { document.body.classList.add('office'); $('host-badge').hidden = false; if (settings.liveSearch) setLive(true); ribbonCheck(); }
       if (online && quran) render();
     });
   }

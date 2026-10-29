@@ -1,6 +1,18 @@
 #!/bin/bash
 # Khatt al-Quran: remove its fonts and the Word add-in (macOS).
 APP="$HOME/Library/Application Support/MyQuran"
+# the agent that kept the add-in manifest up to date: stopped, its files go to the Trash (not deleted)
+launchctl bootout "gui/$(id -u)/org.abdulloh.khatt-manifest" >/dev/null 2>&1 || true
+to_trash() {   # $1 file: into ~/.Trash under a free name
+  [ -e "$1" ] || return 0
+  local t="$HOME/.Trash/$(basename "$1")"
+  [ -e "$t" ] && t="$HOME/.Trash/$(basename "$1") $(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$HOME/.Trash" && mv -f "$1" "$t" 2>/dev/null || true
+}
+to_trash "$HOME/Library/LaunchAgents/org.abdulloh.khatt-manifest.plist"
+to_trash "$APP/khatt-manifest.sh"
+to_trash "$HOME/Library/Containers/com.microsoft.Word/Data/Documents/wef/MyQuran.xml.bak"
+to_trash "$HOME/Library/Logs/khatt-manifest.log"
 launchctl bootout "gui/$(id -u)/uz.myquran.fonts" >/dev/null 2>&1 || true
 rm -f "$HOME/Library/LaunchAgents/uz.myquran.fonts.plist"
 # fonts in ~/Library/Fonts listed by the installer: unregister (login session, 3.0-3.4), then delete

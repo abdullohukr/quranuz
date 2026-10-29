@@ -749,6 +749,32 @@
     ja: { scopeTafsir: 'タフスィールのみ', openTafsir: 'タフスィールを開く' }
   };
   Object.keys(PANEL7).forEach(function (l) { for (var k in PANEL7[l]) L[l][k] = PANEL7[l][k]; });
+  /* 3.16: the ribbon of the Word add-in is out of date */
+  var PANEL8 = {
+    en: { ribbonOld: 'The ribbon of the Khatt al-Quran add-in in Word is out of date (installed {a}, current {b}). Close Word and open it again; if the tab is still old, run the installer again.', ribbonHow: 'Installer' },
+    ru: { ribbonOld: 'Лента надстройки Khatt al-Quran в Word устарела (установлена {a}, актуальная {b}). Закройте Word и откройте снова; если вкладка прежняя, запустите установщик ещё раз.', ribbonHow: 'Установщик' },
+    uz: { ribbonOld: 'Word’даги Khatt al-Quran қўшимчасининг лентаси эскирган (ўрнатилган {a}, жорий {b}). Word’ни ёпиб, қайта очинг; вкладка эски бўлса, ўрнатувчини яна ишга туширинг.', ribbonHow: 'Ўрнатувчи' },
+    uz_latn: { ribbonOld: 'Word’dagi Khatt al-Quran qoʻshimchasining lentasi eskirgan (oʻrnatilgan {a}, joriy {b}). Word’ni yopib, qayta oching; vkladka eski boʻlsa, oʻrnatuvchini yana ishga tushiring.', ribbonHow: 'Oʻrnatuvchi' },
+    ar: { ribbonOld: 'شريط إضافة خط القرآن في Word قديم (المثبَّت {a}، الحالي {b}). أغلق Word وافتحه من جديد؛ وإن بقي التبويب قديمًا فشغّل المثبّت مرة أخرى.', ribbonHow: 'المثبّت' },
+    tr: { ribbonOld: 'Word’deki Khatt al-Quran eklentisinin şeridi eski (kurulu {a}, güncel {b}). Word’ü kapatıp yeniden açın; sekme hâlâ eskiyse kurulum programını yeniden çalıştırın.', ribbonHow: 'Kurulum programı' },
+    fr: { ribbonOld: 'Le ruban du complément Khatt al-Quran dans Word est obsolète (installé {a}, actuel {b}). Fermez Word et rouvrez-le ; si l’onglet reste ancien, relancez l’installateur.', ribbonHow: 'Installateur' },
+    de: { ribbonOld: 'Das Menüband des Khatt-al-Quran-Add-ins in Word ist veraltet (installiert {a}, aktuell {b}). Word schließen und neu öffnen; bleibt die Registerkarte alt, das Installationsprogramm erneut ausführen.', ribbonHow: 'Installationsprogramm' },
+    es: { ribbonOld: 'La cinta del complemento Khatt al-Quran en Word está desactualizada (instalada {a}, actual {b}). Cierre Word y ábralo de nuevo; si la pestaña sigue igual, ejecute otra vez el instalador.', ribbonHow: 'Instalador' },
+    kk: { ribbonOld: 'Word-тағы Khatt al-Quran қосымшасының таспасы ескірген (орнатылған {a}, ағымдағы {b}). Word-ты жабып, қайта ашыңыз; қойынды ескі болса, орнатқышты қайта іске қосыңыз.', ribbonHow: 'Орнатқыш' },
+    ky: { ribbonOld: 'Word’догу Khatt al-Quran кошумчасынын тасмасы эскирген (орнотулган {a}, учурдагы {b}). Word’ду жаап, кайра ачыңыз; өтмөк эски бойдон калса, орноткучту кайра иштетиңиз.', ribbonHow: 'Орноткуч' },
+    tg: { ribbonOld: 'Навори ҳамроҳи Khatt al-Quran дар Word кӯҳна шудааст (насбшуда {a}, ҷорӣ {b}). Word-ро пӯшида, аз нав кушоед; агар варақа кӯҳна монад, насбкунандаро боз иҷро кунед.', ribbonHow: 'Насбкунанда' },
+    az: { ribbonOld: 'Word-dəki Khatt al-Quran əlavəsinin lenti köhnədir (quraşdırılmış {a}, cari {b}). Word-ü bağlayıb yenidən açın; vərəq köhnə qalırsa, quraşdırıcını yenidən işə salın.', ribbonHow: 'Quraşdırıcı' },
+    fa: { ribbonOld: 'نوار افزونهٔ خط القرآن در Word قدیمی است (نصب‌شده {a}، فعلی {b}). Word را ببندید و دوباره باز کنید؛ اگر زبانه همان قبلی بود، نصب‌کننده را دوباره اجرا کنید.', ribbonHow: 'نصب‌کننده' },
+    ur: { ribbonOld: 'Word میں Khatt al-Quran ایڈ اِن کا ربن پرانا ہے (انسٹال شدہ {a}، موجودہ {b})۔ Word بند کر کے دوبارہ کھولیں؛ اگر ٹیب پرانا ہی رہے تو انسٹالر دوبارہ چلائیں۔', ribbonHow: 'انسٹالر' },
+    id: { ribbonOld: 'Pita add-in Khatt al-Quran di Word sudah usang (terpasang {a}, terbaru {b}). Tutup Word dan buka lagi; jika tab masih lama, jalankan penginstal lagi.', ribbonHow: 'Penginstal' },
+    ms: { ribbonOld: 'Reben tambahan Khatt al-Quran dalam Word sudah lapuk (dipasang {a}, terkini {b}). Tutup Word dan buka semula; jika tab masih lama, jalankan pemasang sekali lagi.', ribbonHow: 'Pemasang' },
+    bn: { ribbonOld: 'Word-এ Khatt al-Quran অ্যাড-ইনের রিবন পুরনো (ইনস্টল করা {a}, বর্তমান {b})। Word বন্ধ করে আবার খুলুন; ট্যাব পুরনো থাকলে ইনস্টলার আবার চালান।', ribbonHow: 'ইনস্টলার' },
+    hi: { ribbonOld: 'Word में Khatt al-Quran ऐड-इन का रिबन पुराना है (इंस्टॉल {a}, मौजूदा {b})। Word बंद करके फिर खोलें; टैब पुराना ही रहे तो इंस्टॉलर दोबारा चलाएँ।', ribbonHow: 'इंस्टॉलर' },
+    zh: { ribbonOld: 'Word 中 Khatt al-Quran 加载项的功能区已过期（已安装 {a}，当前 {b}）。请关闭 Word 并重新打开；若选项卡仍是旧的，请再次运行安装程序。', ribbonHow: '安装程序' },
+    ko: { ribbonOld: 'Word의 Khatt al-Quran 추가 기능 리본이 오래되었습니다(설치됨 {a}, 최신 {b}). Word를 닫았다가 다시 여세요. 탭이 그대로이면 설치 프로그램을 다시 실행하세요.', ribbonHow: '설치 프로그램' },
+    ja: { ribbonOld: 'Word の Khatt al-Quran アドインのリボンが古くなっています（インストール済み {a}、最新 {b}）。Word を閉じて開き直してください。タブが古いままなら、インストーラーをもう一度実行してください。', ribbonHow: 'インストーラー' }
+  };
+  Object.keys(PANEL8).forEach(function (l) { for (var k in PANEL8[l]) L[l][k] = PANEL8[l][k]; });
   /* search in every language (translations and tafsirs of the search index) */
   var SEARCH = {
     uz: { searchGroup: 'Қидирув', searchScope: 'Қаерда қидириш', scopeDefault: 'Асосий тилларда (en, ar, ru, tr, uz + интерфейс тили + танланганлар)',

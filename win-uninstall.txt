@@ -29,6 +29,16 @@ $r = [IntPtr]::Zero
 [void][MyQuran.GdiU]::SendMessageTimeoutW([IntPtr]0xffff, 0x001D, [IntPtr]::Zero, [IntPtr]::Zero, 2, 1000, [ref]$r)  # WM_FONTCHANGE
 $Dev = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Microsoft\Office\16.0\WEF\Developer', $true)
 if ($Dev) { $Dev.DeleteValue('5392de1f-c12d-4292-8fb5-64c79333149e', $false); $Dev.Close() }
+# the updater of the add-in manifest (win.txt): its Run value and daily task go, its files into the Recycle Bin
+try { $Run = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Run', $true); if ($Run) { $Run.DeleteValue('KhattAlQuranManifest', $false); $Run.Close() } } catch {}
+try { Unregister-ScheduledTask -TaskName 'Khatt al-Quran manifest' -Confirm:$false -ErrorAction Stop } catch {}
+try {
+  Add-Type -AssemblyName Microsoft.VisualBasic
+  foreach ($f in 'khatt-manifest.ps1', 'khatt-manifest.vbs', 'manifest.log', 'manifest.xml.bak') {
+    $p = Join-Path (Join-Path $env:LOCALAPPDATA 'MyQuran') $f
+    if (Test-Path -LiteralPath $p) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($p, 'OnlyErrorDialogs', 'SendToRecycleBin') }
+  }
+} catch {}
 Remove-Item -Recurse -Force (Join-Path $env:LOCALAPPDATA 'MyQuran') -ErrorAction SilentlyContinue
 Write-Host ('Khatt al-Quran removed ({0} fonts, {1:mm\:ss}). Restart Word.' -f $files.Count, $Clock.Elapsed) -ForegroundColor Green
 if (Test-Path (Join-Path $env:LOCALAPPDATA 'MyQuran')) { Write-Host 'Some font files were in use: sign out and in, then run this command again to delete them.' -ForegroundColor Yellow }

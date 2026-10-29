@@ -1,6 +1,19 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.16.0', '2026-10-29', { uz: 'Word лентаси ўзи янгиланади', ru: 'Лента Word обновляется сама', en: 'The Word ribbon updates itself', ar: 'شريط Word يتحدّث تلقائيًا' }, {
+    uz: ['Word’да Khatt al-Quran вкладкаси ленталаги энди ўзи янгиланади: ўрнатувчи кичик ёрдамчи қўяди (Mac’да LaunchAgent, Windows’да вазифа), у сайтдаги янги манифестни текшириб, хавфсиз бўлса алмаштиради. Фақат Word’ни қайта очиш керак.',
+         'Лента эскирган бўлса, панелда бу ҳақда хабар чиқади (ўрнатилган ва жорий версия) ва ўрнатувчига ҳавола бўлади.',
+         'Ўрнатувчи ва ўчирувчи скриптлар янгиланди; ёрдамчи ўчирилганда Корзинага ўтказилади.'],
+    ru: ['Вкладка Khatt al-Quran на ленте Word теперь обновляется сама: установщик ставит небольшой помощник (LaunchAgent на Mac, задача на Windows), который проверяет новый манифест на сайте и безопасно заменяет его. Нужно только перезапустить Word.',
+         'Если лента устарела, панель сообщит об этом (установленная и актуальная версия) и даст ссылку на установщик.',
+         'Скрипты установки и удаления обновлены; при удалении помощник переносится в Корзину.'],
+    en: ['The Khatt al-Quran tab on the Word ribbon now updates itself: the installer sets up a small helper (a LaunchAgent on Mac, a task on Windows) that checks the new manifest on the site and replaces it safely. You only restart Word.',
+         'If the ribbon is out of date, the panel says so (installed and current version) and links to the installer.',
+         'The install and uninstall scripts were updated; on removal the helper goes to the Trash.'],
+    ar: ['صار تبويب «خط القرآن» في شريط Word يتحدّث تلقائيًا: يثبّت المثبّت مساعدًا صغيرًا (LaunchAgent على Mac ومهمة على Windows) يتحقق من البيان الجديد على الموقع ويستبدله بأمان. يكفي إعادة تشغيل Word.',
+         'إن كان الشريط قديمًا تُنبّهك اللوحة (الإصدار المثبَّت والحالي) وتقدّم رابط المثبّت.',
+         'حُدّثت سكربتات التثبيت والإزالة؛ وعند الإزالة يُنقل المساعد إلى سلة المهملات.'] }],
   ['3.15.3', '2026-10-29', { uz: 'Тафсирлар алоҳида тез сақлагичдан', ru: 'Тафсиры отдаются с отдельного быстрого хранилища', en: 'Tafsirs come from a separate fast storage', ar: 'التفاسير تُقدَّم من مخزن سريع مستقل' }, {
     uz: ['Тафсирлардан қидириш учун маълумотлар энди алоҳида тез сақлагичдан (tafsir.abdulloh.org) юкланади. Сайт ҳажми чекланмаган бўлиб қолди ва қидирув тезроқ очилади; сайтдаги нусхаси захира сифатида қолади.'],
     ru: ['Данные для поиска по тафсирам теперь загружаются из отдельного быстрого хранилища (tafsir.abdulloh.org). Объём сайта больше не ограничивает число тафсиров, поиск открывается быстрее; копия на сайте остаётся запасной.'],

@@ -409,3 +409,10 @@ input[type=color].sample { width: 28px; height: 22px; padding: 0; border: 1px so
 .search-box .live-btn[aria-pressed=true] { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
 .search-box input { padding-inline-end: 44px; }
 .search-box .live-btn svg { position: static; color: inherit; }
+
+/* the add-in's ribbon (manifest) is out of date */
+.ribbon-note { display: flex; align-items: center; gap: 6px; margin: 8px 12px 0; padding: 8px 10px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--fg); border-radius: var(--radius-s); font-size: 13px; line-height: 1.4; }
+.ribbon-note[hidden] { display: none; }
+.ribbon-note > span { flex: 1; min-width: 0; }
+.ribbon-note a { font-weight: 700; white-space: nowrap; }
+.ribbon-note .icon-btn { width: 28px; height: 28px; }

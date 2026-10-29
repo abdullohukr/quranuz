@@ -5,7 +5,8 @@
 # current user. Every run is a clean reinstall (close Word first). Uninstall:  irm https://quran.abdulloh.org/win-uninstall.txt | iex
 # Options for the setup program (tools/installers/app); without them the script works as before:
 #   KHATT_SRC=<dir>        offline: MyQuran-fonts.zip, MyQuran-QPC-V1/V2/V4-fonts.zip and manifest.xml from this folder
-#   KHATT_ONLY=fonts,word  install only these parts (default: all)
+#   KHATT_ONLY=fonts,word  install only these parts (default: all); "word" includes word-autoupdate (keeps the
+#                          add-in manifest up to date at sign-in and daily), which can also be given alone
 #   KHATT_UI=1             no progress bars, no questions; progress lines for the program: "@@step <n> <total> <id>",
 #                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@wait <id>", "@@error <text>", "@@done"
 $ErrorActionPreference = 'Stop'
@@ -46,7 +47,7 @@ try { $Host.UI.RawUI.WindowTitle = 'Khatt al-Quran' } catch {}
 $Clock = [Diagnostics.Stopwatch]::StartNew()
 $Steps = 0; $StepN = 0
 if (Want 'fonts') { $Steps += 5 }
-if (Want 'word') { $Steps += 1 }
+if (Want 'word') { $Steps += 1 } elseif (Want 'word-autoupdate') { $Steps += 1 }
 function T { '{0:00}:{1:00}' -f [int][Math]::Floor($Clock.Elapsed.TotalMinutes), $Clock.Elapsed.Seconds }
 function Step($id, $en, $uz, $ru) {
   $script:StepN++; $n = $script:StepN
@@ -322,6 +323,114 @@ $Id = ([xml](Get-Content $Manifest -Raw)).OfficeApp.Id
 $Dev = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Microsoft\Office\16.0\WEF\Developer')
 $Dev.SetValue($Id, $Manifest); $Dev.Close()
 Ok 'Home -> Khatt al-Quran'
+}
+
+if ((Want 'word') -or (Want 'word-autoupdate')) {   # ---- the add-in keeps itself up to date ----
+# Word reads the manifest from %LOCALAPPDATA%\MyQuran\manifest.xml (the WEF\Developer key) and never updates it:
+# a new ribbon of the site did not reach anyone who installed before. khatt-manifest.ps1 (at sign-in by the Run
+# key, once a day by a task of this user; no administrator rights, no window) replaces it with the manifest of the
+# site when that one is newer and checked. Switch it off: win-uninstall.txt, or delete the Run value
+# "KhattAlQuranManifest" and the task "Khatt al-Quran manifest".
+if (-not (Want 'word')) { Step 'word-autoupdate' 'Word add-in: automatic updates' "Word qo'shimchasi: avtomatik yangilanish" 'Надстройка Word: автообновление' }
+New-Item -ItemType Directory -Force -Path $Home2 | Out-Null
+$Mu = Join-Path $Home2 'khatt-manifest.ps1'
+$MuText = @'
+# Khatt al-Quran: keeps the Word add-in manifest up to date. Installed by win.txt, started at sign-in (HKCU Run
+# "KhattAlQuranManifest") and once a day (task "Khatt al-Quran manifest"); shows nothing.
+# Replaces %LOCALAPPDATA%\MyQuran\manifest.xml only with the manifest of quran.abdulloh.org that is a valid
+# OfficeApp, has the same <Id>, a newer <Version>, only https://quran.abdulloh.org/ addresses and < 300 KB; the old
+# one stays as manifest.xml.bak. Journal: %LOCALAPPDATA%\MyQuran\manifest.log. Word shows the new ribbon after a restart.
+# Tests: KHATT_MANIFEST_URL=file:///C:/.../manifest.xml KHATT_MANIFEST_DIR=<dir> KHATT_RETRY_DELAY=0
+$ErrorActionPreference = 'Stop'
+$Dir = if ($env:KHATT_MANIFEST_DIR) { $env:KHATT_MANIFEST_DIR } else { Join-Path $env:LOCALAPPDATA 'MyQuran' }
+$Cur = Join-Path $Dir 'manifest.xml'
+$Log = Join-Path $Dir 'manifest.log'
+$Url = if ($env:KHATT_MANIFEST_URL) { $env:KHATT_MANIFEST_URL } else { 'https://quran.abdulloh.org/manifest.xml' }
+$Site = 'https://quran.abdulloh.org'
+$Max = 307200
+$Delay = if ($env:KHATT_RETRY_DELAY) { [int]$env:KHATT_RETRY_DELAY } else { 60 }
+function Log($t) {
+  try {
+    Add-Content -Path $Log -Value ((Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + ' ' + $t) -Encoding UTF8
+    $l = @(Get-Content $Log)
+    if ($l.Count -gt 400) { $l[-200..-1] | Set-Content -Path $Log -Encoding UTF8 }
+  } catch {}
+}
+function Read-Manifest([byte[]]$b) {   # XmlDocument without DTD / external entities
+  $s = New-Object Xml.XmlReaderSettings
+  $s.DtdProcessing = [Xml.DtdProcessing]::Prohibit
+  $s.XmlResolver = $null
+  $r = [Xml.XmlReader]::Create((New-Object IO.MemoryStream (, $b)), $s)
+  try { $x = New-Object Xml.XmlDocument; $x.XmlResolver = $null; $x.Load($r); $x } finally { $r.Close() }
+}
+function Get-Child($x, $name) { $n = $x.SelectSingleNode("/*/*[local-name()='$name']"); if ($n) { $n.InnerText.Trim() } else { '' } }
+function Get-Bytes([Uri]$u) {   # at most $Max + 1 bytes, 15 s
+  $q = [Net.WebRequest]::Create($u)
+  $q.Timeout = 15000
+  if ($q -is [Net.HttpWebRequest]) { $q.ReadWriteTimeout = 15000; $q.UserAgent = 'Khatt-al-Quran-manifest' }
+  $res = $q.GetResponse()
+  try {
+    $in = $res.GetResponseStream(); $ms = New-Object IO.MemoryStream; $buf = New-Object byte[] 65536
+    while (($k = $in.Read($buf, 0, $buf.Length)) -gt 0) { $ms.Write($buf, 0, $k); if ($ms.Length -gt $Max) { break } }
+    , $ms.ToArray()
+  } finally { $res.Close() }
+}
+try {
+  if (-not (Test-Path -LiteralPath $Cur)) { exit 0 }   # the add-in is not installed: nothing to keep up to date
+  $u = [Uri]$Url
+  if ($u.Scheme -ne 'https' -and -not ($u.Scheme -eq 'file' -and $env:KHATT_MANIFEST_URL)) { Log "refused: $Url is not https"; exit 0 }
+  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+  $b = $null
+  try { $b = Get-Bytes $u } catch {
+    Start-Sleep -Seconds $Delay   # at sign-in the network may not be up yet: once more a minute later
+    try { $b = Get-Bytes $u } catch { Log "not checked: $Url could not be downloaded (no connection?)"; exit 0 }
+  }
+  if ($b.Length -ge $Max) { Log "refused: larger than $Max bytes"; exit 0 }
+  try { $x = Read-Manifest $b } catch { Log 'refused: not valid XML (or a DTD)'; exit 0 }
+  if ($x.DocumentElement.LocalName -ne 'OfficeApp') { Log 'refused: the root is not OfficeApp'; exit 0 }
+  $cx = Read-Manifest ([IO.File]::ReadAllBytes($Cur))
+  $id = Get-Child $x 'Id'; $cid = Get-Child $cx 'Id'
+  if (-not $id -or $id -ne $cid) { Log "refused: Id $id is not the Id of the installed add-in ($cid)"; exit 0 }
+  $v = Get-Child $x 'Version'; $cv = Get-Child $cx 'Version'
+  if ($v -notmatch '^\d+(\.\d+){0,3}$') { Log "refused: version `"$v`""; exit 0 }
+  $old = [version]'0.0'; if ($cv -match '^\d+(\.\d+){1,3}$') { $old = [version]$cv } elseif ($cv -match '^\d+$') { $old = [version]"$cv.0" }
+  $new = if ($v -match '\.') { [version]$v } else { [version]"$v.0" }
+  if ($new -le $old) { exit 0 }   # the same or older: nothing to do (no line in the journal)
+  # every address inside (DefaultValue, SourceLocation, AppDomain, any other attribute or text) on our site
+  $bad = 0
+  foreach ($n in (@($x.SelectNodes('//@*')) + @($x.SelectNodes('//text()')))) {
+    if ($n.NodeType -eq 'Attribute' -and ($n.Name -eq 'xmlns' -or $n.Prefix -eq 'xmlns')) { continue }   # namespace names
+    $t = ([string]$n.Value).Trim()
+    if (($t.Contains('://') -or $t.StartsWith('//')) -and -not ($t.StartsWith("$Site/") -or $t -eq $Site)) { $bad++ }
+  }
+  if ($bad) { Log "refused: $bad addresses outside $Site/"; exit 0 }
+  $tmp = "$Cur.new"
+  [IO.File]::WriteAllBytes($tmp, $b)
+  [IO.File]::Replace($tmp, $Cur, "$Cur.bak")   # the old one kept as manifest.xml.bak (one copy)
+  Log "updated $cid $cv -> $v (restart Word to see it)"
+} catch { Log ('error: ' + $_.Exception.Message) }
+exit 0
+'@
+[IO.File]::WriteAllText($Mu, $MuText, (New-Object Text.UTF8Encoding $true))
+# started without a window: wscript + a .vbs where Windows has it, else PowerShell with a hidden window
+$Ps = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$PsArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Mu`""
+$Ws = Join-Path $env:SystemRoot 'System32\wscript.exe'
+if (Test-Path $Ws) {
+  $Vbs = Join-Path $Home2 'khatt-manifest.vbs'
+  $VbArgs = $PsArgs.Replace('"', '""')   # VBScript doubles the quotes inside a string
+  [IO.File]::WriteAllText($Vbs, "CreateObject(""WScript.Shell"").Run """"""$Ps"""" $VbArgs"", 0, False`r`n", [Text.Encoding]::Unicode)   # UTF-16 with BOM: a user name in Cyrillic stays right
+  $Exe = $Ws; $ExeArgs = "`"$Vbs`""
+} else { $Exe = $Ps; $ExeArgs = $PsArgs }
+$RunKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Software\Microsoft\Windows\CurrentVersion\Run')
+$RunKey.SetValue('KhattAlQuranManifest', "`"$Exe`" $ExeArgs"); $RunKey.Close()
+try {   # once a day for computers that stay signed in; not essential (the Run key covers every sign-in)
+  $act = New-ScheduledTaskAction -Execute $Exe -Argument $ExeArgs
+  $trg = New-ScheduledTaskTrigger -Daily -At '13:00'
+  $set = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
+  Register-ScheduledTask -TaskName 'Khatt al-Quran manifest' -Action $act -Trigger $trg -Settings $set -Force -ErrorAction Stop | Out-Null
+} catch { Warn 'the daily check could not be scheduled; the add-in is still checked at every sign-in' }
+Ok 'the add-in updates itself (at sign-in and once a day)'
 }
 $FontKey.Close()
 Remove-Item -Recurse -Force $Tmp -ErrorAction SilentlyContinue

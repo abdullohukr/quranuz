@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="57">
+<meta name="myquran-version" content="58">
 <link rel="icon" href="assets/brand/word-office/clear-32.png">
 <link rel="icon" href="assets/brand/word-office/square-32.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="assets/brand/word-office/square-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=57">
+<link rel="stylesheet" href="style.css?v=58">
 <script>
 /* Office.js only where this page is a Word add-in. In the frame of another host (browser extension, Google Docs, WordPress,
    Adobe) it stops the page and leaves a blank screen. Same blocking order as a normal script tag. */
 if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
-<script src="i18n.js?v=57"></script>
-<script src="core.js?v=57"></script>
+<script src="i18n.js?v=58"></script>
+<script src="core.js?v=58"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -33,6 +33,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
   <button id="settings-btn" class="icon-btn" data-i18n-title="settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
 </header>
 
+<div id="ribbon-note" class="ribbon-note" role="status" hidden><span id="ribbon-note-text"></span> <a href="install.html" target="_blank" data-i18n="ribbonHow"></a><button type="button" id="ribbon-note-close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
 <main>
   <section id="votd" class="votd card" hidden aria-labelledby="votd-h">
     <div class="votd-head"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/></svg><h2 id="votd-h" data-i18n="ayahOfDay"></h2><bdi id="votd-ref" class="muted small"></bdi>
@@ -296,7 +297,7 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
 </dialog>
 
 <div id="toast" role="status"></div>
-<script src="search.js?v=57"></script>
-<script src="app.js?v=57"></script>
+<script src="search.js?v=58"></script>
+<script src="app.js?v=58"></script>
 </body>
 </html>

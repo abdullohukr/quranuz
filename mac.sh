@@ -11,7 +11,8 @@
 # Uninstall:        curl -fsSL https://quran.abdulloh.org/mac-uninstall.sh | bash
 # Options for the setup program (tools/installers/app); without them the script works as before:
 #   KHATT_SRC=<dir>        offline: MyQuran-fonts.zip, MyQuran-QPC-V1/V2/V4-fonts.zip and manifest.xml from this folder
-#   KHATT_ONLY=fonts,word  install only these parts (default: all)
+#   KHATT_ONLY=fonts,word  install only these parts (default: all); "word" includes word-autoupdate (the agent that
+#                          keeps the add-in manifest up to date), which can also be given alone
 #   KHATT_UI=1             no colours; progress lines for the program: "@@step <n> <total> <id>",
 #                          "@@pct <0-100> <text>", "@@ok <text>", "@@warn <text>", "@@error <text>", "@@done"
 #   KHATT_ADOBE=1          (testing, the packages are not published yet) also the Adobe panels: components
@@ -45,7 +46,7 @@ B=$'\033[1m' DIM=$'\033[2m' CY=$'\033[36m' GR=$'\033[32m' YE=$'\033[33m' RE=$'\0
 if [ -n "$UI" ]; then B="" DIM="" CY="" GR="" YE="" RE="" N=""; fi
 STEP=0 STEPS=0
 if want fonts; then STEPS=$((STEPS + 5)); fi
-if want word; then STEPS=$((STEPS + 1)); fi
+if want word; then STEPS=$((STEPS + 1)); elif want word-autoupdate; then STEPS=$((STEPS + 1)); fi
 if want_adobe adobe-uxp; then STEPS=$((STEPS + 1)); fi
 if want_adobe adobe-cep; then STEPS=$((STEPS + 1)); fi
 clock() { printf '%02d:%02d' $((SECONDS / 60)) $((SECONDS % 60)); }
@@ -302,6 +303,95 @@ if grep -q "<OfficeApp" "$TMP/manifest.xml" 2>/dev/null; then cp -f "$TMP/manife
 [ -f "$WEF/MyQuran.xml" ] && ok "Home -> Khatt al-Quran"
 # Word shows the task pane from its WebKit cache; clear it so the current version is loaded
 rm -rf "$HOME/Library/Containers/com.microsoft.Word/Data/Library/Caches/WebKit/NetworkCache"
+fi
+
+if want word || want word-autoupdate; then   # ---- the add-in keeps itself up to date ----
+# Word reads the manifest (wef/MyQuran.xml) only from this folder and never updates it: a new ribbon of the site
+# did not reach anyone who installed before. khatt-manifest.sh, run by launchd at login and once a day, replaces it
+# with the manifest of the site when that one is newer and checked. Switch it off: remove the agent below
+# (mac-uninstall.sh does it), or launchctl bootout gui/$(id -u)/org.abdulloh.khatt-manifest
+if ! want word; then step word-autoupdate "Word add-in: automatic updates" "Word қўшимчаси: автоматик янгиланиш" \
+  "Надстройка Word: автообновление" "الوظيفة الإضافية لـ Word: التحديث التلقائي"; fi
+MU="$APP/khatt-manifest.sh" MU_LABEL="org.abdulloh.khatt-manifest"
+MU_AGENT="$HOME/Library/LaunchAgents/$MU_LABEL.plist"
+mkdir -p "$APP" "$HOME/Library/LaunchAgents"
+cat > "$MU.new" <<'MANIFEST'
+#!/bin/bash
+# Khatt al-Quran: keeps the Word add-in manifest up to date. Installed by mac.sh, run by launchd
+# (~/Library/LaunchAgents/org.abdulloh.khatt-manifest.plist: at login and once a day); prints nothing.
+# Replaces wef/MyQuran.xml only with the manifest of quran.abdulloh.org that is a valid OfficeApp, has the same
+# <Id>, a newer <Version>, only https://quran.abdulloh.org/ addresses and < 300 KB; the old one stays as
+# MyQuran.xml.bak. Journal: ~/Library/Logs/khatt-manifest.log. Word shows the new ribbon after a restart.
+# Tests: KHATT_MANIFEST_URL=file:///…/manifest.xml KHATT_WEF=<dir> KHATT_LOG=<file> KHATT_RETRY_DELAY=0
+URL="${KHATT_MANIFEST_URL:-https://quran.abdulloh.org/manifest.xml}"
+WEF="${KHATT_WEF:-$HOME/Library/Containers/com.microsoft.Word/Data/Documents/wef}"
+LOG="${KHATT_LOG:-$HOME/Library/Logs/khatt-manifest.log}"
+CUR="$WEF/MyQuran.xml" MAX=307200 SITE="https://quran.abdulloh.org"
+log() {
+  mkdir -p "$(dirname "$LOG")" 2>/dev/null
+  printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG" 2>/dev/null
+  if [ "$(wc -l < "$LOG" 2>/dev/null || echo 0)" -gt 400 ]; then tail -n 200 "$LOG" > "$LOG.tmp" 2>/dev/null && mv -f "$LOG.tmp" "$LOG"; fi
+}
+xp() { /usr/bin/xmllint --nonet --xpath "$1" "$2" 2>/dev/null; }
+ver_gt() {   # $1 > $2, dotted numbers
+  awk -v a="$1" -v b="$2" 'BEGIN { n = split(a, x, "."); m = split(b, y, "."); if (m > n) n = m
+    for (i = 1; i <= n; i++) { if (x[i] + 0 > y[i] + 0) exit 0; if (x[i] + 0 < y[i] + 0) exit 1 } exit 1 }'
+}
+[ -f "$CUR" ] || exit 0   # the add-in is not installed (or was removed): nothing to keep up to date
+case "$URL" in
+  https://*) PROTO="=https" ;;
+  file://*) if [ -n "${KHATT_MANIFEST_URL:-}" ]; then PROTO="=file"; else exit 0; fi ;;   # tests only
+  *) log "refused: $URL is not https"; exit 0 ;;
+esac
+T="$(mktemp -d 2>/dev/null)" || exit 0
+trap 'rm -rf "$T"' EXIT
+get() { /usr/bin/curl -fsS --proto "$PROTO" --max-time 15 --max-filesize "$MAX" -o "$T/m.xml" "$URL" 2>/dev/null; }
+get; rc=$?
+if [ $rc = 63 ]; then log "refused: larger than $MAX bytes"; exit 0; fi
+if [ $rc != 0 ]; then   # at login the network may not be up yet: once more a minute later
+  sleep "${KHATT_RETRY_DELAY:-60}"
+  get || { log "not checked: $URL could not be downloaded (no connection?)"; exit 0; }
+fi
+size="$(wc -c < "$T/m.xml" | tr -d ' ')"
+if [ "$size" -ge "$MAX" ]; then log "refused: $size bytes (more than $MAX)"; exit 0; fi
+if grep -qiE '<!DOCTYPE|<!ENTITY' "$T/m.xml"; then log "refused: DOCTYPE / ENTITY in the manifest"; exit 0; fi
+/usr/bin/xmllint --nonet --noout "$T/m.xml" 2>/dev/null || { log "refused: not valid XML"; exit 0; }
+[ "$(xp 'local-name(/*)' "$T/m.xml")" = OfficeApp ] || { log "refused: the root is not OfficeApp"; exit 0; }
+id="$(xp 'string(/*/*[local-name()="Id"])' "$T/m.xml")"
+cid="$(xp 'string(/*/*[local-name()="Id"])' "$CUR")"
+if [ -z "$id" ] || [ "$id" != "$cid" ]; then log "refused: Id $id is not the Id of the installed add-in ($cid)"; exit 0; fi
+v="$(xp 'string(/*/*[local-name()="Version"])' "$T/m.xml")"
+cv="$(xp 'string(/*/*[local-name()="Version"])' "$CUR")"
+case "$v" in *[!0-9.]* | "" | .* | *. ) log "refused: version \"$v\""; exit 0 ;; esac
+ver_gt "$v" "${cv:-0}" || exit 0   # the same or older: nothing to do (no line in the journal)
+# every address inside (DefaultValue, SourceLocation, AppDomain, any other attribute or text) on our site
+bad="$(xp "count(//@*[(contains(., '://') or starts-with(., '//')) and not(starts-with(., '$SITE/')) and . != '$SITE'] | //text()[(contains(., '://') or starts-with(normalize-space(.), '//')) and not(starts-with(normalize-space(.), '$SITE/')) and normalize-space(.) != '$SITE'])" "$T/m.xml")"
+if [ "$bad" != 0 ]; then log "refused: ${bad:-?} addresses outside $SITE/"; exit 0; fi
+cp -f "$CUR" "$CUR.bak" 2>/dev/null
+cp -f "$T/m.xml" "$WEF/.MyQuran.xml.new" && mv -f "$WEF/.MyQuran.xml.new" "$CUR" || { log "error: $CUR could not be replaced"; exit 0; }
+log "updated $cid ${cv:-?} -> $v (restart Word to see it)"
+MANIFEST
+chmod 755 "$MU.new" && mv -f "$MU.new" "$MU"
+cat > "$MU_AGENT.new" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$MU_LABEL</string>
+  <key>ProgramArguments</key><array><string>/bin/bash</string><string>$MU</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>StartInterval</key><integer>86400</integer>
+  <key>ProcessType</key><string>Background</string>
+  <key>LowPriorityIO</key><true/>
+  <key>StandardOutPath</key><string>/dev/null</string>
+  <key>StandardErrorPath</key><string>/dev/null</string>
+</dict></plist>
+EOF
+mv -f "$MU_AGENT.new" "$MU_AGENT"
+if [ -z "${KHATT_NO_LAUNCHCTL:-}" ]; then   # tests: KHATT_NO_LAUNCHCTL=1 (no agent loaded into the real session)
+  launchctl bootout "gui/$(id -u)/$MU_LABEL" >/dev/null 2>&1 || true
+  launchctl bootstrap "gui/$(id -u)" "$MU_AGENT" >/dev/null 2>&1 || true
+fi
+ok "the add-in updates itself (at login and once a day)"
 fi
 
 if want fonts; then   # ---- fonts: step 6 ----
