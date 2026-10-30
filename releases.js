@@ -1,6 +1,19 @@
 /* Khatt al-Quran releases, newest first: [version, date, title by language, changes by language].
    Read by releases.html and by the panel's Updates window (app.js). */
 window.KhattReleases = [
+  ['3.18.1', '2026-10-30', { uz: 'Word енгилроқ ишлайди', ru: 'Word работает легче', en: 'Word runs lighter', ar: 'Word أخفّ في العمل' }, {
+    uz: ['Word лентасидаги «Панель» тугмаси энди панелни тезроқ ва хавфсизроқ очади: компьютер хотираси тўлиб қолганда ҳам Word қотиб қолмаслиги керак.',
+         'Жонли қидирув Word’да бир вақтда фақат битта сўров юборади — қайта-қайта сўраб Word’ни секинлатмайди.',
+         'Созламаларда ўчирилган таржималар хотирадан бўшатилади.'],
+    ru: ['Кнопка «Панель» на ленте Word теперь открывает панель быстрее и надёжнее: даже когда памяти в компьютере мало, Word не должен зависать.',
+         'Живой поиск в Word делает один запрос выделения за раз и не тормозит Word очередью запросов.',
+         'Переводы, выключенные в настройках, освобождают память.'],
+    en: ['The “Panel” button on the Word ribbon now opens the panel faster and more safely: Word should no longer freeze when the computer is short of memory.',
+         'Live search in Word makes one request for the selection at a time and no longer slows Word with a queue of requests.',
+         'Translations switched off in Settings give their memory back.'],
+    ar: ['زر «اللوحة» في شريط Word يفتح اللوحة الآن بسرعة وأمان أكبر: ينبغي ألا يتجمّد Word حين تقلّ ذاكرة الجهاز.',
+         'البحث المباشر في Word يطلب التحديد مرة واحدة في كل مرة ولا يُبطئ Word بطابور من الطلبات.',
+         'الترجمات المُعطّلة في الإعدادات تُعيد ذاكرتها.'] }],
   ['3.18.0', '2026-10-29', { uz: 'Жамоат ҳисоблагичи', ru: 'Публичный счётчик', en: 'A public counter', ar: 'عدّاد عام' }, {
     uz: ['Сайт ва барча панеллар (Word, браузер, Google Docs, WordPress, Adobe, Telegram) пастида энди жамоат ҳисоблагичи: фойдаланувчилар сони, қўйилган оятлар, юклаб олиш ва ўрнатишлар. Кичик рақамлар кўрсатилмайди.',
          'Бу номсиз: фақат қурилмада ясалган тасодифий рақам, платформа ва версия юборилади; исм, почта, IP ва ҳужжат матни — ҳеч қачон. Созламаларда ўчириш мумкин («Жамоат ҳисоблагичида иштирок этиш»). Махфийлик сиёсати янгиланди.'],

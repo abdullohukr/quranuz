@@ -1908,11 +1908,13 @@
   function hostLive(on) { if (HOST && !ADOBE && HOST !== 'tg') toParent({ type: 'khatt-live', on: !!on }); }
   /* Word: the selected text is read with getSelectedDataAsync (a few ms; Word.run took seconds). The selection-changed event reads it at
      once, and while live search is on it is also read every 300 ms, because Word sends the event late. One read at a time. */
-  var wordBusy = false, wordPoll = null, wordBackoff = 0;
+  var wordBusy = false, wordPoll = null, wordBackoff = 0, wordReadId = 0;
   function readWordSelection(cb) {
     if (wordBusy || Date.now() < wordBackoff) return; wordBusy = true;
+    var mine = ++wordReadId, answered = false;                  // at most one read in flight; a late answer of an abandoned read is dropped
     var done = function (txt) {
-      wordBusy = false;
+      if (answered) return; answered = true;
+      if (mine === wordReadId) wordBusy = false; else return;
       try {
         if (txt == null) return;
         txt = String(txt);
@@ -1922,19 +1924,19 @@
     };
     try {
       Office.context.document.getSelectedDataAsync(Office.CoercionType.Text, function (r) { done(r && r.status === Office.AsyncResultStatus.Succeeded ? r.value : null); });
-    } catch (e) { wordBusy = false; }
-    setTimeout(function () { wordBusy = false; }, 1500);       // a read that never answers must not block the next ones
+    } catch (e) { answered = true; wordBusy = false; return; }
+    setTimeout(function () { if (!answered && mine === wordReadId) { answered = true; wordBusy = false; wordBackoff = Date.now() + 2000; } }, 3000);   // a read that never answers: give up on it and pause, do not pile up more
   }
   function wordSelection() { if (settings.liveSearch && !document.hidden) readWordSelection(liveSelect); }
   function wordEvent() {                              // the event: read now and once more 150 ms later (the second read confirms that the selection stopped)
     wordSelection();
-    setTimeout(function () { wordBusy = false; wordSelection(); }, 150);
+    setTimeout(wordSelection, 150);
   }
   /* one search of the selection without switching live search on: the key Alt+F (Alt+Shift+F), asked of the host */
   function oneShot() {
     if (!quran) return;
     var found = function (txt) { txt = String(txt || '').replace(/\s+/g, ' ').trim(); if (txt) searchFor(txt.slice(0, 500)); else toast(t('oneShotNone')); };
-    if (inWord && window.Office && Office.context && Office.context.document && Office.context.document.getSelectedDataAsync) { wordBusy = false; readWordSelection(found); }
+    if (inWord && window.Office && Office.context && Office.context.document && Office.context.document.getSelectedDataAsync) readWordSelection(found);
     else if (HOST === 'tg' || ADOBE) toast(t('oneShotNone'));
     else if (HOST) toParent({ type: 'khatt-selection-now' });
     else found(String(window.getSelection ? window.getSelection() : ''));
@@ -2190,6 +2192,9 @@
     if (window.Stats) Stats.enabled = !!settings.statsShare;
     settings.translations = picked($('s-tr-list'), settings.translations);
     settings.tafsirs = picked($('s-tf-list'), settings.tafsirs);
+    catalog.translations.forEach(function (tr) {                  // free the data of translations that were switched off (loaded again if switched on)
+      if (tr.data && settings.translations.indexOf(tr.id) < 0) { delete cache[tr.file]; tr.data = null; }
+    });
     var scriptChanged = settings.script !== $('s-script').value;
     settings.script = $('s-script').value;
     if (scriptChanged && settings.fmt.ar.font === fontWas) settings.fmt.ar.font = '';   // font follows the mushaf
