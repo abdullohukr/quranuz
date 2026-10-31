@@ -166,13 +166,33 @@ body.office #results { max-height: 34vh; }
 .sel-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
 #sel-title { font-size: 15.5px; }
 .arabic { font-family: var(--ar-script, var(--ar-font)); font-size: 27px; line-height: 2.15; text-align: justify; margin: 10px 0; }
-#preview-ar { user-select: none; -webkit-user-select: none; }
-#preview-ar .w { cursor: pointer; border-radius: 6px; touch-action: none; transition: background .1s; }
-#preview-ar .w:hover { background: var(--accent-soft); }
-#preview-ar .w.off { opacity: .3; }
-#preview-ar .w.start, #preview-ar .w.end, #preview-ar .w.drag { background: var(--hl); }
-#preview-ar.dragging .w { opacity: 1; }
-#preview-ar .num { color: var(--accent); }
+/* words that can be chosen: the Arabic and the translations, in the panel and in the big window */
+.wpick { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.wpick .w { cursor: pointer; border-radius: 6px; touch-action: none; transition: background .1s; }
+.wpick .w:hover { background: var(--accent-soft); }
+.wpick .w:focus { outline: none; }
+.wpick .w:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.wpick .w.off { opacity: .3; }
+.wpick .w.start, .wpick .w.end, .wpick .w.drag { background: var(--hl); }
+.wpick.dragging .w { opacity: 1; }
+.wpick .num, .wpick .tnum { color: var(--accent); }
+.wpick .tnum { font-size: .8em; font-weight: 600; }
+.part-clear::before { content: '\00d7'; margin-inline-end: 4px; font-weight: 700; }
+.pick-hint { margin: -4px 0 6px; }
+.pick-hint[hidden], .preview-tr[hidden], .tr-words[hidden] { display: none; }
+.tr-words { display: block; margin: -4px 0 6px; }
+.preview-tr { max-height: 40vh; overflow: auto; margin: 0 0 8px; display: flex; flex-direction: column; gap: 8px; }
+.trw-name { margin-bottom: 2px; }
+.tr-pick { font-size: 15px; line-height: 1.75; text-align: start; overflow-wrap: break-word; }
+/* the big window */
+dialog.sheet.zoom { width: min(960px, calc(100% - 20px)); }
+dialog.zoom .sheet-head h2 { font-size: 16px; min-width: 0; overflow-wrap: anywhere; }
+#zoom-ar { font-size: 38px; line-height: 2.3; margin: 0; }
+@media (max-width: 480px) { #zoom-ar { font-size: 30px; } }
+.zoom-tr { display: flex; flex-direction: column; gap: 12px; }
+.zoom-tr .tr-pick { font-size: 19px; line-height: 1.8; }
+.zoom-foot { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding-bottom: 12px; }
+.zoom-foot .btn { min-width: 0; }
 .basmala { text-align: center; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 @media (max-width: 340px) { .actions .btn:not(.pic-btn) svg { display: none; } }

@@ -33,7 +33,7 @@
   var HOST = (location.search.match(/[?&]host=(gdocs|wp|ext|adobe|tg)\b/) || [])[1] || '';
   if (window.parent === window && HOST !== 'adobe' && HOST !== 'tg') HOST = '';        // tg: the Telegram Mini App is the page itself
   var ADOBE = HOST === 'adobe';
-  var clickStart = null, inWord = false, online = !!HOST && !ADOBE, windows = /Win/.test(navigator.platform || ''), results = [];
+  var pick = null, inWord = false, online = !!HOST && !ADOBE, windows = /Win/.test(navigator.platform || ''), results = [];
   var t = function (k, v) { return i18n.t(k, v); };
   /* host=ext: only the extension's own page (chrome-extension:// …) is a parent that counts; its origin is learnt from its
      first message and is the only address the panel sends to (the history and favourites never go out with '*') */
@@ -850,7 +850,7 @@
     var c = quran.count(sura);
     from = Math.min(Math.max(1, from | 0), c); to = Math.min(Math.max(from, to | 0), c);
     sel = { sura: sura, from: from, to: to, wordFrom: 0, wordTo: null };
-    clickStart = null;
+    view = { sura: sura, from: from, to: to }; pick = null; focusAt = {};
     $('sura').value = sura; $('from').max = c; $('to').max = c; $('from').value = from; $('to').value = to;
     render();
     ensureData().then(render);
@@ -879,14 +879,7 @@
     });
   });
   ['from', 'to'].forEach(function (id) { $(id).addEventListener('wheel', function (e) { if (document.activeElement === this) e.preventDefault(); }, { passive: false }); });
-  $('reset-words').addEventListener('click', function () { setSel(sel.sura, sel.from, sel.to); });
-
-  function wordState(a, w) {
-    if (a === sel.from && w < sel.wordFrom) return 'off';
-    if (a === sel.to && sel.wordTo != null && w > sel.wordTo) return 'off';
-    if (clickStart && clickStart.a === a && clickStart.w === w) return 'start';
-    return '';
-  }
+  $('reset-words').addEventListener('click', function () { clearParts(); });
 
   function current(src) {
     var sc = scriptById(settings.script);
@@ -897,7 +890,7 @@
       // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
       basmalaText: settings.fmt.basmala.font && sc.glyph && !src ? QuranCore.BASMALA : null,
       translations: settings.withTr && !skipExtras ? activeTranslations().filter(function (x) { return x.data && !muted[x.id]; }).map(function (x) {
-        return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'],
+        return { data: x.data, dir: x.dir, quotes: QUOTES[x.lang] || ['«', '»'], parts: sel.parts && sel.parts.tr && sel.parts.tr[x.id] || null,
                  suraName: suraName(sel.sura, x.lang, x.data[quran.index(sel.sura, sel.from)]) };
       }) : [],
       tafsirs: settings.withTafsir && !skipExtras ? activeTafsirs().filter(function (tf) { return !muted[tf.id]; }).map(function (tf) {
@@ -944,84 +937,294 @@
     }).join('');
   }
 
-  function render() {
-    if (!quran) return;
-    var s = sel.sura;
-    $('sel-title').innerHTML = esc(uiSuraName(s)) + ' <bdi>' + esc(quran.suras[s - 1][0]) + '</bdi> <bdi>' + s + ':' +
-      (sel.to > sel.from ? sel.from + '-' + sel.to : sel.from) + '</bdi>';
-    var html = '';
-    if (sel.from === 1 && s !== 1 && s !== 9) html += '<div class="muted basmala">' + quran.meta.basmala + '</div>';
-    for (var a = sel.from; a <= sel.to; a++) {
+  /* ---------- the words chosen by hand: the Arabic and each translation ("kind" k: 'ar' or the id of a translation) ----------
+     view = the ayahs that are shown (the numbers); sel = what goes in. The Arabic keeps the old form for one place
+     (from, wordFrom .. to, wordTo); several places go to sel.parts.ar = [[a0, w0, a1, w1], …] (from..to and wordFrom/wordTo stay
+     the outer bounds, so older readers of the history, the basket and the tags of Word still get a sensible text). A translation's
+     own words: sel.parts.tr[id] = [[a0, w0, a1, w1], …] (word numbers of Quran.trWords). Nothing chosen = everything. */
+  function wordsOf(k, a) {
+    if (k === 'ar') return quran.spans(view.sura, a).words.length;
+    var tr = trById(k);
+    return tr && tr.data ? quran.trWords(tr.data, view.sura, a).length : 0;
+  }
+  function lin(k) {                                   // the words of the shown ayahs one after another
+    var start = {}, pos = [], n = 0;
+    for (var a = view.from; a <= view.to; a++) {
+      start[a] = n;
+      for (var w = 0, c = wordsOf(k, a); w < c; w++) pos.push([a, w]);
+      n = pos.length;
+    }
+    return { start: start, pos: pos, n: n };
+  }
+  function arPartial() {
+    return !!(sel.parts && sel.parts.ar) || sel.wordFrom > 0 || sel.wordTo != null || sel.from !== view.from || sel.to !== view.to;
+  }
+  function rangesOf(k) {                              // null: everything
+    if (k === 'ar') {
+      if (sel.parts && sel.parts.ar) return sel.parts.ar;
+      return arPartial() ? [[sel.from, sel.wordFrom > 0 ? sel.wordFrom : 0, sel.to, sel.wordTo == null ? Infinity : sel.wordTo]] : null;
+    }
+    return sel.parts && sel.parts.tr && sel.parts.tr[k] || null;
+  }
+  function anyPartial() { return arPartial() || !!(sel.parts && sel.parts.tr && Object.keys(sel.parts.tr).length); }
+  function maskOf(k, L) {
+    var R = rangesOf(k), m = new Uint8Array(L.n);
+    if (!R) { m.fill(1); return m; }
+    R.forEach(function (r) {
+      if (L.start[r[0]] == null || L.start[r[2]] == null) return;
+      var i0 = L.start[r[0]] + r[1], i1 = L.start[r[2]] + Math.min(r[3], wordsOf(k, r[2]) - 1);
+      for (var i = i0; i <= i1 && i < L.n; i++) m[i] = 1;
+    });
+    return m;
+  }
+  /* m: 1 = the word goes in. open: the first tap of two (from this word to the end, the end is not chosen yet) */
+  function setMask(k, m, L, open) {
+    var R = [], i = 0;
+    while (i < L.n) {
+      if (!m[i]) { i++; continue; }
+      var j = i; while (j + 1 < L.n && m[j + 1]) j++;
+      R.push([L.pos[i][0], L.pos[i][1], L.pos[j][0], L.pos[j][1]]); i = j + 1;
+    }
+    if (!R.length || (R.length === 1 && m[0] && m[L.n - 1])) R = null;           // nothing or everything: the whole text
+    sel.parts = sel.parts || {};
+    if (k === 'ar') {
+      delete sel.parts.ar;
+      if (!R) { sel.from = view.from; sel.to = view.to; sel.wordFrom = 0; sel.wordTo = null; }
+      else {
+        var l = R[R.length - 1];
+        sel.from = R[0][0]; sel.wordFrom = R[0][1]; sel.to = l[2]; sel.wordTo = open ? null : l[3];
+        if (R.length > 1) sel.parts.ar = R;
+      }
+      $('from').value = sel.from; $('to').value = sel.to;
+    } else {
+      sel.parts.tr = sel.parts.tr || {};
+      if (R) sel.parts.tr[k] = R; else delete sel.parts.tr[k];
+      if (!Object.keys(sel.parts.tr).length) delete sel.parts.tr;
+    }
+    if (!sel.parts.ar && !sel.parts.tr) delete sel.parts;
+  }
+  /* a tap on a word. how: '' (first tap = from here, second tap = up to here, as before), 'add' (Ctrl/⌘ or a long press:
+     one more place, or this word out again), 'extend' (Shift: from the last tapped word up to this one) */
+  function pickWord(k, a, w, how) {
+    var L = lin(k), i = L.start[a] == null ? -1 : L.start[a] + w;
+    if (i < 0 || i >= L.n) return;
+    if (pick && pick.k !== k) pick = null;
+    var cur = rangesOf(k) ? maskOf(k, L) : new Uint8Array(L.n), m, x;
+    if (pick && pick.open) { cur = new Uint8Array(L.n); cur[pick.i] = 1; }     // a first tap waiting for the second: only its word
+    if (how === 'add') {
+      m = cur.slice();
+      if (m[i]) { m[i] = 0; pick = null; } else { pick = { k: k, i: i, base: cur }; m[i] = 1; }
+      setMask(k, m, L);
+    } else if (how === 'extend') {
+      if (!pick) { x = cur.indexOf(1); pick = { k: k, i: x < 0 || !rangesOf(k) ? i : x, base: new Uint8Array(L.n) }; }
+      m = pick.base.slice(); pick.open = false;
+      for (x = Math.min(pick.i, i); x <= Math.max(pick.i, i); x++) m[x] = 1;
+      setMask(k, m, L);
+    } else if (pick && pick.open) {
+      m = new Uint8Array(L.n);
+      for (x = Math.min(pick.i, i); x <= Math.max(pick.i, i); x++) m[x] = 1;
+      pick = { k: k, i: pick.i, base: new Uint8Array(L.n) };
+      setMask(k, m, L);
+    } else {
+      m = new Uint8Array(L.n);
+      for (x = i; x < L.n; x++) m[x] = 1;
+      pick = { k: k, i: i, base: new Uint8Array(L.n), open: true };
+      setMask(k, m, L, true);
+    }
+    focusAt[k] = i;
+    render();
+  }
+  function pickSpan(k, p0, p1, add) {                 // dragged across words (with Ctrl/⌘: one more place)
+    var L = lin(k);
+    if (L.start[p0.a] == null || L.start[p1.a] == null) return;
+    var i0 = L.start[p0.a] + p0.w, i1 = L.start[p1.a] + p1.w, base = new Uint8Array(L.n);
+    if (pick && pick.k !== k) pick = null;
+    if (add && rangesOf(k)) base = maskOf(k, L);
+    if (add && pick && pick.open) { base = new Uint8Array(L.n); base[pick.i] = 1; }
+    var m = base.slice();
+    for (var x = Math.min(i0, i1); x <= Math.max(i0, i1); x++) m[x] = 1;
+    pick = { k: k, i: i0, base: base };
+    setMask(k, m, L); focusAt[k] = i1; render();
+  }
+  function clearParts() {                             // "Clear the selection": all the shown ayahs again
+    sel = { sura: view.sura, from: view.from, to: view.to, wordFrom: 0, wordTo: null };
+    pick = null;
+    $('from').value = sel.from; $('to').value = sel.to;
+    render();
+  }
+
+  var view = { sura: 1, from: 1, to: 1 }, focusAt = {}, trOpen = false;
+  function focusIdx(k, L, m, partial) {
+    var f = focusAt[k];
+    if (f != null && f < L.n) return f;
+    var x = partial ? m.indexOf(1) : 0;
+    return x < 0 ? 0 : x;
+  }
+  function wordSpan(k, a, w, i, m, partial, foc, inner) {
+    var on = !!m[i], cls = 'w' + (partial && !on ? ' off' : '') + (pick && pick.open && pick.k === k && pick.i === i ? ' start' : '');
+    return '<span class="' + cls + '" role="option" aria-selected="' + (partial && on) + '" tabindex="' + (i === foc ? 0 : -1) +
+      '" data-k="' + esc(k) + '" data-a="' + a + '" data-w="' + w + '" data-i="' + i + '">' + inner + '</span> ';
+  }
+  function arWordsHtml() {
+    var s = view.sura, L = lin('ar'), partial = !!rangesOf('ar'), m = maskOf('ar', L), foc = focusIdx('ar', L, m, partial), html = '';
+    if (view.from === 1 && s !== 1 && s !== 9) html += '<div class="muted basmala" role="presentation">' + quran.meta.basmala + '</div>';
+    for (var a = view.from; a <= view.to; a++) {
       var sp = quran.spans(s, a), cols = quran.colors && quran.colors[quran.index(s, a)], text = quran.text(s, a);
-      sp.words.forEach(function (w, i) {
+      sp.words.forEach(function (w, k) {
         var inner = '';
         if (cols || quran.pages) quran._runs(s, a, w.start, w.end).forEach(function (r) {
           var st = (r.color ? 'color:#' + r.color + ';' : '') + (r.page ? 'font-family:' + pageFamily(r.page) : '');
           inner += st ? '<span style="' + st + '">' + esc(r.t) + '</span>' : esc(r.t);
         }); else inner = esc(w.text);
-        html += '<span class="w ' + wordState(a, i) + '" data-a="' + a + '" data-w="' + i + '">' + inner + '</span> ';
+        html += wordSpan('ar', a, k, L.start[a] + k, m, partial, foc, inner);
       });
       if (sp.mark) {
         var mk = quran.pages ? quran._runs(s, a, text.lastIndexOf(sp.mark), text.length)[0] : null;
-        html += '<span class="num"' + (mk && mk.page ? ' style="font-family:' + pageFamily(mk.page) + '"' : '') + '>' + esc(sp.mark) + '</span> ';
+        html += '<span class="num" role="presentation"' + (mk && mk.page ? ' style="font-family:' + pageFamily(mk.page) + '"' : '') + '>' + esc(sp.mark) + '</span> ';
       }
     }
-    $('preview-ar').innerHTML = html;
-    $('reset-words').hidden = !(sel.wordFrom > 0 || sel.wordTo != null);
+    return html;
+  }
+  function pickTrs() {                                // the translations whose words can be chosen (those that go in)
+    return settings.withTr && quran ? activeTranslations().filter(function (x) { return x.data && !muted[x.id]; }) : [];
+  }
+  function trWordsHtml() {
+    return pickTrs().map(function (tr) {
+      var k = tr.id, L = lin(k), partial = !!rangesOf(k), m = maskOf(k, L), foc = focusIdx(k, L, m, partial), dir = tr.dir || 'ltr', html = '';
+      for (var a = view.from; a <= view.to; a++) {
+        var ws = quran.trWords(tr.data, view.sura, a);
+        if (view.to > view.from && ws.length) html += '<span class="tnum" role="presentation">' + a + '.</span> ';
+        ws.forEach(function (w, j) { html += wordSpan(k, a, j, L.start[a] + j, m, partial, foc, esc(w)); });
+      }
+      return '<div class="trw"><div class="trw-name small muted">' + esc(tr.name) + '</div><div class="wpick tr-pick" dir="' + dir + '" role="listbox" aria-multiselectable="true" aria-label="' +
+        esc(tr.name) + '" aria-describedby="pick-hint">' + html + '</div></div>';
+    }).join('');
+  }
+  function selTitle() {
+    var s = sel.sura;
+    return esc(uiSuraName(s)) + ' <bdi>' + esc(quran.suras[s - 1][0]) + '</bdi> <bdi>' + s + ':' + (sel.to > sel.from ? sel.from + '-' + sel.to : sel.from) + '</bdi>';
+  }
+  function render() {
+    if (!quran) return;
+    // the keyboard focus stays on the same word when the words are drawn again
+    var f = document.activeElement, fk = f && f.classList && f.classList.contains('w') && f.closest('.wpick') ? { k: f.dataset.k, i: f.dataset.i, z: !!f.closest('#zoom') } : null;
+    $('sel-title').innerHTML = selTitle();
+    $('preview-ar').innerHTML = arWordsHtml();
+    $('preview-ar').setAttribute('aria-label', t('ayahWords')); $('zoom-ar').setAttribute('aria-label', t('ayahWords'));
+    var trs = pickTrs(), trParts = !!(sel.parts && sel.parts.tr), showTr = trs.length && (trOpen || trParts);
+    $('tr-words').hidden = !trs.length;
+    $('tr-words').setAttribute('aria-expanded', !!showTr);
+    $('preview-tr').hidden = !showTr;
+    $('preview-tr').innerHTML = showTr ? trWordsHtml() : '';
+    $('reset-words').hidden = !anyPartial();
+    $('pick-hint').hidden = !anyPartial() && !pick;           // how to add places, shown once words are being chosen
+    if ($('zoom').open) {
+      $('zoom-h').innerHTML = selTitle();
+      $('zoom-ar').innerHTML = arWordsHtml();
+      $('zoom-tr').innerHTML = trWordsHtml();
+      $('zoom-clear').hidden = !anyPartial();
+    }
+    if (fk) {
+      var el = document.querySelector((fk.z ? '#zoom' : '.selection') + ' .w[data-k="' + (window.CSS && CSS.escape ? CSS.escape(fk.k) : fk.k) + '"][data-i="' + fk.i + '"]');
+      if (el) el.focus();
+    }
     starState(); drawChips();
   }
+  $('tr-words').addEventListener('click', function () {
+    trOpen = !(trOpen || (sel.parts && sel.parts.tr));
+    if (!trOpen && sel.parts && sel.parts.tr) { delete sel.parts.tr; if (!sel.parts.ar) delete sel.parts; }    // closed: the whole translation again
+    render();
+  });
 
-  /* Word selection: click first word then last word, or drag across words with the mouse. */
-  function applyRange(st, en) {
-    if (en.a < st.a || (en.a === st.a && en.w < st.w)) { var x = st; st = en; en = x; }
-    sel.from = st.a; sel.wordFrom = st.w; sel.to = en.a; sel.wordTo = en.w;
-    clickStart = null;
-    $('from').value = sel.from; $('to').value = sel.to;
-    render();
-  }
-  function clickWord(a, w) {
-    if (clickStart) { applyRange(clickStart, { a: a, w: w }); return; }
-    clickStart = { a: a, w: w };
-    sel.from = a; sel.wordFrom = w; sel.wordTo = null;
-    if (sel.to < a) sel.to = a;
-    $('from').value = sel.from; $('to').value = sel.to;
-    render();
-  }
-  var drag = null;
+  /* the mouse and the finger: a tap (Ctrl/⌘ adds a place, Shift extends), a drag across words, a long press (= add a place) */
+  var drag = null, pressTimer = null;
+  function wordOf(el) { return { k: el.dataset.k, a: +el.dataset.a, w: +el.dataset.w }; }
   function wordAt(x, y) {
     var el = document.elementFromPoint(x, y);
-    el = el && el.closest ? el.closest('#preview-ar .w') : null;
-    return el ? { a: +el.dataset.a, w: +el.dataset.w } : null;
+    el = el && el.closest ? el.closest('.wpick .w') : null;
+    return el ? wordOf(el) : null;
   }
   function paintDrag() {
     var lo = drag.start, hi = drag.end;
     if (hi.a < lo.a || (hi.a === lo.a && hi.w < lo.w)) { var x = lo; lo = hi; hi = x; }
-    [].forEach.call($('preview-ar').querySelectorAll('.w'), function (el) {
+    [].forEach.call(drag.box.querySelectorAll('.w[data-k="' + lo.k.replace(/"/g, '') + '"]'), function (el) {
       var a = +el.dataset.a, w = +el.dataset.w;
       el.classList.toggle('drag', (a > lo.a || (a === lo.a && w >= lo.w)) && (a < hi.a || (a === hi.a && w <= hi.w)));
     });
   }
-  $('preview-ar').addEventListener('pointerdown', function (e) {
+  function dragEnd() { clearTimeout(pressTimer); [].forEach.call(document.querySelectorAll('.wpick.dragging'), function (b) { b.classList.remove('dragging'); }); }
+  document.addEventListener('pointerdown', function (e) {
     if (e.button > 0) return;
-    var p = wordAt(e.clientX, e.clientY); if (!p) return;
+    var el = e.target.closest && e.target.closest('.wpick .w'); if (!el || !quran) return;
     e.preventDefault();
-    drag = { start: p, end: p, moved: false };
+    var p = wordOf(el);
+    drag = { start: p, end: p, moved: false, add: e.ctrlKey || e.metaKey, ext: e.shiftKey, box: el.closest('.wpick') };
+    clearTimeout(pressTimer);
+    if (e.pointerType && e.pointerType !== 'mouse') pressTimer = setTimeout(function () {    // a long press: one more place
+      if (!drag || drag.moved) return;
+      var d = drag; drag = null; dragEnd();
+      try { if (navigator.vibrate) navigator.vibrate(12); } catch (x) {}
+      pickWord(d.start.k, d.start.a, d.start.w, 'add');
+    }, 480);
   });
   document.addEventListener('pointermove', function (e) {
     if (!drag) return;
     var p = wordAt(e.clientX, e.clientY);
-    if (!p || (p.a === drag.end.a && p.w === drag.end.w)) return;
-    drag.end = p; drag.moved = true;
-    $('preview-ar').classList.add('dragging');
+    if (!p || p.k !== drag.start.k || (p.a === drag.end.a && p.w === drag.end.w)) return;
+    drag.end = p; drag.moved = true; clearTimeout(pressTimer);
+    drag.box.classList.add('dragging');
     paintDrag();
   });
   document.addEventListener('pointerup', function () {
     if (!drag) return;
-    var d = drag; drag = null;
-    $('preview-ar').classList.remove('dragging');
-    if (d.moved) applyRange(d.start, d.end); else clickWord(d.start.a, d.start.w);
+    var d = drag; drag = null; dragEnd();
+    if (d.moved) pickSpan(d.start.k, d.start, d.end, d.add);
+    else pickWord(d.start.k, d.start.a, d.start.w, d.add ? 'add' : d.ext ? 'extend' : '');
   });
-  document.addEventListener('pointercancel', function () { drag = null; $('preview-ar').classList.remove('dragging'); render(); });
+  document.addEventListener('pointercancel', function () { if (!drag) return; drag = null; dragEnd(); render(); });
+  document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.wpick .w')) e.preventDefault(); });   // Ctrl+click on a Mac, a long press
+  /* the keyboard: arrows go from word to word (Shift: selecting), Space / Enter = a tap (Ctrl/⌘+Space adds a place), Esc clears */
+  document.addEventListener('keydown', function (e) {
+    var el = e.target.closest && e.target.closest('.wpick .w'); if (!el || e.altKey) return;
+    var box = el.closest('.wpick'), ws = box.querySelectorAll('.w[data-k="' + el.dataset.k.replace(/"/g, '') + '"]'), i = [].indexOf.call(ws, el);
+    var rtl = getComputedStyle(box).direction === 'rtl';
+    var step = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowDown: 1, ArrowUp: -1, Home: -1e9, End: 1e9 }[e.key];
+    if (step) {
+      e.preventDefault();
+      var to = ws[Math.max(0, Math.min(ws.length - 1, i + step))]; if (!to) return;
+      [].forEach.call(ws, function (x) { x.tabIndex = -1; }); to.tabIndex = 0; to.focus();
+      focusAt[to.dataset.k] = +to.dataset.i;
+      if (e.shiftKey) {
+        var p = wordOf(to);
+        if (!pick || pick.k !== p.k) pick = { k: p.k, i: +el.dataset.i, base: new Uint8Array(lin(p.k).n) };   // from the word the keys started on
+        pickWord(p.k, p.a, p.w, 'extend');
+      }
+      return;
+    }
+    if (e.key === ' ' || e.key === 'Spacebar' || (e.key === 'Enter' && !e.ctrlKey && !e.metaKey)) {
+      e.preventDefault();
+      var q = wordOf(el); pickWord(q.k, q.a, q.w, e.ctrlKey || e.metaKey ? 'add' : e.shiftKey ? 'extend' : '');
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented || !quran) return;
+    var tg = e.target || {};
+    if (document.querySelector('dialog[open]') || !$('more-menu').hidden) return;                 // a window or the menu closes first
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName || '') || tg.isContentEditable) return;    // Esc in the search field clears the search
+    if (tg.closest && tg.closest('#found, .search-box, .marks, .topbar')) return;               // the search results keep their own marks
+    if (!anyPartial() && !pick) return;
+    e.preventDefault(); clearParts();
+  });
+
+  /* "Enlarge": the ayah and its translations in a big window, with the same choosing of words (it changes the same sel) */
+  $('zoom-btn').addEventListener('click', function () {
+    if (!quran) return;
+    $('zoom').showModal(); render();
+    var f = $('zoom-ar').querySelector('.w[tabindex="0"]'); if (f) f.focus();
+  });
+  $('zoom-clear').addEventListener('click', function () { clearParts(); var f = $('zoom-ar').querySelector('.w[tabindex="0"]'); if (f) f.focus(); });
+  $('zoom-insert').addEventListener('click', function () { $('zoom').close('insert'); doInsert(); });
+  $('zoom').addEventListener('close', function () { $('zoom-ar').innerHTML = ''; $('zoom-tr').innerHTML = ''; $('zoom-btn').focus(); });
 
   /* ---------- output: Word (OOXML), clipboard (HTML + text) ---------- */
   function xmlEsc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -1234,7 +1437,11 @@
     });
   }
   function refTag() {
-    return 'khatt:' + sel.sura + ':' + sel.from + '-' + sel.to + (sel.wordFrom > 0 || sel.wordTo != null ? ':' + sel.wordFrom + ':' + (sel.wordTo == null ? 'n' : sel.wordTo) : '');
+    var parts = sel.parts && !skipExtras ? encParts(sel.parts) : sel.parts && sel.parts.ar ? encParts({ ar: sel.parts.ar }) : '';
+    var tag = 'khatt:' + sel.sura + ':' + sel.from + '-' + sel.to + (sel.wordFrom > 0 || sel.wordTo != null || parts ? ':' + sel.wordFrom + ':' + (sel.wordTo == null ? 'n' : sel.wordTo) : '');
+    if (!parts) return tag;                          // one place: the same tag as before
+    tag += ':p' + parts;
+    return tag.length <= 64 ? tag : tag.replace(/:p.*$/, ':x');   // Word keeps up to 64 characters; ':x' = "Update all" leaves it as it is
   }
   function copy(out) { return copyRaw(buildHtml(out), out.text); }
   function copyRaw(html, text) {
@@ -1482,19 +1689,56 @@
   }
   var marks = { hist: loadMarks('hist'), fav: loadMarks('fav'), bask: loadMarks('bask') };
   function markId(x) { return x.sura + ':' + x.from + '-' + x.to; }
+  /* with the chosen words: two different parts of one ayah are two entries of the history and the basket */
+  function markFull(x) { return markId(x) + (x.wf > 0 || x.wt != null ? ':' + (x.wf | 0) + ':' + (x.wt == null ? 'n' : x.wt) : '') + (x.p ? ':p' + encParts(x.p) : ''); }
+  /* the chosen words of sel as they are kept (x.wf / x.wt as before; x.p only for several places or a translation's words) */
+  function selMark() {
+    var x = { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() };
+    if (sel.wordFrom > 0 || sel.wordTo != null || sel.parts && sel.parts.ar) { x.wf = sel.wordFrom; x.wt = sel.wordTo; }
+    if (sel.parts) x.p = JSON.parse(JSON.stringify(sel.parts));
+    return x;
+  }
+  function markSel(x) {                               // a kept entry -> sel (older entries: only wf / wt)
+    var s = { sura: x.sura, from: x.from, to: x.to, wordFrom: x.wf > 0 ? x.wf | 0 : 0, wordTo: x.wt == null ? null : x.wt | 0 };
+    var p = x.p && decParts(encParts(x.p));             // the same check as for a tag: only well-formed ranges
+    if (p) s.parts = p;
+    return s;
+  }
+  /* compact form of the parts (the tag of a Word content control, the history kept by the extension):
+     "a.w.a.w,a.w.a.w;id=a.w.a.w" — the Arabic ranges first, then the words of each translation */
+  function encRanges(R) { return (R || []).map(function (r) { return r.join('.'); }).join(','); }
+  function decRanges(t) {
+    return String(t || '').split(',').map(function (x) {
+      var v = x.split('.').map(Number);
+      return v.length === 4 && v.every(function (n) { return n >= 0 && n <= 9999 && n === Math.floor(n); }) ? v : null;
+    }).filter(Boolean);
+  }
+  function encParts(p) {
+    if (!p) return '';
+    var t = encRanges(p.ar);
+    Object.keys(p.tr || {}).forEach(function (id) { t += ';' + id + '=' + encRanges(p.tr[id]); });
+    return t;
+  }
+  function decParts(t) {
+    var bits = String(t || '').split(';'), p = {}, ar = decRanges(bits[0]);
+    if (ar.length) p.ar = ar;
+    bits.slice(1).forEach(function (b) {
+      var m = /^([\w.-]{1,40})=(.+)$/.exec(b), r = m && decRanges(m[2]);
+      if (r && r.length) (p.tr = p.tr || {})[m[1]] = r;
+    });
+    return p.ar || p.tr ? p : null;
+  }
   function storeMarks(k) { try { localStorage.setItem(MARK_KEY[k], JSON.stringify(marks[k])); } catch (e) {} }
   function saveMarks(k) { storeMarks(k); marksPref(); drawMarks(); starState(); }
   function addMark(k, x) {
-    var id = markId(x);
-    marks[k] = [x].concat(marks[k].filter(function (y) { return markId(y) !== id; })).slice(0, MARK_MAX[k]);
+    var idOf = k === 'fav' ? markId : markFull, id = idOf(x);
+    marks[k] = [x].concat(marks[k].filter(function (y) { return idOf(y) !== id; })).slice(0, MARK_MAX[k]);
     saveMarks(k);
   }
   function platformId() { return HOST || (inWord ? 'word' : 'web'); }
   function remember() {                              // the current selection goes on top of the history
     if (window.Stats) Stats.insert(sel.to - sel.from + 1, platformId());
-    var x = { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() };
-    if (sel.wordFrom > 0 || sel.wordTo != null) { x.wf = sel.wordFrom; x.wt = sel.wordTo; }
-    addMark('hist', x);
+    addMark('hist', selMark());
   }
   function isFav() { var id = markId(sel); return marks.fav.some(function (y) { return markId(y) === id; }); }
   function starState() {
@@ -1549,8 +1793,10 @@
   });
   function pickMark(x) {
     setSel(x.sura, x.from, x.to);
-    if (x.wf > 0 || x.wt != null) {                 // a part of the ayahs: the same words again
-      sel.wordFrom = Math.max(0, x.wf | 0); sel.wordTo = x.wt == null ? null : x.wt | 0; render();
+    if (x.wf > 0 || x.wt != null || x.p) {          // a part of the ayahs: the same words again
+      var s = markSel(x); sel.wordFrom = s.wordFrom; sel.wordTo = s.wordTo; if (s.parts) sel.parts = s.parts;
+      if (s.parts && s.parts.tr) trOpen = true;
+      render();
     }
   }
   $('marks-list').addEventListener('click', function (e) {
@@ -1606,7 +1852,9 @@
     if (HOST === 'tg') { tgSyncSoon(); return; }
     if (HOST !== 'ext') return;
     toParent({ type: 'khatt-pref', fav: marks.fav.map(markId).join(','), hist: marks.hist.map(function (x) {
-      return [x.sura, x.from, x.to, Math.round((x.time || 0) / 1000)].concat(x.wf != null ? [x.wf, x.wt] : []);
+      var p = x.p ? encParts(x.p) : '';                     // the chosen places only while short (the extension's storage is small)
+      return [x.sura, x.from, x.to, Math.round((x.time || 0) / 1000)].concat(x.wf != null || p ? [x.wf | 0, x.wt == null ? null : x.wt] : [])
+        .concat(p && p.length <= 120 ? [p] : []);
     }) });
   }
   function takeExtMarks(d) {
@@ -1621,6 +1869,7 @@
         if (!Array.isArray(a)) return null;
         var x = { sura: +a[0], from: +a[1], to: +a[2], time: (+a[3] || 0) * 1000 };
         if (a.length > 4) { x.wf = +a[4] || 0; x.wt = a[5] == null ? null : +a[5]; }
+        if (typeof a[6] === 'string') { var p = decParts(a[6]); if (p) x.p = p; }
         return x;
       }).filter(okMark).slice(0, MARK_MAX.hist);
       storeMarks('hist');
@@ -1796,21 +2045,19 @@
   $('quote-run').addEventListener('click', quoteCompare);
   /* the basket: ayahs and ranges collected in order, inserted (or copied) all at once */
   function addBask(x) {
-    var id = markId(x);
-    marks.bask = marks.bask.filter(function (y) { return markId(y) !== id; }).concat([x]).slice(-MARK_MAX.bask);     // in the order they were added
+    var id = markFull(x);
+    marks.bask = marks.bask.filter(function (y) { return markFull(y) !== id; }).concat([x]).slice(-MARK_MAX.bask);     // in the order they were added
     saveMarks('bask');
   }
   $('m-bask').addEventListener('click', function () {
     menuOpen(false); if (!quran) return;
-    var x = { sura: sel.sura, from: sel.from, to: sel.to, time: Date.now() };
-    if (sel.wordFrom > 0 || sel.wordTo != null) { x.wf = sel.wordFrom; x.wt = sel.wordTo; }
-    addBask(x); toast(t('basketAdded'));
+    addBask(selMark()); toast(t('basketAdded'));
   });
   function basketParts() {
     var save = JSON.parse(JSON.stringify(sel)), parts = [];
     return marks.bask.slice().reduce(function (p, x) {
       return p.then(function () {
-        sel = { sura: x.sura, from: x.from, to: x.to, wordFrom: x.wf > 0 ? x.wf : 0, wordTo: x.wt == null ? null : x.wt };
+        sel = markSel(x);
         return ensureData().then(function () { var out = current(); parts.push({ html: buildHtml(out), text: out.text, doc: hostDoc(out) }); });
       });
     }, Promise.resolve()).then(function () { sel = save; render(); return parts; }, function (e) { sel = save; render(); throw e; });
@@ -1846,10 +2093,12 @@
     Word.run(function (ctx) {
       var ccs = ctx.document.contentControls; ccs.load('items/tag');
       return ctx.sync().then(function () {
-        var jobs = ccs.items.map(function (cc) { var m = /^khatt:(\d+):(\d+)-(\d+)(?::(\d+):(\d+|n))?$/.exec(cc.tag || ''); return m && { cc: cc, m: m }; }).filter(Boolean);
+        // khatt:sura:from-to[:wordFrom:wordTo][:p<places>] (older tags have no :p; ':x' = too many places for a tag: left as it is)
+        var jobs = ccs.items.map(function (cc) { var m = /^khatt:(\d+):(\d+)-(\d+)(?::(\d+):(\d+|n))?(?::p([\w.,;=-]+))?$/.exec(cc.tag || ''); return m && { cc: cc, m: m }; }).filter(Boolean);
         return jobs.reduce(function (p, j) {
           return p.then(function () {
             sel = { sura: +j.m[1], from: +j.m[2], to: +j.m[3], wordFrom: j.m[4] ? +j.m[4] : 0, wordTo: j.m[5] && j.m[5] !== 'n' ? +j.m[5] : null };
+            var jp = j.m[6] && decParts(j.m[6]); if (jp) sel.parts = jp;
             return ensureData().then(function () { j.cc.insertOoxml(buildOoxml(current(), null), 'Replace'); n++; return ctx.sync(); });
           });
         }, Promise.resolve());
@@ -2426,7 +2675,8 @@
   if (/[?&]debug\b/.test(location.search)) window.MQDebug = { ayahPicture: ayahPicture, buildOoxml: buildOoxml, current: current,
     setSel: function (s, f, t) { setSel(s, f, t); }, settings: settings, useScript: useScript,
     setOnline: function (v) { online = !!v; }, setWord: function (v) { inWord = !!v; ribbonCheck(); }, pictureBlob: function () { return pictureBlob(current()); },
-    dayAyah: function (d) { return dayAyah(d || new Date()); }, marks: function () { return marks; } };   // tests only
+    dayAyah: function (d) { return dayAyah(d || new Date()); }, marks: function () { return marks; },
+    sel: function () { return JSON.parse(JSON.stringify(sel)); }, refTag: refTag, pickMark: function (x) { pickMark(x); }, hostDoc: function () { return hostDoc(current()); } };   // tests only
 
   if (window.Office && Office.onReady) {
     Office.onReady(function (info) {

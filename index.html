@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Khatt al-Quran</title>
-<meta name="myquran-version" content="61">
+<meta name="myquran-version" content="62">
 <link rel="icon" href="assets/brand/word-office/clear-32.png">
 <link rel="icon" href="assets/brand/word-office/square-32.png" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="assets/brand/word-office/square-300.png">
 <link rel="preload" href="fonts/ScheherazadeNew-Regular.woff2?v=5" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=61">
+<link rel="stylesheet" href="style.css?v=62">
 <script>
 /* Office.js only where this page is a Word add-in. In the frame of another host (browser extension, Google Docs, WordPress,
    Adobe) it stops the page and leaves a blank screen. Same blocking order as a normal script tag. */
 if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write('<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"><\/script>');
 </script>
-<script src="i18n.js?v=61"></script>
-<script src="core.js?v=61"></script>
+<script src="i18n.js?v=62"></script>
+<script src="core.js?v=62"></script>
 <script>
   /* theme before the first paint */
   try { var t = (JSON.parse(localStorage.getItem('myquran-settings') || '{}').theme) || 'auto';
@@ -72,7 +72,8 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
   <section class="selection card">
     <div class="sel-head">
       <strong id="sel-title"></strong>
-      <button id="reset-words" class="link" hidden data-i18n="fullAyah"></button>
+      <button type="button" id="reset-words" class="link part-clear" hidden data-i18n="partClear"></button>
+      <button type="button" id="zoom-btn" class="icon-btn" data-i18n-title="zoom" aria-label="Enlarge" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
       <button type="button" id="next" class="icon-btn" data-i18n-title="nextAyah" aria-label="Next ayah"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
       <button type="button" id="more-btn" class="icon-btn" data-i18n-title="moreMenu" aria-label="More" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2" class="fill"/><circle cx="12" cy="12" r="1.2" class="fill"/><circle cx="19" cy="12" r="1.2" class="fill"/></svg></button>
       <button type="button" id="fav-toggle" class="icon-btn star" aria-pressed="false" aria-label="Add to favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg></button>
@@ -89,7 +90,10 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
     </div>
     <div id="chips" class="tchips" aria-label="Translations"></div>
     <p id="script-note" class="note small" hidden data-i18n="ayahByAyah"></p>
-    <div id="preview-ar" class="arabic" dir="rtl"></div>
+    <div id="preview-ar" class="arabic wpick" dir="rtl" role="listbox" aria-multiselectable="true" aria-label="Words" aria-describedby="pick-hint"></div>
+    <p id="pick-hint" class="small muted pick-hint" hidden data-i18n="partHint"></p>
+    <button type="button" id="tr-words" class="link small tr-words" hidden aria-expanded="false" aria-controls="preview-tr" data-i18n="trWords"></button>
+    <div id="preview-tr" class="preview-tr" hidden></div>
     <div class="actions">
       <button id="insert" class="btn primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg><span data-i18n="insert"></span></button>
       <button id="copy" class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span data-i18n="copy"></span></button>
@@ -299,9 +303,23 @@ if (!/[?&]host=(gdocs|wp|ext|adobe|tg)\b/.test(location.search)) document.write(
   </form>
 </dialog>
 
+<dialog id="zoom" class="sheet zoom" aria-labelledby="zoom-h">
+  <form method="dialog">
+    <div class="sheet-head"><h2 id="zoom-h"></h2>
+      <button type="button" id="zoom-clear" class="link part-clear" hidden data-i18n="partClear"></button>
+      <button value="close" class="icon-btn" data-i18n-title="close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="sheet-body">
+      <p class="small muted" data-i18n="partHint"></p>
+      <div id="zoom-ar" class="arabic wpick" dir="rtl" role="listbox" aria-multiselectable="true" aria-label="Words" aria-describedby="pick-hint"></div>
+      <div id="zoom-tr" class="zoom-tr"></div>
+    </div>
+    <div class="sheet-foot zoom-foot"><button value="done" class="btn" data-i18n="zoomDone"></button><button type="button" id="zoom-insert" class="btn primary" data-i18n="insert"></button></div>
+  </form>
+</dialog>
+
 <div id="toast" role="status"></div>
-<script src="stats.js?v=61"></script>
-<script src="search.js?v=61"></script>
-<script src="app.js?v=61"></script>
+<script src="stats.js?v=62"></script>
+<script src="search.js?v=62"></script>
+<script src="app.js?v=62"></script>
 </body>
 </html>

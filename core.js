@@ -916,6 +916,49 @@
     return { words: out, mark: mark };
   };
   Quran.prototype.words = function (s, a) { return this.spans(s, a).words.map(function (w) { return w.text; }); };
+  /* the words of a translation of an ayah, as format() puts them in (word numbers of sel.parts.tr) */
+  Quran.prototype.trWords = function (data, s, a) {
+    var x = trPlain(data && data[this.index(s, a)]);
+    return x ? x.split(' ') : [];
+  };
+  function trPlain(t) { return stripTrNumber(stripHtml(t).replace(/\s+/g, ' ')); }
+
+  /* Parts of the text chosen by hand: ranges [a0, w0, a1, w1] (ayah, 0-based word; both ends included), in the order of the
+     text. -> sorted, merged, clamped to the ayahs that exist; count(a) = the number of words of ayah a. */
+  function cleanRanges(list, count) {
+    var out = [];
+    (Array.isArray(list) ? list : []).forEach(function (r) {
+      if (!Array.isArray(r) || r.length !== 4 || !r.every(function (x) { return x >= 0 && x === Math.floor(x); })) return;
+      var a0 = r[0], w0 = r[1], a1 = r[2], w1 = r[3];
+      if (a1 < a0 || (a1 === a0 && w1 < w0)) return;
+      var n0 = count(a0), n1 = count(a1);
+      if (!n0 || !n1 || w0 >= n0) return;
+      out.push([a0, w0, a1, Math.min(w1, n1 - 1)]);
+    });
+    out.sort(function (x, y) { return x[0] - y[0] || x[1] - y[1]; });
+    var merged = [];
+    out.forEach(function (r) {
+      var l = merged[merged.length - 1];
+      // overlapping, or the next word right after (also across the end of an ayah): one range
+      if (l && (r[0] < l[2] || (r[0] === l[2] && r[1] <= l[3] + 1) || (r[0] === l[2] + 1 && r[1] === 0 && l[3] === count(l[2]) - 1))) {
+        if (r[2] > l[2] || (r[2] === l[2] && r[3] > l[3])) { l[2] = r[2]; l[3] = r[3]; }
+      } else merged.push(r.slice());
+    });
+    return merged;
+  }
+  function rangeAyahs(ranges) {                       // the ayahs the ranges touch, in order
+    var seen = {}, out = [];
+    ranges.forEach(function (r) { for (var a = r[0]; a <= r[2]; a++) if (!seen[a]) { seen[a] = 1; out.push(a); } });
+    return out;
+  }
+  function numList(nums, num, comma) {               // 2,3,4,7 -> "2-4, 7"
+    var out = [], i = 0;
+    while (i < nums.length) {
+      var j = i; while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1) j++;
+      out.push(j > i ? num(nums[i]) + '-' + num(nums[j]) : num(nums[i])); i = j + 1;
+    }
+    return out.join(comma);
+  }
 
   function stripTrNumber(t) { return t.trim().replace(/^\d+\s*\.\s*/, ''); }
   function stripHtml(t) {
@@ -936,8 +979,11 @@
     return runs;
   };
 
-  /* sel  = {sura, from, to, wordFrom?, wordTo?}  (0-based word indexes; wordFrom
+  /* sel  = {sura, from, to, wordFrom?, wordTo?, parts?}  (0-based word indexes; wordFrom
             applies to the first ayah, wordTo to the last one)
+            parts = {ar: [[a0, w0, a1, w1], …]}: several places of the Arabic chosen by hand (from..to and wordFrom/wordTo
+            are then the outer bounds, for older readers); a translation gets its own ranges in opts.translations[].parts.
+            Between the places goes opts.partSep (default "…"). Without parts everything is as before.
      opts = {brackets, auza, basmala, ref, trRef, bold, basmalaText?,
              ayahNums, hizb, sajda, waqf (false: leave out ayah numbers, ۞, ۩, the pause marks ۖ ۗ ۚ ۛ ۘ ۙ),
              translations: [{data, dir, quotes:[open, close], suraName}],
@@ -971,23 +1017,33 @@
     if (opts.sajda === false) cut.push('[ \u00a0]?\u06E9');
     if (opts.waqf === false) cut.push('[\u06D6-\u06DB]');
     cut = cut.length ? new RegExp(cut.join('|'), 'g') : null;
-    for (var a = sel.from; a <= sel.to; a++) {
-      var sp = this.spans(sel.sura, a), w = sp.words, t = this.text(sel.sura, a);
-      var b = a === sel.from && sel.wordFrom > 0 ? Math.min(sel.wordFrom, w.length - 1) : 0;
-      var e = a === sel.to && sel.wordTo != null ? Math.min(sel.wordTo, w.length - 1) : w.length - 1;
-      if (a > sel.from) push(' ');
-      var endChar = e === w.length - 1 && opts.ayahNums !== false ? t.length : w[e].end;
-      var pr = this._runs(sel.sura, a, w[b].start, endChar);
-      if (cut) pr = pr.map(function (r) { if (!r.page) r.t = r.t.replace(cut, ''); return r; }).filter(function (r) { return r.t; });
-      if (pr.length) { pr[0].t = pr[0].t.replace(/^[ \u00a0]+/, ''); pr[pr.length - 1].t = pr[pr.length - 1].t.replace(/[ \u00a0]+$/, ''); }
-      pr.forEach(function (r) {
-        var x = {}; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
-        push(r.t, x);
-      });
-    }
+    var sep = opts.partSep || '\u2026', wc = function (a) { return self.spans(sel.sura, a).words.length; };
+    var arParts = sel.parts && sel.parts.ar ? cleanRanges(sel.parts.ar, wc) : [];
+    // one range = the old selection (from, wordFrom) .. (to, wordTo); Infinity: to the end of the last ayah
+    var ranges = arParts.length ? arParts : [[sel.from, sel.wordFrom > 0 ? sel.wordFrom : 0, sel.to, sel.wordTo != null ? sel.wordTo : Infinity]];
+    ranges.forEach(function (rg, ri) {
+      if (ri > 0) push(' ' + sep + ' ', { plain: true, role: 'sep' });     // a gap between two chosen places
+      for (var a = rg[0]; a <= rg[2]; a++) {
+        var sp = self.spans(sel.sura, a), w = sp.words, t = self.text(sel.sura, a);
+        var b = a === rg[0] && rg[1] > 0 ? Math.min(rg[1], w.length - 1) : 0;
+        var e = a === rg[2] && rg[3] !== Infinity ? Math.min(rg[3], w.length - 1) : w.length - 1;
+        if (a > rg[0]) push(' ');
+        var endChar = e === w.length - 1 && opts.ayahNums !== false ? t.length : w[e].end;
+        var pr = self._runs(sel.sura, a, w[b].start, endChar);
+        if (cut) pr = pr.map(function (r) { if (!r.page) r.t = r.t.replace(cut, ''); return r; }).filter(function (r) { return r.t; });
+        if (pr.length) { pr[0].t = pr[0].t.replace(/^[ \u00a0]+/, ''); pr[pr.length - 1].t = pr[pr.length - 1].t.replace(/[ \u00a0]+$/, ''); }
+        pr.forEach(function (r) {
+          var x = {}; if (r.color) x.color = r.color; if (r.page) x.page = r.page;
+          push(r.t, x);
+        });
+      }
+    });
+    // the ayahs that go in (several places: only the ayahs they touch, also for translations and tafsirs)
+    var ayahs = arParts.length ? rangeAyahs(arParts) : null;
     if (opts.brackets !== false) push(br.close);
     if (opts.ref) {
-      var rng = sel.to > sel.from ? arNum(sel.from) + '-' + arNum(sel.to) : arNum(sel.from);
+      var rng = ayahs && ayahs.length !== ayahs[ayahs.length - 1] - ayahs[0] + 1 ? numList(ayahs, arNum, '\u060c ')
+        : sel.to > sel.from ? arNum(sel.from) + '-' + arNum(sel.to) : arNum(sel.from);
       push(' ', { plain: true, role: 'sep', bold: false });
       // non-breaking space: the reference never breaks between the sura name and the numbers
       push('[' + this.suras[sel.sura - 1][0] + '\u00a0' + rng + ']', { plain: true, role: 'ref', bold: false });
@@ -998,9 +1054,9 @@
     /* «meaning (explanation) …» (Sura: 1-2).  -- the same layout for translations and tafsirs:
        one ayah: no number inside; several: "1. … 2. …" (a commentary on a group: "1-3. …"),
        the sura name and the range at the end */
-    function quoted(items, q, suraName) {
+    function quoted(items, q, suraName, chosen) {      // chosen: places chosen by hand, the reference lists the ayahs ("2, 5")
       var multi = items.length > 1 || items[0].from !== items[0].to;
-      var from = items[0].from, to = items[items.length - 1].to;
+      var from = items[0].from, to = items[items.length - 1].to, gaps = chosen && items.some(function (it, i) { return i && it.from > items[i - 1].to + 1; });
       var parts = [], bounds = [], pos = q[0].length;
       items.forEach(function (it) {
         var num = it.from === it.to ? String(it.from) : it.from + '-' + it.to;
@@ -1008,34 +1064,50 @@
         bounds.push(pos); pos += parts[parts.length - 1].length + 1;
       });
       var quote = q[0] + parts.join(' ').replace(/[\s.,;:،]+$/, '') + q[1];
-      var rng = from === to ? String(from) : from + '-' + to;
+      var rng = gaps ? numList([].concat.apply([], items.map(function (it) { var n = []; for (var k = it.from; k <= it.to; k++) n.push(k); return n; })), String, ', ') : from === to ? String(from) : from + '-' + to;
       var runs = splitParens(quote, bounds, q[0].length);
       return opts.trRef === false ? runs : runs.concat([{ t: ' (' + suraName + ': ' + rng + ').', bold: false, italic: true, role: 'trref' }]);
     }
+    var ayahList = ayahs || [];
+    if (!ayahs) for (var a1 = sel.from; a1 <= sel.to; a1++) ayahList.push(a1);
     (opts.translations || []).forEach(function (tr) {
       var items = [];
-      for (var a2 = sel.from; a2 <= sel.to; a2++) {
-        var x = stripTrNumber(stripHtml(tr.data[self.index(sel.sura, a2)]).replace(/\s+/g, ' '));
+      var trParts = tr.parts ? cleanRanges(tr.parts, function (a) { return self.trWords(tr.data, sel.sura, a).length; }) : [];
+      if (trParts.length) {
+        /* words of the translation chosen by hand: per ayah, the pieces joined by the separator */
+        var per = {}, order = [];
+        trParts.forEach(function (rg) {
+          for (var a = rg[0]; a <= rg[2]; a++) {
+            var ws = self.trWords(tr.data, sel.sura, a);
+            var b = a === rg[0] ? rg[1] : 0, e = a === rg[2] ? Math.min(rg[3], ws.length - 1) : ws.length - 1;
+            if (!ws.length || b > e) continue;
+            if (!per[a]) { per[a] = []; order.push(a); }
+            per[a].push(ws.slice(b, e + 1).join(' '));
+          }
+        });
+        order.forEach(function (a) { items.push({ from: a, to: a, text: per[a].join(' ' + sep + ' ') }); });
+      } else ayahList.forEach(function (a2) {
+        var x = trPlain(tr.data[self.index(sel.sura, a2)]);
         if (x) items.push({ from: a2, to: a2, text: x });     // partial translations: ayah missing
-      }
-      if (items.length) paras.push({ dir: tr.dir || 'ltr', kind: 'tr', runs: quoted(items, tr.quotes || ['«', '»'], tr.suraName) });
+      });
+      if (items.length) paras.push({ dir: tr.dir || 'ltr', kind: 'tr', runs: quoted(items, tr.quotes || ['«', '»'], tr.suraName, !!(ayahs || trParts.length)) });
     });
 
     // a commentary entry may explain a group of ayahs: each entry once, all in one paragraph
     (opts.tafsirs || []).forEach(function (tf) {
       var seen = {}, items = [];
-      for (var a3 = sel.from; a3 <= sel.to; a3++) {
+      ayahList.forEach(function (a3) {
         var en = tf.get(sel.sura, a3);
-        if (!en || !en.text) continue;
+        if (!en || !en.text) return;
         var key = en.from + '-' + en.to;
-        if (seen[key]) continue;
+        if (seen[key]) return;
         seen[key] = 1;
         var text = tafsirParagraphs(en.text).join(' ');
         if (text) items.push({ from: en.from, to: en.to, text: text });
-      }
+      });
       if (!items.length) return;
       var all = items.map(function (it) { return it.text; }).join(' ');
-      paras.push({ dir: textDir(all, tf.dir || 'ltr'), kind: 'tf', runs: quoted(items, tf.quotes || ['«', '»'], tf.suraName || tf.name) });
+      paras.push({ dir: textDir(all, tf.dir || 'ltr'), kind: 'tf', runs: quoted(items, tf.quotes || ['«', '»'], tf.suraName || tf.name, !!ayahs) });
     });
 
     var text = ar.map(function (r) { return r.t; }).join('');
@@ -1129,7 +1201,7 @@
     return h.picture ? 'picture' : 'plain';
   }
 
-  return { Quran: Quran, HOSTS: HOSTS, renderMode: renderMode, normArabic: normArabic, normText: normText, arNum: arNum,
+  return { Quran: Quran, HOSTS: HOSTS, renderMode: renderMode, cleanRanges: cleanRanges, normArabic: normArabic, normText: normText, arNum: arNum,
            tafsirParagraphs: tafsirParagraphs, stripHtml: stripHtml, AUZA: AUZA, BASMALA: BASMALA,
            // search in any language (shared by web/search.js and the index builder)
            text: { norm: norm, terms: terms, queryTerms: queryTerms, tokenize: tokenize, detectScript: detectScript,

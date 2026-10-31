@@ -916,6 +916,55 @@
   };
   Object.keys(SEARCH).forEach(function (l) { for (var k in SEARCH[l]) L[l][k] = SEARCH[l][k]; });
 
+  /* 3.19: words chosen by hand in several places, in the translation, the big window */
+  var PICK = {
+    uz: { partClear: 'Белгилашни бекор қилиш', partHint: 'Сўзни босинг — шу ердан, яна бирини босинг — шу ергача. Ctrl/⌘ + босиш ёки узоқ босиш — яна бир жой қўшади, Shift + босиш — шу сўзгача, Esc — бекор қилади. Жойлар орасига «…» қўйилади.',
+          trWords: 'Таржимадан сўз танлаш', ayahWords: 'Оят сўзлари', zoom: 'Катта ойнада очиш', zoomDone: 'Тайёр' },
+    uz_latn: { partClear: 'Belgilashni bekor qilish', partHint: 'Soʻzni bosing — shu yerdan, yana birini bosing — shu yergacha. Ctrl/⌘ + bosish yoki uzoq bosish — yana bir joy qoʻshadi, Shift + bosish — shu soʻzgacha, Esc — bekor qiladi. Joylar orasiga «…» qoʻyiladi.',
+          trWords: 'Tarjimadan soʻz tanlash', ayahWords: 'Oyat soʻzlari', zoom: 'Katta oynada ochish', zoomDone: 'Tayyor' },
+    ar: { partClear: 'إلغاء التحديد', partHint: 'انقر كلمة ليبدأ التحديد منها، ثم كلمة أخرى لينتهي عندها. Ctrl/⌘ + نقر أو ضغط مطوّل يضيف موضعًا آخر، وShift + نقر يمدّ التحديد إلى الكلمة، وEsc يلغيه. توضع «…» بين المواضع.',
+          trWords: 'اختيار كلمات من الترجمة', ayahWords: 'كلمات الآية', zoom: 'فتح في نافذة كبيرة', zoomDone: 'تم' },
+    en: { partClear: 'Clear selection', partHint: 'Tap a word to start there, tap another to end there. Ctrl/⌘ + click or a long press adds another place, Shift + click extends to the word, Esc clears. Places are joined with “…”.',
+          trWords: 'Choose words of the translation', ayahWords: 'Words of the ayah', zoom: 'Open in a big window', zoomDone: 'Done' },
+    ru: { partClear: 'Отменить выделение', partHint: 'Нажмите слово — отсюда, ещё одно — досюда. Ctrl/⌘ + щелчок или долгое нажатие добавляет ещё одно место, Shift + щелчок — до этого слова, Esc — отменяет. Между местами ставится «…».',
+          trWords: 'Выбрать слова перевода', ayahWords: 'Слова аята', zoom: 'Открыть в большом окне', zoomDone: 'Готово' },
+    tr: { partClear: 'Seçimi kaldır', partHint: 'Bir kelimeye dokunun — buradan, başka birine — buraya kadar. Ctrl/⌘ + tıklama veya uzun basma bir yer daha ekler, Shift + tıklama kelimeye kadar uzatır, Esc kaldırır. Yerler arasına “…” konur.',
+          trWords: 'Mealden kelime seç', ayahWords: 'Ayetin kelimeleri', zoom: 'Büyük pencerede aç', zoomDone: 'Tamam' },
+    fr: { partClear: 'Annuler la sélection', partHint: 'Touchez un mot pour commencer, un autre pour finir. Ctrl/⌘ + clic ou un appui long ajoute un autre passage, Maj + clic étend jusqu’au mot, Échap annule. Les passages sont reliés par « … ».',
+          trWords: 'Choisir des mots de la traduction', ayahWords: 'Mots du verset', zoom: 'Ouvrir dans une grande fenêtre', zoomDone: 'Terminé' },
+    de: { partClear: 'Auswahl aufheben', partHint: 'Ein Wort antippen – ab hier, ein weiteres – bis hier. Strg/⌘ + Klick oder langes Drücken fügt eine weitere Stelle hinzu, Umschalt + Klick erweitert bis zum Wort, Esc hebt auf. Zwischen den Stellen steht „…“.',
+          trWords: 'Wörter der Übersetzung wählen', ayahWords: 'Wörter des Verses', zoom: 'In großem Fenster öffnen', zoomDone: 'Fertig' },
+    es: { partClear: 'Quitar la selección', partHint: 'Toque una palabra para empezar ahí y otra para terminar. Ctrl/⌘ + clic o una pulsación larga añade otro lugar, Mayús + clic amplía hasta la palabra, Esc la quita. Entre los lugares se pone «…».',
+          trWords: 'Elegir palabras de la traducción', ayahWords: 'Palabras de la aleya', zoom: 'Abrir en una ventana grande', zoomDone: 'Listo' },
+    kk: { partClear: 'Белгілеуді болдырмау', partHint: 'Сөзді басыңыз — осы жерден, тағы бірін — осы жерге дейін. Ctrl/⌘ + басу немесе ұзақ басу тағы бір орын қосады, Shift + басу — осы сөзге дейін, Esc — болдырмайды. Орындар арасына «…» қойылады.',
+          trWords: 'Аудармадан сөз таңдау', ayahWords: 'Аят сөздері', zoom: 'Үлкен терезеде ашу', zoomDone: 'Дайын' },
+    ky: { partClear: 'Белгилөөнү жокко чыгаруу', partHint: 'Сөздү басыңыз — ушул жерден, дагы бирин — ушул жерге чейин. Ctrl/⌘ + басуу же узак басуу дагы бир орун кошот, Shift + басуу — ушул сөзгө чейин, Esc — жокко чыгарат. Орундардын ортосуна «…» коюлат.',
+          trWords: 'Котормодон сөз тандоо', ayahWords: 'Аяттын сөздөрү', zoom: 'Чоң терезеде ачуу', zoomDone: 'Даяр' },
+    tg: { partClear: 'Бекор кардани интихоб', partHint: 'Калимаро пахш кунед — аз ин ҷо, боз якеро — то ин ҷо. Ctrl/⌘ + пахш ё пахши дароз боз як ҷой илова мекунад, Shift + пахш — то ин калима, Esc — бекор мекунад. Байни ҷойҳо «…» гузошта мешавад.',
+          trWords: 'Интихоби калима аз тарҷума', ayahWords: 'Калимаҳои оят', zoom: 'Дар равзанаи калон кушодан', zoomDone: 'Тайёр' },
+    az: { partClear: 'Seçimi ləğv et', partHint: 'Sözə toxunun — buradan, başqasına — buraya qədər. Ctrl/⌘ + klik və ya uzun basma daha bir yer əlavə edir, Shift + klik sözə qədər uzadır, Esc ləğv edir. Yerlər arasına «…» qoyulur.',
+          trWords: 'Tərcümədən söz seç', ayahWords: 'Ayənin sözləri', zoom: 'Böyük pəncərədə aç', zoomDone: 'Hazır' },
+    fa: { partClear: 'لغو انتخاب', partHint: 'روی واژه‌ای بزنید تا انتخاب از آن آغاز شود و روی واژهٔ دیگر تا همان‌جا پایان یابد. Ctrl/⌘ + کلیک یا فشار طولانی جای دیگری می‌افزاید، Shift + کلیک تا آن واژه گسترش می‌دهد و Esc لغو می‌کند. میان جاها «…» گذاشته می‌شود.',
+          trWords: 'انتخاب واژه از ترجمه', ayahWords: 'واژه‌های آیه', zoom: 'باز کردن در پنجرهٔ بزرگ', zoomDone: 'تمام' },
+    ur: { partClear: 'انتخاب ختم کریں', partHint: 'کسی لفظ کو دبائیں — یہاں سے، دوسرے کو — یہاں تک۔ Ctrl/⌘ + کلک یا دیر تک دبانا ایک اور جگہ شامل کرتا ہے، Shift + کلک اس لفظ تک بڑھاتا ہے، Esc ختم کرتا ہے۔ جگہوں کے درمیان «…» لگتا ہے۔',
+          trWords: 'ترجمے سے الفاظ چنیں', ayahWords: 'آیت کے الفاظ', zoom: 'بڑی ونڈو میں کھولیں', zoomDone: 'ہو گیا' },
+    id: { partClear: 'Batalkan pilihan', partHint: 'Ketuk kata untuk mulai di sana, ketuk kata lain untuk berakhir di sana. Ctrl/⌘ + klik atau tekan lama menambah tempat lain, Shift + klik memperluas sampai kata itu, Esc membatalkan. Antar tempat diberi “…”.',
+          trWords: 'Pilih kata dari terjemahan', ayahWords: 'Kata-kata ayat', zoom: 'Buka di jendela besar', zoomDone: 'Selesai' },
+    ms: { partClear: 'Batalkan pilihan', partHint: 'Ketik perkataan untuk mula di situ, ketik yang lain untuk tamat di situ. Ctrl/⌘ + klik atau tekan lama menambah tempat lain, Shift + klik meluaskan hingga perkataan itu, Esc membatalkan. Antara tempat diletakkan “…”.',
+          trWords: 'Pilih perkataan daripada terjemahan', ayahWords: 'Perkataan ayat', zoom: 'Buka dalam tetingkap besar', zoomDone: 'Selesai' },
+    bn: { partClear: 'নির্বাচন বাতিল', partHint: 'একটি শব্দে চাপুন — এখান থেকে, আরেকটিতে — এখান পর্যন্ত। Ctrl/⌘ + ক্লিক বা দীর্ঘ চাপ আরেকটি জায়গা যোগ করে, Shift + ক্লিক শব্দটি পর্যন্ত বাড়ায়, Esc বাতিল করে। জায়গাগুলোর মাঝে “…” বসে।',
+          trWords: 'অনুবাদ থেকে শব্দ বাছুন', ayahWords: 'আয়াতের শব্দ', zoom: 'বড় উইন্ডোতে খুলুন', zoomDone: 'হয়ে গেছে' },
+    hi: { partClear: 'चयन हटाएँ', partHint: 'किसी शब्द पर टैप करें — यहाँ से, दूसरे पर — यहाँ तक। Ctrl/⌘ + क्लिक या देर तक दबाना एक और जगह जोड़ता है, Shift + क्लिक उस शब्द तक बढ़ाता है, Esc हटाता है। जगहों के बीच “…” लगता है।',
+          trWords: 'अनुवाद से शब्द चुनें', ayahWords: 'आयत के शब्द', zoom: 'बड़ी विंडो में खोलें', zoomDone: 'हो गया' },
+    zh: { partClear: '取消选择', partHint: '点一个词从这里开始，再点一个词到这里结束。Ctrl/⌘ + 点击或长按可再添加一处，Shift + 点击延伸到该词，Esc 取消。各处之间用“…”连接。',
+          trWords: '选择译文中的词', ayahWords: '经文的词', zoom: '在大窗口中打开', zoomDone: '完成' },
+    ko: { partClear: '선택 취소', partHint: '단어를 누르면 거기서 시작하고, 다른 단어를 누르면 거기서 끝납니다. Ctrl/⌘ + 클릭 또는 길게 누르기로 다른 곳을 추가하고, Shift + 클릭으로 그 단어까지 넓히며, Esc로 취소합니다. 각 부분 사이에는 “…”가 들어갑니다.',
+          trWords: '번역에서 단어 고르기', ayahWords: '아야의 단어', zoom: '큰 창에서 열기', zoomDone: '완료' },
+    ja: { partClear: '選択を解除', partHint: '語をタップするとそこから、別の語をタップするとそこまで選ばれます。Ctrl/⌘ + クリックまたは長押しで別の箇所を追加、Shift + クリックでその語まで広げ、Esc で解除します。箇所の間には「…」が入ります。',
+          trWords: '翻訳から語を選ぶ', ayahWords: '節の語', zoom: '大きなウィンドウで開く', zoomDone: '完了' }
+  };
+  Object.keys(PICK).forEach(function (l) { for (var k in PICK[l]) L[l][k] = PICK[l][k]; });
+
   var ORDER = ['uz', 'uz_latn', 'ar', 'en', 'ru', 'tr', 'fr', 'de', 'es', 'kk', 'ky', 'tg', 'az',
                'fa', 'ur', 'id', 'ms', 'bn', 'hi', 'zh', 'ko', 'ja'];
 
