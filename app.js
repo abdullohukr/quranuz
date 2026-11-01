@@ -8,7 +8,7 @@
     withTr: true, translations: ['alovuddin_mansur'],
     withTafsir: false, tafsirs: [],
     brackets: true, auza: false, basmala: false, ref: false, trRef: true, newPara: true,
-    ayahNums: true, hizb: true, sajda: true, waqf: true,
+    ayahNums: true, hizb: true, sajda: true, waqf: true, partSep: '…',
     arFont: '', arSize: 18, arBold: false, uzFont: '', uzSize: 14, arText: false,
     picBgOn: false, picBg: '#ffffff',                  // the Arabic as a picture: transparent unless a background is switched on
     extInsert: 'ask',                                  // browser extension, editors on web pages: 'ask' | 'text' | 'picture'
@@ -85,6 +85,7 @@
       .forEach(function (k) { st[k] = typeof st[k] === 'boolean' ? st[k] : DEFAULTS[k]; });
     st.searchScope = oneOf(st.searchScope, ['default', 'selected', 'all', 'tafsir'], 'default');
     st.votdClose = oneOf(st.votdClose, ['ask', 'day', 'off'], 'ask');
+    st.partSep = oneOf(st.partSep, ['…', '[…]', '...', '—'], '…');
     st.picAction = oneOf(st.picAction, ['ask', 'insert', 'copy'], 'ask');
     st.extInsert = oneOf(st.extInsert, ['ask', 'text', 'picture'], 'ask');
     if (!/^#[0-9a-f]{6}$/i.test(st.picBg)) st.picBg = DEFAULTS.picBg;
@@ -885,7 +886,7 @@
     var sc = scriptById(settings.script);
     return (src || quran).format(sel, {
       brackets: settings.brackets, auza: settings.auza, basmala: settings.basmala, ref: settings.ref, trRef: settings.trRef,
-      ayahNums: settings.ayahNums, hizb: settings.hizb, sajda: settings.sajda, waqf: settings.waqf,
+      ayahNums: settings.ayahNums, hizb: settings.hizb, sajda: settings.sajda, waqf: settings.waqf, partSep: settings.partSep,
       bold: false,                                     // weight etc. come from settings.fmt
       // a font chosen for the basmala needs Unicode text (the QPC page mushafs have glyph codes)
       basmalaText: settings.fmt.basmala.font && sc.glyph && !src ? QuranCore.BASMALA : null,
@@ -1706,7 +1707,7 @@
   }
   /* compact form of the parts (the tag of a Word content control, the history kept by the extension):
      "a.w.a.w,a.w.a.w;id=a.w.a.w" — the Arabic ranges first, then the words of each translation */
-  function encRanges(R) { return (R || []).map(function (r) { return r.join('.'); }).join(','); }
+  function encRanges(R) { return (Array.isArray(R) ? R : []).filter(Array.isArray).map(function (r) { return r.join('.'); }).join(','); }
   function decRanges(t) {
     return String(t || '').split(',').map(function (x) {
       var v = x.split('.').map(Number);
@@ -2318,7 +2319,7 @@
   var B = { withTr: 's-with-tr', withTafsir: 's-with-tf', brackets: 's-brackets', auza: 's-auza', basmala: 's-basmala',
             ref: 's-ref', trRef: 's-tr-ref', newPara: 's-newpara', picBgOn: 's-picbg-on', picBg: 's-picbg',
             ayahNums: 's-nums', hizb: 's-hizb', sajda: 's-sajda', waqf: 's-waqf', votd: 's-votd', liveSearch: 's-live', statsShare: 's-stats', votdClose: 's-votd-close', picAction: 's-pic-action', markAyahs: 's-mark',
-            searchScope: 's-search-scope' };
+            searchScope: 's-search-scope', partSep: 's-part-sep' };
   if (HOST === 'ext') B.extInsert = 's-ext-insert';
   /* Group label in the interface language + the native name: "Турк тили (Türkçe)" */
   function langLabel(x) {

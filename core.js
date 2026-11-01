@@ -1017,7 +1017,7 @@
     if (opts.sajda === false) cut.push('[ \u00a0]?\u06E9');
     if (opts.waqf === false) cut.push('[\u06D6-\u06DB]');
     cut = cut.length ? new RegExp(cut.join('|'), 'g') : null;
-    var sep = opts.partSep || '\u2026', wc = function (a) { return self.spans(sel.sura, a).words.length; };
+    var sep = opts.partSep || '\u2026', wc = function (a) { return a >= 1 && a <= self.count(sel.sura) ? self.spans(sel.sura, a).words.length : 0; };   // an ayah outside the sura (a damaged tag or history entry): no words, the place is dropped
     var arParts = sel.parts && sel.parts.ar ? cleanRanges(sel.parts.ar, wc) : [];
     // one range = the old selection (from, wordFrom) .. (to, wordTo); Infinity: to the end of the last ayah
     var ranges = arParts.length ? arParts : [[sel.from, sel.wordFrom > 0 ? sel.wordFrom : 0, sel.to, sel.wordTo != null ? sel.wordTo : Infinity]];
